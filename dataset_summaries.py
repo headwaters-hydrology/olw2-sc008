@@ -69,23 +69,23 @@ ds_df.to_csv(os.path.join(output_path, ds_csv.format(date=date)))
 stn_df.to_csv(os.path.join(output_path, stn_csv.format(date=date)))
 
 ## Summarize the datasets
-summ_keys = ['feature', 'parameter', 'method', 'owner']
-ds_df1 = ds_df[ds_df.product_code == 'quality_controlled_data'].drop_duplicates(subset=summ_keys)
-grp = ds_df1.groupby(summ_keys)
+# summ_keys = ['feature', 'parameter', 'method', 'owner']
+# ds_df1 = ds_df[ds_df.product_code == 'quality_controlled_data'].drop_duplicates(subset=summ_keys)
+# grp = ds_df1.groupby(summ_keys)
 
-owners = ds_df1.owner.unique()
-owners.sort()
+# owners = ds_df1.owner.unique()
+# owners.sort()
 
-params = ds_df1.parameter.unique()
-params.sort()
+# params = ds_df1.parameter.unique()
+# params.sort()
 
-methods = ds_df1.method.unique()
-methods.sort()
+# methods = ds_df1.method.unique()
+# methods.sort()
 
-features = ds_df1.feature.unique()
-features.sort()
+# features = ds_df1.feature.unique()
+# features.sort()
 
-ds_df2 = ds_df1[ds_df1.method == 'sensor_recording']
+# ds_df2 = ds_df1[ds_df1.method == 'sensor_recording']
 
 
 

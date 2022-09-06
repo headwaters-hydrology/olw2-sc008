@@ -22,9 +22,9 @@ output_path = '/home/mike/git/hh/olw2-sc008/data'
 public_url = 'https://b2.tethys-ts.xyz/file'
 
 buckets = [
-    # 'gwrc-env',
-    # 'ecan-env-monitoring',
-    # 'es-hilltop',
+    'gwrc-env',
+    'ecan-env-monitoring',
+    'es-hilltop',
     'hrc-env',
     'tasman-env',
     'trc-env',
