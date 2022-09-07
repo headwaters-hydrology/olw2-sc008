@@ -22,14 +22,16 @@ output_path = '/home/mike/git/hh/olw2-sc008/data'
 public_url = 'https://b2.tethys-ts.xyz/file'
 
 buckets = [
-    'gwrc-env',
+    # 'gwrc-env',
     'ecan-env-monitoring',
     'es-hilltop',
     'hrc-env',
     'tasman-env',
     'trc-env',
     'niwa-sos',
-    'orc-env'
+    'orc-env',
+    'gdc-env',
+    'nrc-env'
     ]
 
 index_cols = ['dataset_id', 'station_id', 'time', 'parameter']
@@ -45,12 +47,14 @@ for bucket in buckets:
     print('-- ' + bucket)
     remote = {'public_url': public_url, 'bucket': bucket, 'version': 4}
     ts = Tethys([remote], cache_path)
-    datasets = [ds for ds in ts.datasets if (ds['product_code'] == 'quality_controlled_data') and (ds['method'] == 'sensor_recording')]
+    datasets = [ds for ds in ts.datasets if (ds['product_code'] == 'quality_controlled_data') and (ds['method'] in ['sensor_recording', 'field_activity', 'sample_analysis'])]
+    print('There are {} datasets to run through.'.format(len(datasets)))
     for dataset in datasets:
         ds_id = dataset['dataset_id']
         print(ds_id)
         stns = ts.get_stations(ds_id)
         stn_ids1 = [stn['station_id'] for stn in stns]
+
         n_arrays = len(stn_ids1)//50 + 1
 
         stn_ids_arr = np.array_split(stn_ids1, n_arrays)
@@ -75,6 +79,8 @@ for bucket in buckets:
             data3.name = 'result'
             data3 = data3.to_frame().reset_index()
             data3 = pd.merge(data3, data2.drop(dataset['parameter'], axis=1), on=['dataset_id', 'station_id', 'time'])
+            del data2
+
             if 'quality_code' in data3:
                 data3['quality_code'] = pd.to_numeric(data3['quality_code'], errors='coerce', downcast='integer')
 

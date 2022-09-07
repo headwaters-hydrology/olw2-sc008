@@ -21,7 +21,7 @@ output_path = '/home/mike/git/hh/olw2-sc008'
 
 public_url = 'https://b2.tethys-ts.xyz/file'
 
-buckets = ['gwrc-env', 'ecan-env-monitoring', 'es-hilltop', 'hrc-env', 'tasman-env', 'trc-env', 'niwa-sos', 'orc-env']
+buckets = ['gwrc-env', 'ecan-env-monitoring', 'es-hilltop', 'hrc-env', 'tasman-env', 'trc-env', 'niwa-sos', 'orc-env', 'gdc-env', 'nrc-env']
 
 dataset_fields = ['dataset_id', 'feature', 'parameter', 'method', 'owner', 'product_code', 'aggregation_statistic', 'frequency_interval', 'utc_offset', 'units', 'license', 'attribution', 'result_type', 'precision']
 
