@@ -1,0 +1,9 @@
+version: '3'
+
+services:
+  es-habitat-app:
+    image: tethysts/tethys-es-habitat-app:1.0
+    # extra_hosts:
+    #   - "host.docker.internal:host-gateway"
+    ports:
+      - "8080:80"

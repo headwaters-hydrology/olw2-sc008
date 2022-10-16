@@ -1,0 +1,31 @@
+version: '3.3'
+
+networks:
+  # net:
+  #   driver: overlay
+  #   attachable: true
+  traefik-public:
+    external: true
+
+services:
+  dash:
+    image: tethysts/tethys-es-habitat-app:1.0
+    networks:
+      # - net
+      - traefik-public
+    deploy:
+      placement:
+        constraints:
+          - node.labels.function == web_server
+      labels:
+        - traefik.enable=true
+        - traefik.docker.network=traefik-public
+        - traefik.constraint-label=traefik-public
+        - traefik.http.routers.es-habitat-http.rule=Host(`es-habitat.nzrivers.xyz`)
+        - traefik.http.routers.es-habitat-http.entrypoints=http
+        - traefik.http.routers.es-habitat-http.middlewares=https-redirect
+        - traefik.http.routers.es-habitat-https.rule=Host(`es-habitat.nzrivers.xyz`)
+        - traefik.http.routers.es-habitat-https.entrypoints=https
+        - traefik.http.routers.es-habitat-https.tls=true
+        # - traefik.http.routers.es-dash-https.tls.certresolver=le
+        - traefik.http.services.es-habitat.loadbalancer.server.port=80
