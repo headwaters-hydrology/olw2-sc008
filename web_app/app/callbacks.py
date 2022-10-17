@@ -17,44 +17,48 @@ from app import app
 import utils
 
 ################################################
+### Parameters
+
+base_reaches_path = '/assets/reaches/'
+
+reach_path_str = '{base_path}/{catch_id}.pbf'
+
+################################################
 ### Callbacks
 
 
-@app.callback(Output("catch_map", "children"), [Input("catch_map", "hover_feature")])
-def catch_hover(feature):
-    if feature is not None:
-        return f"{feature['id']}"
-
-
-# @app.callback(
-#         Output('sites', 'options'), Output('stn_map', 'data'),
-#         [Input('active_select', 'value')],
-#         [State('stns_obj', 'data')])
-# # @cache.memoize()
-# def update_sites_options_geojson(active, stns_obj):
-#     stns = utils.decode_obj(stns_obj)
-
-#     stns_name_list = utils.stn_labels(stns, active)
-#     stns_geojson = utils.stns_to_geojson(stns, active)
-
-#     return stns_name_list, stns_geojson
-
-
-# @app.callback(
-#     Output('sites', 'value'),
-#     [Input('stn_map', 'click_feature')]
-#     )
-# def update_station_id(feature):
-#     """
-
-#     """
-#     # print(ds_id)
-#     stn_id = None
+# @app.callback(Output("catch_map", "children"), [Input("catch_map", "click_feature")])
+# def catch_hover(feature):
 #     if feature is not None:
-#         if 'name' in feature['properties']:
-#             stn_id = feature['properties']['name']
+#         print(feature['id'])
+#         return feature['id']
 
-#     return stn_id
+
+@app.callback(
+    Output('catch_id', 'value'),
+    [Input('catch_map', 'click_feature')]
+    )
+def update_catch_id(feature):
+    """
+
+    """
+    # print(ds_id)
+    catch_id = None
+    if feature is not None:
+        catch_id = feature['id']
+
+    return catch_id
+
+
+@app.callback(
+        Output('reach_map', 'url'),
+        [Input('catch_id', 'value')],
+        )
+# @cache.memoize()
+def update_reaches_map(catch_id):
+    url = reach_path_str.format(base_path=base_reaches_path, catch_id=catch_id)
+
+    return url
 
 
 # @app.callback(

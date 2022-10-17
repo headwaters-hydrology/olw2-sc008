@@ -24,6 +24,7 @@ import geobuf
 import orjson
 import dash_leaflet.express as dlx
 from dash_extensions.javascript import assign
+import pathlib
 
 # from . import utils
 import utils
@@ -33,13 +34,16 @@ import utils
 
 base_path = os.path.realpath(os.path.dirname(__file__))
 
+base_path = pathlib.Path(base_path)
+
 reach_geobuf_zst = 'reach_geobuf.pbf.zst'
 catch_geobuf_zst = 'catch_geobuf.pbf.zst'
-catch_pbf = os.path.join(base_path, 'catch_geobuf.pbf')
-sel_data_h5 = os.path.join(base_path, 'selection_data.h5')
+catch_pbf = '/assets/catch.pbf'
+sel_data_h5 = '/assets/selection_data.h5'
+base_reaches_path = '/assets/reaches/'
 
-reach_dict = tethysts.utils.read_pkl_zstd(os.path.join(base_path, reach_geobuf_zst), True)
-catch_gbuf = base64.b64encode(tethysts.utils.read_pkl_zstd(os.path.join(base_path, catch_geobuf_zst))).decode()
+# reach_dict = tethysts.utils.read_pkl_zstd(os.path.join(base_path, reach_geobuf_zst), True)
+# catch_gbuf = base64.b64encode(tethysts.utils.read_pkl_zstd(os.path.join(base_path, catch_geobuf_zst))).decode()
 # catch_gbuf = tethysts.utils.read_pkl_zstd(os.path.join(base_path, catch_geobuf_zst))
 
 # catch1 = orjson.loads(orjson.dumps(geobuf.decode(catch_gbuf)))
@@ -96,7 +100,10 @@ style_handle = assign("""function style(feature) {
 ###############################################
 ### Initial processing
 
-sel1 = xr.open_dataset(sel_data_h5, engine='h5netcdf')
+sel1 = xr.open_dataset(base_path.joinpath(sel_data_h5[1:]), engine='h5netcdf')
+
+with open(base_path.joinpath(catch_pbf[1:]), 'rb') as f:
+    catch1 = geobuf.decode(f.read())
 
 freqs = sel1['frequency'].values
 indicators = sel1['indicator'].values
@@ -104,9 +111,12 @@ indicators.sort()
 # nzsegments = sel1['nzsegment'].values
 percent_changes = sel1['percent_change'].values
 time_periods = sel1['time_period'].values
-catches = list(reach_dict.keys())
+catches = [int(c['id']) for c in catch1['features']]
 
 
+sel1.close()
+del sel1
+del catch1
 
 
 ###############################################
@@ -120,10 +130,10 @@ def layout1():
     layout = html.Div(children=[
         html.Div([
             # html.P(children='Select species:'),
-            html.Label('Please select a catchment on the map:'),
-            dcc.Dropdown(options=[{'label': d, 'value': d} for d in catches], id='indicator', optionHeight=40, clearable=True),
+            html.Label('Select a catchment on the map:'),
+            dcc.Dropdown(options=[{'label': d, 'value': d} for d in catches], id='catch_id', optionHeight=40, clearable=True),
             html.Label('Select Indicator:'),
-            dcc.Dropdown(options=[{'label': d, 'value': d} for d in indicators], id='catch_id', optionHeight=40, clearable=True),
+            dcc.Dropdown(options=[{'label': d, 'value': d} for d in indicators], id='indicator', optionHeight=40, clearable=True),
             html.Label('Select expected percent improvement:'),
             dcc.Dropdown(options=[{'label': d, 'value': d} for d in percent_changes], id='percent_change', clearable=True),
             html.Label('Select sampling length (years):'),
@@ -136,7 +146,8 @@ def layout1():
     html.Div([
         dl.Map(children=[
             dl.TileLayer(id='tile_layer', attribution=attribution),
-            dl.GeoJSON(url="/assets/catch.pbf", format="geobuf", id='catch_map', zoomToBoundsOnClick=True, zoomToBounds=True, options=dict(style=style_handle))
+            dl.GeoJSON(url=catch_pbf, format="geobuf", id='catch_map', zoomToBoundsOnClick=True, zoomToBounds=True, options=dict(style=style_handle)),
+            dl.GeoJSON(url='', format="geobuf", id='reach_map')
                             ], style={'width': '100%', 'height': 780, 'margin': "auto", "display": "block"}, id="map2")
     ], className='fourish columns', style={'margin': 10}),
 
