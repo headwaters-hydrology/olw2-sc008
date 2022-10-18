@@ -1,8 +1,8 @@
 version: '3'
 
 services:
-  es-habitat-app:
-    image: tethysts/tethys-es-habitat-app:1.0
+  olw-app:
+    image: tethysts/olw-monitoring-app:1.0
     # extra_hosts:
     #   - "host.docker.internal:host-gateway"
     ports:

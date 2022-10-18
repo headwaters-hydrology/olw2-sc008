@@ -9,19 +9,40 @@ from dash.dependencies import Input, Output, State
 import plotly.graph_objs as go
 import pandas as pd
 from dash import dcc, html, dash_table
+import dash_leaflet.express as dlx
+import xarray as xr
+import pathlib
+import os
+import hdf5plugin
 
-# from .app import app
-# from . import utils
+from .app import app
+from . import utils
 
-from app import app
-import utils
+# from app import app
+# import utils
 
 ################################################
 ### Parameters
 
-base_reaches_path = '/assets/reaches/'
+base_path = pathlib.Path(os.path.realpath(os.path.dirname(__file__))).joinpath('assets')
+app_base_path = pathlib.Path('/assets')
 
-reach_path_str = '{base_path}/{catch_id}.pbf'
+reaches_path = 'reaches'
+# reach_path_str = '{base_path}/{catch_id}.pbf'
+
+sel_data_h5 = 'selection_data.h5'
+catch_reaches_file = 'catch_reach_mapping.pkl.zst'
+
+style = dict(weight=4, opacity=1, color='white')
+classes = [0, 20, 40, 60, 80]
+bins = classes.copy()
+bins.append(100)
+colorscale = ['#FFEDA0', '#FEB24C', '#FC4E2A', '#BD0026', '#800026']
+ctg = ["{}%+".format(cls, classes[i + 1]) for i, cls in enumerate(classes[:-1])] + ["{}%+".format(classes[-1])]
+colorbar = dlx.categorical_colorbar(categories=ctg, colorscale=colorscale, width=300, height=30, position="bottomleft")
+
+catch_reaches = utils.read_pkl_zstd(str(base_path.joinpath(catch_reaches_file)), True)
+
 
 ################################################
 ### Callbacks
@@ -56,9 +77,38 @@ def update_catch_id(feature):
         )
 # @cache.memoize()
 def update_reaches_map(catch_id):
-    url = reach_path_str.format(base_path=base_reaches_path, catch_id=catch_id)
+    url = app_base_path.joinpath(reaches_path).joinpath(str(catch_id) + '.pbf')
 
-    return url
+    return str(url)
+
+
+@app.callback(
+    Output('reach_map', 'hideout'),
+    [Input('catch_id', 'value'), Input('indicator', 'value'), Input('percent_change', 'value'), Input('time_period', 'value'), Input('freq', 'value')],
+    )
+def update_sel_data(catch_id, indicator, percent_change, time_period, freq):
+    """
+
+    """
+    if isinstance(catch_id, str) and isinstance(indicator, str) and isinstance(percent_change, int) and isinstance(time_period, int) and isinstance(freq, int):
+        x1 = xr.open_dataset(base_path.joinpath(sel_data_h5), engine='h5netcdf')
+        reaches = catch_reaches[int(catch_id)]
+        x2 = x1['percent_likelihood'].sel(indicator=indicator, frequency=freq, percent_change=percent_change, time_period=time_period, nzsegment=reaches, drop=True).copy().load()
+        x1.close()
+        del x1
+        color_arr = pd.cut(x2.values, bins, labels=colorscale).tolist()
+
+        hideout = {'colorscale': color_arr, 'classes': x2.nzsegment.values.tolist(), 'style': style, 'colorProp': 'nzsegment'}
+    else:
+        hideout = {}
+
+    return hideout
+
+
+
+
+
+
 
 
 # @app.callback(

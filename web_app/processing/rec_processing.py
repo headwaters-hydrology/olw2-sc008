@@ -147,7 +147,7 @@ starts = reaches3.start.unique()
 reach_dict = {}
 
 for s in starts:
-    df1 = reaches3[reaches3['start'] == s].drop('start', axis=1).set_index('nzsegment')
+    df1 = reaches3[reaches3['start'] == s].drop('start', axis=1).set_index('nzsegment', drop=False)
     gjson = orjson.loads(df1.to_json())
     gbuf = geobuf.encode(gjson)
     reach_dict[s] = gbuf
@@ -155,16 +155,32 @@ for s in starts:
 # write_pkl_zstd(reach_dict, os.path.join(base_path, 'reach_geobuf.pbf.zst'))
 
 ## Temp
-# reach_dict = read_pkl_zstd('/home/mike/git/olw2-sc008/web_app/app/reach_geobuf.pbf.zst', True)
+# reach_dict = read_pkl_zstd('/home/mike/git/olw2-sc008/web_app/app/assets/reach_geobuf.pbf.zst', True)
 # base_path = pathlib.Path('/home/mike/git/olw2-sc008/web_app/app/assets')
 
 reach_path = base_path.joinpath('reaches')
 reach_path.mkdir(parents=True, exist_ok=True)
 
 for r, gbuf in reach_dict.items():
+    # gjson = orjson.loads(orjson.dumps(geobuf.decode(gbuf)))
+    # for feature in gjson['features']:
+    #     feature['properties']['nzsegment'] = int(feature['id'])
+
+    # gbuf = geobuf.encode(gjson)
+
     new_path = reach_path.joinpath(str(r) + '.pbf')
     with open(new_path, 'wb') as f:
         f.write(gbuf)
+
+catch_mapping = {}
+for r, gbuf in reach_dict.items():
+    gjson = geobuf.decode(gbuf)
+    f = []
+    for feature in gjson['features']:
+        f.append(int(feature['id']))
+    catch_mapping[r] = f
+
+write_pkl_zstd(catch_mapping, base_path.joinpath('catch_reach_mapping.pkl.zst'))
 
 ## Export 3 plus streams
 rec_rivers2 = rec_rivers0[rec_rivers0.StreamOrde > 2][['nzsegment', 'FROM_NODE', 'TO_NODE', 'geometry']].copy()

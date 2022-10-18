@@ -19,6 +19,7 @@ from geopandas import gpd
 from sklearn.neighbors import KernelDensity
 
 pd.options.display.max_columns = 10
+pd.options.display.max_rows = 100
 
 ##############################################
 ### Parameters
@@ -118,14 +119,6 @@ for ind in data4['indicator']:
 ## Save
 chunks = {'percent_likelihood': (1, 10000, 4, 4, 5)}
 hdf5tools.xr_to_hdf5(data4, os.path.join(base_path, 'selection_data_all.h5'), chunks=chunks)
-
-
-
-
-
-
-
-
 
 
 

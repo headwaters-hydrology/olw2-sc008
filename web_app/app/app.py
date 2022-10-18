@@ -11,6 +11,5 @@ import dash
 ##############################################
 ### The app
 
-app = dash.Dash(__name__,  url_base_pathname = '/', prevent_initial_callbacks=True)
+app = dash.Dash(__name__,  url_base_pathname = '/')
 server = app.server
-

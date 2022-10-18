@@ -1,6 +1,0 @@
-remotes:
-  - bucket: es-hilltop
-    public_url: https://b2.tethys-ts.xyz/file
-    version: 4
-# cache_path: /cache
-cache_path: /home/mike/cache/temp
