@@ -25,13 +25,13 @@ pd.options.display.max_columns = 10
 ##############################################
 ### Parameters
 
-base_path = '/home/mike/data/OLW/web_app'
+base_path = '/media/nvme1/data/OLW/web_app'
 # %cd '/home/mike/data/OLW/web_app'
 
 base_path = pathlib.Path(base_path)
 
-rec_rivers_shp = '/home/mike/data/niwa/rec/River_Lines.shp'
-rec_catch_shp ='/home/mike/data/niwa/rec/ca240805-e6be-414e-8a39-579459acac2a2020230-1-1l4v6za.5259g.shp'
+rec_rivers_shp = '/media/nvme1/data/NIWA/REC25_rivers/rec25_rivers.shp'
+rec_catch_shp ='/media/nvme1/data/NIWA/REC25_watersheds/rec25_watersheds.shp'
 
 segment_id_col = 'nzsegment'
 
@@ -114,8 +114,7 @@ def write_pkl_zstd(obj, file_path=None, compress_level=1, pkl_protocol=pickle.HI
 #############################################
 ### Rivers
 
-rec_rivers0 = gpd.read_file(os.path.join(base_path, rec_rivers_shp))
-rec_catch0 = gpd.read_file(os.path.join(base_path, rec_catch_shp))
+rec_rivers0 = gpd.read_file(rec_rivers_shp)
 
 ## Find all outlet reaches
 rec_rivers1 = rec_rivers0[rec_rivers0.StreamOrde > 2][['nzsegment', 'FROM_NODE', 'TO_NODE']].copy()
@@ -162,12 +161,6 @@ reach_path = base_path.joinpath('reaches')
 reach_path.mkdir(parents=True, exist_ok=True)
 
 for r, gbuf in reach_dict.items():
-    # gjson = orjson.loads(orjson.dumps(geobuf.decode(gbuf)))
-    # for feature in gjson['features']:
-    #     feature['properties']['nzsegment'] = int(feature['id'])
-
-    # gbuf = geobuf.encode(gjson)
-
     new_path = reach_path.joinpath(str(r) + '.pbf')
     with open(new_path, 'wb') as f:
         f.write(gbuf)
@@ -183,15 +176,21 @@ for r, gbuf in reach_dict.items():
 write_pkl_zstd(catch_mapping, base_path.joinpath('catch_reach_mapping.pkl.zst'))
 
 ## Export 3 plus streams
-rec_rivers2 = rec_rivers0[rec_rivers0.StreamOrde > 2][['nzsegment', 'FROM_NODE', 'TO_NODE', 'geometry']].copy()
-rec_rivers2['nzsegment'] = rec_rivers2['nzsegment'].astype('int32')
-rec_rivers2['FROM_NODE'] = rec_rivers2['FROM_NODE'].astype('int32')
-rec_rivers2['TO_NODE'] = rec_rivers2['TO_NODE'].astype('int32')
+# rec_rivers2 = rec_rivers0[rec_rivers0.StreamOrde > 2][['nzsegment', 'FROM_NODE', 'TO_NODE', 'geometry']].copy()
+reaches3['StreamOrde'] = reaches3['StreamOrde'].astype('int8')
+reaches3['nzsegment'] = reaches3['nzsegment'].astype('int32')
+reaches3['start'] = reaches3['start'].astype('int32')
+reaches3['FROM_NODE'] = reaches3['FROM_NODE'].astype('int32')
+reaches3['TO_NODE'] = reaches3['TO_NODE'].astype('int32')
 
-rec_rivers2.to_file(base_path.joinpath('rec_streams3plus.gpkg'), driver='GPKG')
+reaches3.to_file(base_path.joinpath('rec_streams3plus.gpkg'), driver='GPKG')
+
+write_pkl_zstd(reaches3, base_path.joinpath('rec_streams3plus.pkl.zst'))
 
 #############################################
 ### Catchments
+
+rec_catch0 = gpd.read_file(rec_catch_shp)
 
 ## Extract associated catchments
 rec_catch2 = rec.extract_catch(reaches, rec_catch=rec_catch0)
@@ -207,8 +206,7 @@ rec_shed = rec_shed.drop('area', axis=1).set_index('nzsegment').to_crs(4326)
 
 ## Convert to geobuf and save
 rec_shed_gbuf = geobuf.encode(orjson.loads(rec_shed.to_json()))
-# write_pkl_zstd(rec_shed_gbuf, os.path.join(base_path, 'catch_geobuf.pbf.zst'))
-
+write_pkl_zstd(rec_shed, os.path.join(base_path, 'rec_catch3plus.pkl.zst'))
 
 with open(os.path.join(base_path, 'catch_geobuf.pbf'), 'wb') as f:
     f.write(rec_shed_gbuf)
