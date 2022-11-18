@@ -26,9 +26,9 @@ import rioxarray as rxr
 
 base_path = pathlib.Path('/media/nvme1/data/OLW/web_app')
 
-dem_remote = {'bucket': 'jaxa-data', 'public_url': 'https://b2.tethys-ts.xyz/file', 'version': 4}
+dem_remote = {'bucket': 'linz-data', 'public_url': 'https://b2.tethys-ts.xyz/file', 'version': 4}
 
-dem_ds_id = '980177538186a9bb9c9a0672'
+dem_ds_id = '54374801c0311a98a0f8e5ef'
 
 catch_pkl = 'rec_catch3plus.pkl.zst'
 rivers_pkl = 'rec_streams3plus.pkl.zst'

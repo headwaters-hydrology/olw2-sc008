@@ -19,6 +19,7 @@ import base64
 import orjson
 import zstandard as zstd
 import pathlib
+from glob import glob
 
 pd.options.display.max_columns = 10
 
@@ -212,32 +213,50 @@ with open(os.path.join(base_path, 'catch_geobuf.pbf'), 'wb') as f:
     f.write(rec_shed_gbuf)
 
 
+######################################################
+### Conversions
+
+rec_catch3 = rec_catch2[['nzsegment', 'start', 'geometry']].copy()
+rec_catch3['nzsegment'] = rec_catch3['nzsegment'].astype('int32')
+rec_catch3['start'] = rec_catch3['start'].astype('int32')
+
+rec_catch3 = rec_catch3.to_crs(4326)
+
+# write_pkl_zstd(rec_catch3, os.path.join(base_path, 'rec_catch_all.pkl.zst'))
+
+# rec_catch3.to_file(os.path.join(base_path, 'rec_catch_all.gpkg'))
+
+for grp, val in rec_catch3.set_index('nzsegment').groupby('start'):
+    print(grp)
+    path = os.path.join(base_path, 'catchments', '{}.pkl.zst'.format(grp))
+    write_pkl_zstd(val.drop('start', axis=1), path)
+
+for grp, val in reaches3.set_index('nzsegment').groupby('start'):
+    print(grp)
+    path = os.path.join(base_path, 'reaches', '{}_reach.pkl.zst'.format(grp))
+    write_pkl_zstd(val.drop('start', axis=1), path)
 
 
+for file in glob(os.path.join(base_path, 'reaches/*_reach.pkl.zst')):
+    reach_id = int(os.path.split(file)[-1].split('.')[0])
+    print(reach_id)
+
+    r1 = read_pkl_zstd(file, True).reset_index()
+    up1 = rec.find_upstream(r1.nzsegment.tolist(), r1)
+
+    branches = {}
+    for grp, segs in up1['nzsegment'].reset_index().groupby('start')['nzsegment']:
+        branches[grp] = segs.values.astype('int32')
+
+    path = os.path.join(base_path, 'reaches', '{}_mapping.pkl.zst'.format(reach_id))
+    write_pkl_zstd(branches, path)
 
 
+# c1 = read_pkl_zstd(os.path.join(base_path, 'catchments', '14295077.pkl.zst'), True)
+# c1.to_file(os.path.join(base_path, '14295077_catchments.gpkg'))
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+# r1 = read_pkl_zstd(os.path.join(base_path, 'reaches', '14295077.pkl.zst'), True)
+# r1.to_file(os.path.join(base_path, '14295077_reaches.gpkg'))
 
 
 
