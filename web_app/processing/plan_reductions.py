@@ -294,6 +294,10 @@ c1 = read_pkl_zstd(os.path.join(base_path, 'catchments', '14295077.pkl.zst'), Tr
 r1 = read_pkl_zstd(os.path.join(base_path, 'reaches', '14295077.pkl.zst'), True).reset_index()
 # r1.to_file(os.path.join(base_path, '14295077_reaches.gpkg'))
 
+
+# with open(os.path.join(base_path, 'test_plan1.gpkg'), 'rb') as f:
+#     plan1 = gpd.read_file(f).drop('id', axis=1)
+
 plan1 = gpd.read_file(os.path.join(base_path, 'test_plan1.gpkg')).drop('id', axis=1)
 
 c2 = vector.sjoin(c1, plan1, how='left').drop('index_right', axis=1)
