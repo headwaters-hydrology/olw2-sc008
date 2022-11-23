@@ -17,7 +17,7 @@ import orjson
 # from shapely.geometry import shape, mapping
 # import tethysts
 import os
-from gistools import vector, rec
+from gistools import vector
 import geopandas as gpd
 from scipy import stats
 import base64

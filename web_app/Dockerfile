@@ -3,9 +3,8 @@ FROM tethysts/tethys-dash-base:1.5
 
 # RUN apt-get update && apt-get install -y libspatialindex-dev python-rtree
 
-# COPY requirements.txt ./
-#
-# RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy hello-cron file to the cron.d directory
 # COPY tethys-cron /etc/cron.d/tethys-cron
