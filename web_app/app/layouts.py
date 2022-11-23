@@ -23,8 +23,8 @@ from dash_extensions.javascript import assign, arrow_function
 import pathlib
 import hdf5plugin
 
-# from . import utils
-import utils
+from . import utils
+# import utils
 
 ##########################################
 ### Parameters
@@ -104,6 +104,9 @@ colorbar = dl.Colorbar(min=0, max=len(ctg), classes=indices, colorscale=colorsca
 
 base_reach_style = dict(weight=4, opacity=1, color='white')
 
+info = html.Div(id="info", className="info", style={"position": "absolute", "top": "10px", "right": "10px", "z-index": "1000"})
+
+
 ###############################################
 ### Initial processing
 
@@ -173,7 +176,7 @@ def layout1():
                    ],
                    value=['reductions_poly', 'reach_map'],
                    id='map_checkboxes',
-                   style={'padding': 5, 'margin-bottom': 240}
+                   style={'padding': 5, 'margin-bottom': 220}
                 ),
 
             dcc.Link(html.Img(src=str(app_base_path.joinpath('our-land-and-water-logo.svg'))), href='https://ourlandandwater.nz/')
@@ -186,7 +189,8 @@ def layout1():
             # dl.GeoJSON(url='', format="geobuf", id='base_reach_map', options=dict(style=base_reaches_style_handle)),
             dl.GeoJSON(url='', format="geobuf", id='reach_map', options={}, hideout={}, hoverStyle=arrow_function(dict(weight=10, color='black', dashArray=''))),
             dl.GeoJSON(data='', format="geobuf", id='reductions_poly'),
-            colorbar
+            colorbar,
+            info
                             ], style={'width': '100%', 'height': 780, 'margin': "auto", "display": "block"}, id="map2")
     ], className='six columns', style={'margin': 10}),
 

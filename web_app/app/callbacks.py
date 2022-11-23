@@ -16,11 +16,11 @@ import os
 import hdf5plugin
 from dash_extensions.javascript import assign
 
-# from .app import app
-# from . import utils
+from .app import app
+from . import utils
 
-from app import app
-import utils
+# from app import app
+# import utils
 
 ################################################
 ### Parameters
@@ -235,6 +235,26 @@ def update_hideout(props_obj):
         hideout = {}
 
     return hideout
+
+
+@app.callback(
+    Output("info", "children"),
+    [Input('props_obj', 'data'),
+     Input('reductions_obj', 'data')],
+    )
+def update_map_info(props_obj, reductions_obj):
+    """
+
+    """
+    info = [html.H6("Concentration reduction (%)")]
+
+    if (reductions_obj != '') and (reductions_obj is not None):
+        info = info + [html.P("Hover over the polygons to see reduction %")]
+
+    if (props_obj != '') and (props_obj is not None):
+        info = info + [html.P("Click on a reach to see info")]
+
+    return info
 
 
 @app.callback(Output('plots', 'children'),

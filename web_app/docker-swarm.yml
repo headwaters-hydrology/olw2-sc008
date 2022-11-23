@@ -9,7 +9,7 @@ networks:
 
 services:
   dash:
-    image: tethysts/olw-monitoring-app:1.0
+    image: tethysts/olw-monitoring-app:1.1
     networks:
       # - net
       - traefik-public
