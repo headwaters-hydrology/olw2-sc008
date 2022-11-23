@@ -25,6 +25,7 @@ pd.options.display.max_columns = 10
 ##############################################
 ### Functions
 
+
 def process_assets():
     """
 
@@ -60,7 +61,7 @@ def process_assets():
 
     for catch_id, catches in grp1:
         new_path = utils.catch_path.joinpath(str(catch_id) + '.pkl.zst')
-        utils.write_pkl_zstd(catches, new_path)
+        utils.write_pkl_zstd(catches.drop('start', axis=1), new_path)
 
     ## Save reach mappings
     mapping = utils.read_pkl_zstd(utils.output_path.joinpath(utils.reach_mapping_file), True)

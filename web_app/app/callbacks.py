@@ -30,19 +30,19 @@ app_base_path = pathlib.Path('/assets')
 
 reaches_path = 'reaches'
 
-sel_data_h5 = 'selection_data.h5'
-catch_reaches_file = 'catch_reach_mapping.pkl.zst'
+# sel_data_h5 = 'selection_data.h5'
+# catch_reaches_file = 'catch_reach_mapping.pkl.zst'
 
 style = dict(weight=4, opacity=1, color='white')
 classes = [0, 5, 20, 40, 60, 80]
 bins = classes.copy()
 bins.append(100)
-colorscale = ['grey', '#FED976', '#FEB24C', '#FC4E2A', '#BD0026', '#800026']
+colorscale = ['#808080', '#FED976', '#FEB24C', '#FC4E2A', '#BD0026', '#800026']
 ctg = ["{}%+".format(cls, classes[i + 1]) for i, cls in enumerate(classes[1:-1])] + ["{}%+".format(classes[-1])]
 ctg.insert(0, 'NA')
 colorbar = dlx.categorical_colorbar(categories=ctg, colorscale=colorscale, width=300, height=30, position="bottomleft")
 
-catch_reaches = utils.read_pkl_zstd(str(base_path.joinpath(catch_reaches_file)), True)
+# catch_reaches = utils.read_pkl_zstd(str(base_path.joinpath(catch_reaches_file)), True)
 
 base_reach_style_handle = assign("""function style3(feature) {
     return {
@@ -68,8 +68,10 @@ reach_style_handle = assign("""function style2(feature, context){
 ### Callbacks
 
 
-# @app.callback(Output("catch_map", "children"), [Input("catch_map", "click_feature")])
-# def catch_hover(feature):
+# @app.callback(Output("catch_map", "children"),
+#               [Input("catch_map", "click_feature")],
+#               State('reaches_obj', 'data'))
+# def catch_hover(feature, reaches_obj):
 #     if feature is not None:
 #         print(feature['id'])
 #         return feature['id']
@@ -148,7 +150,7 @@ def update_reductions_poly(reductions_obj, map_checkboxes, col_name):
     # print(col_name)
     if (reductions_obj != '') and (reductions_obj is not None) and ('reductions_poly' in map_checkboxes):
 
-        data = utils.decode_obj(reductions_obj)
+        data = utils.decode_obj(reductions_obj).to_crs(4326)
 
         if isinstance(col_name, str):
             data[col_name] = data[col_name].astype(str).str[:] + '% reduction'
@@ -196,10 +198,10 @@ def update_reach_data(catch_id, reductions_obj, col_name):
 
 
 @app.callback(
-    Output('reach_map', 'hideout'),
+    Output('props_obj', 'data'),
     [Input('reaches_obj', 'data'), Input('time_period', 'value'), Input('freq', 'value')],
     )
-def update_sel_data(reaches_obj, n_years, n_samples_year):
+def update_props_data(reaches_obj, n_years, n_samples_year):
     """
 
     """
@@ -208,23 +210,63 @@ def update_sel_data(reaches_obj, n_years, n_samples_year):
         props = utils.t_test(props, n_samples_year, n_years)
         props = utils.apply_filters(props, t_bins=bins, p_cutoff=0.01, reduction_cutoff=0.01)
 
-        color_arr = pd.cut(props.t_stat.values, bins, labels=colorscale).tolist()
+        data = utils.encode_obj(props)
+    else:
+        data = ''
+
+    return data
+
+
+@app.callback(
+    Output('reach_map', 'hideout'),
+    [Input('props_obj', 'data')],
+    )
+def update_hideout(props_obj):
+    """
+
+    """
+    if (props_obj != '') and (props_obj is not None):
+        props = utils.decode_obj(props_obj)
+
+        color_arr = pd.cut(props.reduction.values*100, bins, labels=colorscale, right=False).tolist()
 
         hideout = {'colorscale': color_arr, 'classes': props.reach.values.tolist(), 'style': style, 'colorProp': 'nzsegment'}
-
-        return hideout
-
-
-        # x1 = xr.open_dataset(base_path.joinpath(sel_data_h5), engine='h5netcdf')
-        # reaches = catch_reaches[int(catch_id)]
-        # x2 = x1['percent_likelihood'].sel(indicator=indicator, frequency=freq, percent_change=percent_change, time_period=time_period, nzsegment=reaches, drop=True).copy().load()
-        # x1.close()
-        # del x1
-        # color_arr = pd.cut(x2.values, bins, labels=colorscale).tolist()
-
-        # hideout = {'colorscale': color_arr, 'classes': x2.nzsegment.values.tolist(), 'style': style, 'colorProp': 'nzsegment'}
     else:
-        return {}
+        hideout = {}
+
+    return hideout
+
+
+@app.callback(Output('plots', 'children'),
+              [Input('plot_tabs', 'value'), Input("reach_map", "click_feature")],
+              State('props_obj', 'data')
+              )
+# @cache.memoize()
+def update_tabs(tab, feature, props_obj):
+    """
+    """
+    # if feature is not None:
+    #     print(feature['id'])
+
+    if (feature is not None) and (props_obj != '') and (props_obj is not None):
+        # print(feature['id'])
+        props = utils.decode_obj(props_obj)
+        reach_data = props.sel(reach=int(feature['id']))
+
+        info_str = """
+                ###### Reduction %:
+                {red}%
+
+                ###### T Statistic:
+                {t_stat}
+
+                ###### P Value of T Statistic:
+                {p}
+            """.format(red=int(reach_data.reduction*100), t_stat=float(reach_data.t_stat.round(3)), p=float(reach_data.p_value.round(3)))
+
+        fig1 = info_str
+
+        return dcc.Markdown(fig1)
 
 
 # @app.callback(

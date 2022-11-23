@@ -33,7 +33,7 @@ base_path = pathlib.Path(os.path.realpath(os.path.dirname(__file__))).joinpath('
 
 app_base_path = pathlib.Path('/assets')
 
-catch_pbf = 'catch.pbf'
+catch_pbf = 'catchments.pbf'
 # sel_data_h5 = 'selection_data.h5'
 base_reaches_path = 'reaches'
 
@@ -91,11 +91,11 @@ reach_style_handle = assign("""function style2(feature, context){
     return style;
 }""")
 
-freq_mapping = {12: 'once a month', 26: 'once a fortnight', 52: 'once a week', 104: 'twice a week', 365: 'once a day'}
+freq_mapping = {12: 'once a month', 26: 'once a fortnight', 52: 'once a week', 104: 'twice a week', 364: 'once a day'}
 time_periods = [5, 10, 20, 30]
 
 classes = [0, 5, 20, 40, 60, 80]
-colorscale = ['grey', '#FED976', '#FEB24C', '#FC4E2A', '#BD0026', '#800026']
+colorscale = ['#808080', '#FED976', '#FEB24C', '#FC4E2A', '#BD0026', '#800026']
 ctg = ["{}%+".format(cls, classes[i + 1]) for i, cls in enumerate(classes[1:-1])] + ["{}%+".format(classes[-1])]
 ctg.insert(0, 'NA')
 # colorbar = dlx.categorical_colorbar(categories=ctg, colorscale=colorscale, width=300, height=30, position="bottomleft")
@@ -206,7 +206,7 @@ def layout1():
     ], className='three columns', style={'margin': 10}),
 
     # dcc.Store(id='catch_reaches', data=utils.encode_obj(catch_reaches)),
-    # dcc.Store(id='hideout', data=''),
+    dcc.Store(id='props_obj', data=''),
     dcc.Store(id='reaches_obj', data=''),
     dcc.Store(id='reductions_obj', data='')
 ], style={'margin':0})

@@ -41,7 +41,7 @@ def catch_agg():
     ## Save
     utils.write_pkl_zstd(rec_shed.drop('area', axis=1), utils.output_path.joinpath(utils.major_catch_file))
     # utils.write_pkl_zstd(rec_catch3, utils.output_path.joinpath(utils.catch_simple_file))
-    utils.write_pkl_zstd(rec_catch2, utils.output_path.joinpath(utils.catch_file))
+    utils.write_pkl_zstd(rec_catch2[['nzsegment', 'start', 'stream_order', 'geometry']], utils.output_path.joinpath(utils.catch_file))
 
 
 

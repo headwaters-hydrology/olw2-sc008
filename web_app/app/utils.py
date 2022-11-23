@@ -173,8 +173,8 @@ def calc_reach_reductions(catch_id, base_path, plan_file, reduction_col='reducti
     """
     This assumes that the concentration is the same throughout the entire greater catchment. If it's meant to be different, then each small catchment must be set and multiplied by the area to weight the contribution downstream.
     """
-    plan1 = plan_file[[reduction_col, 'geometry']].copy()
-    c1 = read_pkl_zstd(os.path.join(base_path, 'lotsa_catchments', '{}.pkl.zst'.format(catch_id)), True).reset_index()
+    plan1 = plan_file[[reduction_col, 'geometry']].to_crs(2193)
+    c1 = read_pkl_zstd(os.path.join(base_path, 'catchments', '{}.pkl.zst'.format(catch_id)), True)
 
     c2 = vector.sjoin(c1, plan1, how='left').drop('index_right', axis=1)
     c2.loc[c2[reduction_col].isnull(), reduction_col] = 0
@@ -193,7 +193,7 @@ def calc_reach_reductions(catch_id, base_path, plan_file, reduction_col='reducti
     c5 = c4[['nzsegment', 'base_area', 'prop_area']].set_index('nzsegment').copy()
     c5 = {r: list(v.values()) for r, v in c5.to_dict('index').items()}
 
-    branches = read_pkl_zstd(os.path.join(base_path, 'reach_mappings', '{}_mapping.pkl.zst'.format(catch_id)), True)
+    branches = read_pkl_zstd(os.path.join(base_path, 'reach_mappings', '{}.pkl.zst'.format(catch_id)), True)
 
     # props = {}
     # for reach, branch in branches.items():
@@ -229,6 +229,10 @@ def calc_reach_reductions(catch_id, base_path, plan_file, reduction_col='reducti
                                   },
                        coords={'reach': props_index}
                        )
+
+    ## Filter out lower stream orders
+    so3 = c1.loc[c1.stream_order > 2, 'nzsegment'].to_numpy()
+    props = props.sel(reach=so3)
 
     return props
 
