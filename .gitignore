@@ -13,3 +13,6 @@ __pycache__/
 # due to using tox and pytest
 .tox
 .cache
+web_app/assets/catchments/*
+web_app/assets/reaches/*
+web_app/assets/reach_mappings/*

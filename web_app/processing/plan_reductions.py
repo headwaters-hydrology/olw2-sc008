@@ -248,7 +248,7 @@ def calc_reach_reductions(catch_id, base_path, plan_file, reduction_col='reducti
     return props
 
 
-def t_test(props, n_samples_year, n_years, ):
+def t_test(props, n_samples_year, n_years):
     """
 
     """
