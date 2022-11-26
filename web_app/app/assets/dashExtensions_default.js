@@ -30,6 +30,28 @@ window.dashExtensions = Object.assign({}, window.dashExtensions, {
                 }
             }
             return style;
+        },
+        function3: function style3(feature) {
+            return {
+                weight: 2,
+                opacity: 0.75,
+                color: 'grey',
+            };
+        },
+        function4: function style2(feature, context) {
+            const {
+                classes,
+                colorscale,
+                style,
+                colorProp
+            } = context.props.hideout; // get props from hideout
+            const value = feature.properties[colorProp]; // get value the determines the color
+            for (let i = 0; i < classes.length; ++i) {
+                if (value == classes[i]) {
+                    style.color = colorscale[i]; // set the fill color according to the class
+                }
+            }
+            return style;
         }
     }
 });

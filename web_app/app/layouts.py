@@ -23,8 +23,8 @@ from dash_extensions.javascript import assign, arrow_function
 import pathlib
 import hdf5plugin
 
-from . import utils
-# import utils
+# from . import utils
+import utils
 
 ##########################################
 ### Parameters

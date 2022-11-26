@@ -16,11 +16,11 @@ import os
 import hdf5plugin
 from dash_extensions.javascript import assign
 
-from .app import app
-from . import utils
+# from .app import app
+# from . import utils
 
-# from app import app
-# import utils
+from app import app
+import utils
 
 ################################################
 ### Parameters
@@ -105,6 +105,8 @@ def update_reaches(catch_id, map_checkboxes):
         # print(url)
     else:
         url = ''
+
+    print(url)
 
     return str(url)
 
