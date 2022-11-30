@@ -34,10 +34,10 @@ reaches_path = 'reaches'
 # catch_reaches_file = 'catch_reach_mapping.pkl.zst'
 
 style = dict(weight=4, opacity=1, color='white')
-classes = [0, 5, 20, 40, 60, 80]
+classes = [0, 20, 40, 60, 80]
 bins = classes.copy()
 bins.append(100)
-colorscale = ['#808080', '#FED976', '#FEB24C', '#FC4E2A', '#BD0026', '#800026']
+colorscale = ['#808080', '#FED976', '#FD8D3C', '#E31A1C', '#800026']
 ctg = ["{}%+".format(cls, classes[i + 1]) for i, cls in enumerate(classes[1:-1])] + ["{}%+".format(classes[-1])]
 ctg.insert(0, 'NA')
 colorbar = dlx.categorical_colorbar(categories=ctg, colorscale=colorscale, width=300, height=30, position="bottomleft")
@@ -201,16 +201,19 @@ def update_reach_data(catch_id, reductions_obj, col_name):
 
 @app.callback(
     Output('props_obj', 'data'),
-    [Input('reaches_obj', 'data'), Input('time_period', 'value'), Input('freq', 'value')],
+    [Input('reaches_obj', 'data'), Input('indicator', 'value'), Input('time_period', 'value'), Input('freq', 'value')],
+    [State('conc_obj', 'data'), State('catch_id', 'value')]
     )
-def update_props_data(reaches_obj, n_years, n_samples_year):
+def update_props_data(reaches_obj, indicator, n_years, n_samples_year, conc_obj, catch_id):
     """
 
     """
-    if (reaches_obj != '') and (reaches_obj is not None) and isinstance(n_years, int) and isinstance(n_samples_year, int):
+    if (reaches_obj != '') and (reaches_obj is not None) and isinstance(n_years, int) and isinstance(n_samples_year, int) and isinstance(indicator, str):
+        conc_dict = utils.decode_obj(conc_obj)
+        conc_reach = conc_dict[indicator][int(catch_id)]
         props = utils.decode_obj(reaches_obj)
-        props = utils.t_test(props, n_samples_year, n_years)
-        props = utils.apply_filters(props, t_bins=bins, p_cutoff=0.01, reduction_cutoff=0.01)
+        props = utils.big_test(props, n_samples_year, n_years, conc_reach)
+        props = utils.apply_filters(props)
 
         data = utils.encode_obj(props)
     else:
@@ -230,7 +233,7 @@ def update_hideout(props_obj):
     if (props_obj != '') and (props_obj is not None):
         props = utils.decode_obj(props_obj)
 
-        color_arr = pd.cut(props.reduction.values*100, bins, labels=colorscale, right=False).tolist()
+        color_arr = pd.cut(props.power.values, bins, labels=colorscale, right=False).tolist()
 
         hideout = {'colorscale': color_arr, 'classes': props.reach.values.tolist(), 'style': style, 'colorProp': 'nzsegment'}
     else:

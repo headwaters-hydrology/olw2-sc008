@@ -35,7 +35,6 @@ def rec_delin():
         if not seg_bool.any():
             end_segs.append(seg.nzsegment)
 
-
     ## Find all upstream reaches
     reaches = rec.find_upstream(end_segs, rec_streams=rec_rivers0)
 

@@ -298,9 +298,9 @@ r1 = read_pkl_zstd(os.path.join(base_path, 'reaches', '14295077.pkl.zst'), True)
 # with open(os.path.join(base_path, 'test_plan1.gpkg'), 'rb') as f:
 #     plan1 = gpd.read_file(f).drop('id', axis=1)
 
-plan1 = gpd.read_file(os.path.join(base_path, 'test_plan1.gpkg')).drop('id', axis=1)
+plan_file = gpd.read_file(os.path.join(base_path, 'test_plan1.gpkg')).drop('id', axis=1)
 
-c2 = vector.sjoin(c1, plan1, how='left').drop('index_right', axis=1)
+c2 = vector.sjoin(c1, plan_file, how='left').drop('index_right', axis=1)
 
 c2.loc[c2['reduction'].isnull(), 'reduction'] = 0
 c2['s_area'] = c2.area

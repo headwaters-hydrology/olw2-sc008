@@ -106,6 +106,7 @@ base_reach_style = dict(weight=4, opacity=1, color='white')
 
 info = html.Div(id="info", className="info", style={"position": "absolute", "top": "10px", "right": "10px", "z-index": "1000"})
 
+conc_dict = utils.read_pkl_zstd(base_path.joinpath('catch_conc.pkl.zst'), True)
 
 ###############################################
 ### Initial processing
@@ -116,8 +117,8 @@ with open(base_path.joinpath(catch_pbf), 'rb') as f:
     catch1 = geobuf.decode(f.read())
 
 # freqs = sel1['frequency'].values
-# indicators = sel1['indicator'].values
-# indicators.sort()
+indicators = list(conc_dict.keys())
+indicators.sort()
 # nzsegments = sel1['nzsegment'].values
 # percent_changes = sel1['percent_change'].values
 # time_periods = sel1['time_period'].values
@@ -140,8 +141,10 @@ def layout1():
     ### Dash layout
     layout = html.Div(children=[
         html.Div([
-            html.Label('Select a catchment on the map:'),
-            dcc.Dropdown(options=[{'label': d, 'value': d} for d in catches], id='catch_id', optionHeight=40, clearable=True),
+            html.Label('Select Indicator:'),
+            dcc.Dropdown(options=[{'label': d, 'value': d} for d in indicators], id='indicator', optionHeight=40, clearable=False),
+            html.Label('Select a catchment on the map:', style={'margin-top': 40}),
+            dcc.Dropdown(options=[{'label': d, 'value': d} for d in catches], id='catch_id', optionHeight=40, clearable=False),
 
             dcc.Upload(
                 id='upload-data',
@@ -176,7 +179,7 @@ def layout1():
                    ],
                    value=['reductions_poly', 'reach_map'],
                    id='map_checkboxes',
-                   style={'padding': 5, 'margin-bottom': 220}
+                   style={'padding': 5, 'margin-bottom': 120}
                 ),
 
             dcc.Link(html.Img(src=str(app_base_path.joinpath('our-land-and-water-logo.svg'))), href='https://ourlandandwater.nz/')
@@ -209,7 +212,7 @@ def layout1():
 
     ], className='three columns', style={'margin': 10}),
 
-    # dcc.Store(id='catch_reaches', data=utils.encode_obj(catch_reaches)),
+    dcc.Store(id='conc_obj', data=utils.encode_obj(conc_dict)),
     dcc.Store(id='props_obj', data=''),
     dcc.Store(id='reaches_obj', data=''),
     dcc.Store(id='reductions_obj', data='')

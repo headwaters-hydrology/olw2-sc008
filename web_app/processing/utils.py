@@ -55,6 +55,11 @@ catch_path.mkdir(parents=True, exist_ok=True)
 reach_map_path = assets_path.joinpath('reach_mappings')
 reach_map_path.mkdir(parents=True, exist_ok=True)
 
+conc_csv_path = base_path.joinpath('StBD3.csv')
+
+conc_pkl_path = assets_path.joinpath('catch_conc.pkl.zst')
+
+
 #############################################
 ### Functions
 

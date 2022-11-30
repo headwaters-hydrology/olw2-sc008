@@ -22,6 +22,7 @@ import geopandas as gpd
 from scipy import stats
 import base64
 from dash import dcc, html
+import pathlib
 # import plotly.graph_objs as go
 
 #####################################
@@ -87,7 +88,7 @@ def read_pkl_zstd(obj, unpickle=False):
     -------
     Python object
     """
-    if isinstance(obj, str):
+    if isinstance(obj, (str, pathlib.Path)):
         with open(obj, 'rb') as p:
             dctx = zstd.ZstdDecompressor()
             with dctx.stream_reader(p) as reader:
@@ -237,30 +238,77 @@ def calc_reach_reductions(catch_id, base_path, plan_file, reduction_col='reducti
     return props
 
 
-def t_test(props, n_samples_year, n_years):
+# def t_test(props, n_samples_year, n_years):
+#     """
+
+#     """
+#     red1 = 1 - props.reduction.values
+
+#     red2 = np.tile(red1, (n_samples_year*n_years,1)).transpose()
+#     ones = np.ones(red2.shape)
+
+#     rng = np.random.default_rng()
+
+#     r1 = rng.uniform(-.1, .1, red2.shape)
+#     r2 = rng.uniform(-.1, .1, red2.shape)
+
+#     season1 = seasonal_sine(n_samples_year, n_years)
+
+#     o1 = stats.ttest_ind((ones+r1)*season1, (red2+r2)*season1, axis=1)
+
+#     props = props.assign(p_value=(('reach'), o1.pvalue), t_stat=(('reach'), np.abs(o1.statistic)))
+
+#     return props
+
+
+def big_test(props, n_samples_year, n_years, conc_reach, p_cutoff=0.05, sims=200):
     """
 
     """
-    red1 = 1 - props.reduction.values
+    # vec_func = np.vectorize(np.interp)
 
-    red2 = np.tile(red1, (n_samples_year*n_years,1)).transpose()
-    ones = np.ones(red2.shape)
+    red1 = ((1 - props.reduction.values)*10000).astype('int16')
+
+    n_samples = n_samples_year*n_years
+
+    # vec_func(np.arange(n_samples), [0, n_samples-1], [[10000, i] for i in red1])
+
+    red2a = np.empty((red1.shape[0], n_samples), dtype='int16')
+    for i, v in enumerate(red1):
+        samples = np.interp(np.arange(n_samples), [0, n_samples-1], [10000, v]).round().astype('int16')
+        red2a[i] = samples
+
+    red2 = np.tile(red2a, (sims, 1)).reshape((sims, red1.shape[0], n_samples))
+    # red2 = np.tile(red1, (n_samples_year*n_years,1)).transpose()
+    ones = np.ones(red2.shape, dtype='int16')*10000
+
+    error = int(conc_reach['error']*10000)
 
     rng = np.random.default_rng()
 
-    r1 = rng.uniform(-.1, .1, red2.shape)
-    r2 = rng.uniform(-.1, .1, red2.shape)
+    rand_shape = (sims, n_samples)
 
-    season1 = seasonal_sine(n_samples_year, n_years)
+    r1a = rng.integers(-error, error, rand_shape, dtype='int16', endpoint=True)
+    r1 = np.tile(r1a, red1.shape[0]).reshape((sims, red1.shape[0], n_samples))
+    r2a = rng.integers(-error, error, rand_shape, dtype='int16', endpoint=True)
+    r2 = np.tile(r2a, red1.shape[0]).reshape((sims, red1.shape[0], n_samples))
 
-    o1 = stats.ttest_ind((ones+r1)*season1, (red2+r2)*season1, axis=1)
+    ind1 = ones + r1
+    dep1 = red2 + r2
 
-    props = props.assign(p_value=(('reach'), o1.pvalue), t_stat=(('reach'), np.abs(o1.statistic)))
+    p1 = np.empty(dep1.shape[:2], dtype='int16')
+    for i, v in enumerate(ind1):
+        o1 = stats.ttest_ind(v, dep1[i], axis=1)
+        p1[i] = o1.pvalue*10000
+
+    p2 = (((p1 < 500).sum(0)/sims) *100).round().astype('int8')
+
+    props = props.assign(power=(('reach'), p2))
 
     return props
 
 
-def apply_filters(props, t_bins=[0, 10, 20, 40, 60, 80, 100], p_cutoff=0.01, reduction_cutoff=0.01):
+def apply_filters(props, t_bins=[0, 10, 20, 40, 60, 80, 100], p_cutoff=1, reduction_cutoff=0.01):
     """
 
     """
@@ -268,7 +316,7 @@ def apply_filters(props, t_bins=[0, 10, 20, 40, 60, 80, 100], p_cutoff=0.01, red
 
     # props = props.assign(t_cat=(('reach'), c1.to_numpy().astype('int8')))
 
-    props['reduction'] = xr.where((props.p_value <= p_cutoff) & (props.reduction >= reduction_cutoff), props['reduction'], 0)
+    props['power'] = xr.where((props.power > p_cutoff) & (props.reduction >= reduction_cutoff), props['reduction'], 0)
     # props['t_cat'] = props['t_cat'].astype('int8')
 
     return props
