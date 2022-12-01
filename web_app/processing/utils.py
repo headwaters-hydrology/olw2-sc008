@@ -5,6 +5,7 @@ Created on Wed Nov 23 09:19:21 2022
 
 @author: mike
 """
+import copy
 import pathlib
 import os
 import pickle
@@ -18,7 +19,9 @@ from gistools import vector, rec
 import geopandas as gpd
 import pandas as pd
 import numpy as np
-
+import xarray as xr
+import hdf5tools
+from scipy import stats
 
 ##############################################
 ### Parameters
@@ -58,6 +61,16 @@ reach_map_path.mkdir(parents=True, exist_ok=True)
 conc_csv_path = base_path.joinpath('StBD3.csv')
 
 conc_pkl_path = assets_path.joinpath('catch_conc.pkl.zst')
+
+## Sims params
+conc_perc = np.arange(2, 101, 2, dtype='int8')
+n_samples_year = [12, 26, 52, 104, 364]
+n_years = [5, 10, 20, 30]
+
+
+
+
+
 
 
 #############################################
@@ -136,8 +149,74 @@ def write_pkl_zstd(obj, file_path=None, compress_level=1, pkl_protocol=pickle.HI
         return c_obj
 
 
+def catch_sims(error, n_years, n_samples_year, n_sims, output_path):
+    """
 
+    """
+    print(error)
+    error1 = int(error*1000)
 
+    n_samples = np.prod(hdf5tools.utils.cartesian([n_samples_year, n_years]), axis=1)
+    n_samples = list(set(n_samples))
+    n_samples.sort()
+
+    filler = np.empty((1, len(n_samples), len(conc_perc)), dtype='int8')
+
+    rng = np.random.default_rng()
+
+    for ni, n in enumerate(n_samples):
+        # print(n)
+
+        for pi, perc in enumerate(conc_perc):
+            red1 = np.interp(np.arange(n), [0, n-1], [10000, perc*100 ]).round().astype('int16')
+
+            # red1 = np.empty((len(conc_perc), n), dtype='int16')
+            # for i, v in enumerate(conc_perc):
+            #     l1 = np.interp(np.arange(n), [0, n-1], [10000, v*100 ]).round().astype('int16')
+            #     red1[i] = l1
+
+            # red2 = np.tile(red1, n_sims).reshape((len(conc_perc), n_sims, n))
+            red2 = np.tile(red1, n_sims).reshape((n_sims, n))
+
+            rand_shape = (n_sims, n)
+
+            r1 = rng.normal(0, error, rand_shape)
+            r1[r1 < -1] = -1
+            r1 = (r1*10000).astype('int16')
+            # r1 = np.tile(r1a, len(conc_perc)).reshape((len(conc_perc), n_sims, n))
+            r2 = rng.normal(0, error, rand_shape)
+            r2[r2 < -1] = -1
+            r2 = (r2*red2).astype('int16')
+            # r2 = r2.astype('uint16')
+            # r2 = np.tile(r2a, len(conc_perc)).reshape((len(conc_perc), n_sims, n))
+
+            # ones = np.ones(red2.shape)*10
+
+            ind1 = 10000 + r1
+            dep1 = red2 + r2
+
+            o1 = stats.ttest_ind(ind1, dep1, axis=1)
+
+            # p1 = np.empty(dep1.shape[:2], dtype='int16')
+            # for i, v in enumerate(ind1):
+            #     o1 = stats.ttest_ind(v, dep1[i])
+            #     p1[i] = o1.pvalue*10000
+
+            p2 = (((o1.pvalue < 0.05).sum()/n_sims) *100).round().astype('int8')
+
+            filler[0][ni][pi] = p2
+
+    props = xr.Dataset(data_vars={'power': (('error', 'n_samples', 'conc_perc'), filler)
+                                  },
+                       coords={'error': np.array([error1], dtype='int16'),
+                               'n_samples': np.array(n_samples, dtype='int16'),
+                               'conc_perc': conc_perc}
+                       )
+
+    output = os.path.join(output_path, str(error1) + '.h5')
+    hdf5tools.xr_to_hdf5(props, output)
+
+    return output
 
 
 
