@@ -15,12 +15,13 @@ import pathlib
 import os
 import hdf5plugin
 from dash_extensions.javascript import assign
+from dash.exceptions import PreventUpdate
 
-# from .app import app
-# from . import utils
+from .app import app
+from . import utils
 
-from app import app
-import utils
+# from app import app
+# import utils
 
 ################################################
 ### Parameters
@@ -30,13 +31,13 @@ app_base_path = pathlib.Path('/assets')
 
 reaches_path = 'reaches'
 
-# sel_data_h5 = 'selection_data.h5'
+sel_data_h5 = base_path.joinpath('sims_10000.h5')
 # catch_reaches_file = 'catch_reach_mapping.pkl.zst'
 
 style = dict(weight=4, opacity=1, color='white')
 classes = [0, 20, 40, 60, 80]
 bins = classes.copy()
-bins.append(100)
+bins.append(101)
 colorscale = ['#808080', '#FED976', '#FD8D3C', '#E31A1C', '#800026']
 ctg = ["{}%+".format(cls, classes[i + 1]) for i, cls in enumerate(classes[1:-1])] + ["{}%+".format(classes[-1])]
 ctg.insert(0, 'NA')
@@ -128,16 +129,21 @@ def update_reaches_option(hideout, catch_id):
 
 @app.callback(
         Output('reductions_obj', 'data'),
-        Input('upload-data', 'contents'),
-        State('upload-data', 'filename')
+        [Input('upload-data', 'contents'),
+        Input('demo-data', 'n_clicks')],
+        [State('upload-data', 'filename'),
+        State('demo_obj', 'data')]
         )
 # @cache.memoize()
-def update_reductions_obj(contents, filename):
-    if contents is not None:
-        data = utils.parse_gis_file(contents, filename)
+def update_reductions_obj(contents, n_clicks, filename, demo_obj):
+    if n_clicks is None:
+        if contents is not None:
+            data = utils.parse_gis_file(contents, filename)
 
-        if isinstance(data, str):
-            return data
+            if isinstance(data, str):
+                return data
+    else:
+        return demo_obj
 
 
 @app.callback(
@@ -202,17 +208,20 @@ def update_reach_data(catch_id, reductions_obj, col_name):
 @app.callback(
     Output('props_obj', 'data'),
     [Input('reaches_obj', 'data'), Input('indicator', 'value'), Input('time_period', 'value'), Input('freq', 'value')],
-    [State('conc_obj', 'data'), State('catch_id', 'value')]
+    [State('error_obj', 'data'), State('catch_id', 'value')]
     )
-def update_props_data(reaches_obj, indicator, n_years, n_samples_year, conc_obj, catch_id):
+def update_props_data(reaches_obj, indicator, n_years, n_samples_year, error_obj, catch_id):
     """
 
     """
     if (reaches_obj != '') and (reaches_obj is not None) and isinstance(n_years, int) and isinstance(n_samples_year, int) and isinstance(indicator, str):
-        conc_dict = utils.decode_obj(conc_obj)
-        conc_reach = conc_dict[indicator][int(catch_id)]
+        error_dict = utils.decode_obj(error_obj)
+        error_reach = error_dict[indicator][int(catch_id)]
+        # print(error_reach)
         props = utils.decode_obj(reaches_obj)
-        props = utils.big_test(props, n_samples_year, n_years, conc_reach)
+        power_data = xr.open_dataset(sel_data_h5, engine='h5netcdf')
+        power_data = power_data.sel(error=round(error_reach*1000))
+        props = utils.get_power(props, n_samples_year, n_years, power_data)
         props = utils.apply_filters(props)
 
         data = utils.encode_obj(props)
@@ -251,7 +260,7 @@ def update_map_info(props_obj, reductions_obj):
     """
 
     """
-    info = [html.H6("Concentration reduction (%)")]
+    info = [html.H6("Likelihood of significant reduction (%)")]
 
     if (reductions_obj != '') and (reductions_obj is not None):
         info = info + [html.P("Hover over the polygons to see reduction %")]
@@ -279,15 +288,12 @@ def update_tabs(tab, feature, props_obj):
         reach_data = props.sel(reach=int(feature['id']))
 
         info_str = """
-                ###### Reduction %:
+                ###### Reduction:
                 {red}%
 
-                ###### T Statistic:
-                {t_stat}
-
-                ###### P Value of T Statistic:
-                {p}
-            """.format(red=int(reach_data.reduction*100), t_stat=float(reach_data.t_stat.round(3)), p=float(reach_data.p_value.round(3)))
+                ###### Likelihood of significant reduction (power):
+                {t_stat}%
+            """.format(red=int(reach_data.reduction), t_stat=int(reach_data.power))
 
         fig1 = info_str
 

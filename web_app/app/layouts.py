@@ -22,9 +22,10 @@ import dash_leaflet.express as dlx
 from dash_extensions.javascript import assign, arrow_function
 import pathlib
 import hdf5plugin
+import geopandas as gpd
 
-# from . import utils
-import utils
+from . import utils
+# import utils
 
 ##########################################
 ### Parameters
@@ -36,6 +37,7 @@ app_base_path = pathlib.Path('/assets')
 catch_pbf = 'catchments.pbf'
 # sel_data_h5 = 'selection_data.h5'
 base_reaches_path = 'reaches'
+demo_data_file = 'test_plan1.gpkg'
 
 map_height = 700
 
@@ -94,10 +96,12 @@ reach_style_handle = assign("""function style2(feature, context){
 freq_mapping = {12: 'once a month', 26: 'once a fortnight', 52: 'once a week', 104: 'twice a week', 364: 'once a day'}
 time_periods = [5, 10, 20, 30]
 
-classes = [0, 5, 20, 40, 60, 80]
+classes = [0, 20, 40, 60, 80]
 colorscale = ['#808080', '#FED976', '#FEB24C', '#FC4E2A', '#BD0026', '#800026']
-ctg = ["{}%+".format(cls, classes[i + 1]) for i, cls in enumerate(classes[1:-1])] + ["{}%+".format(classes[-1])]
-ctg.insert(0, 'NA')
+# ctg = ["{}%+".format(cls, classes[i + 1]) for i, cls in enumerate(classes[1:-1])] + ["{}%+".format(classes[-1])]
+# ctg.insert(0, 'NA')
+ctg = ["{}%+".format(cls, classes[i + 1]) for i, cls in enumerate(classes[:-1])] + ["{}%+".format(classes[-1])]
+# ctg.insert(0, 'NA')
 # colorbar = dlx.categorical_colorbar(categories=ctg, colorscale=colorscale, width=300, height=30, position="bottomleft")
 indices = list(range(len(ctg) + 1))
 colorbar = dl.Colorbar(min=0, max=len(ctg), classes=indices, colorscale=colorscale, tooltip=True, tickValues=[item + 0.5 for item in indices[:-1]], tickText=ctg, width=300, height=30, position="bottomright")
@@ -106,7 +110,7 @@ base_reach_style = dict(weight=4, opacity=1, color='white')
 
 info = html.Div(id="info", className="info", style={"position": "absolute", "top": "10px", "right": "10px", "z-index": "1000"})
 
-conc_dict = utils.read_pkl_zstd(base_path.joinpath('catch_conc.pkl.zst'), True)
+error_dict = utils.read_pkl_zstd(base_path.joinpath('catch_error.pkl.zst'), True)
 
 ###############################################
 ### Initial processing
@@ -117,7 +121,7 @@ with open(base_path.joinpath(catch_pbf), 'rb') as f:
     catch1 = geobuf.decode(f.read())
 
 # freqs = sel1['frequency'].values
-indicators = list(conc_dict.keys())
+indicators = list(error_dict.keys())
 indicators.sort()
 # nzsegments = sel1['nzsegment'].values
 # percent_changes = sel1['percent_change'].values
@@ -129,6 +133,10 @@ catches = [int(c['id']) for c in catch1['features']]
 del catch1
 
 # catch_reaches = utils.read_pkl_zstd(str(base_path.joinpath(catch_reaches_file)), True)
+
+plan1 = gpd.read_file(base_path.joinpath(demo_data_file))[['reduction', 'geometry']].copy()
+
+output = utils.encode_obj(plan1)
 
 
 ###############################################
@@ -157,6 +165,12 @@ def layout1():
                 },
                 multiple=False
             ),
+            html.Button('Use demo reductions polygons', id='demo-data',
+                        style={
+                            'width': '100%',
+                            'height': '50%',
+                            'textAlign': 'center',
+                        }),
 
             html.Label('Select a reductions column in the GIS file:', style={'margin-top': 0}),
             dcc.Dropdown(options=[], id='col_name', optionHeight=40, clearable=False),
@@ -212,10 +226,11 @@ def layout1():
 
     ], className='three columns', style={'margin': 10}),
 
-    dcc.Store(id='conc_obj', data=utils.encode_obj(conc_dict)),
+    dcc.Store(id='error_obj', data=utils.encode_obj(error_dict)),
     dcc.Store(id='props_obj', data=''),
     dcc.Store(id='reaches_obj', data=''),
-    dcc.Store(id='reductions_obj', data='')
+    dcc.Store(id='reductions_obj', data=''),
+    dcc.Store(id='demo_obj', data=output)
 ], style={'margin':0})
 
     return layout

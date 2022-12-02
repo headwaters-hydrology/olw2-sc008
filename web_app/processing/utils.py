@@ -60,7 +60,7 @@ reach_map_path.mkdir(parents=True, exist_ok=True)
 
 conc_csv_path = base_path.joinpath('StBD3.csv')
 
-conc_pkl_path = assets_path.joinpath('catch_conc.pkl.zst')
+error_pkl_path = assets_path.joinpath('catch_error.pkl.zst')
 
 ## Sims params
 conc_perc = np.arange(2, 101, 2, dtype='int8')
@@ -147,6 +147,23 @@ def write_pkl_zstd(obj, file_path=None, compress_level=1, pkl_protocol=pickle.HI
         c_obj = cctx.compress(p_obj)
 
         return c_obj
+
+
+def error_cats():
+    """
+
+    """
+    start = 0.025
+    list1 = [0.001, 0.005, 0.01, start]
+
+    while start < 2.7:
+        if start < 0.1:
+            start = round(start*2, 3)
+        else:
+            start = round(start*1.2, 3)
+        list1.append(start)
+
+    return list1
 
 
 def catch_sims(error, n_years, n_samples_year, n_sims, output_path):

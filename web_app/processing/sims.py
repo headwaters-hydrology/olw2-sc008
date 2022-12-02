@@ -57,15 +57,7 @@ output_path = '/media/nvme1/data/OLW/web_app/output/sims'
 #         errors.add(int(error['error']*1000))
 
 
-start = 0.025
-list1 = [0.001, 0.005, 0.01, start]
-
-while start < 2.7:
-    if start < 0.1:
-        start = round(start*2, 3)
-    else:
-        start = round(start*1.2, 3)
-    list1.append(start)
+list1 = utils.error_cats()
 
 
 if __name__ == '__main__':

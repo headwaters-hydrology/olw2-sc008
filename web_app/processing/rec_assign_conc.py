@@ -18,6 +18,8 @@ pd.options.display.max_columns = 10
 ### Assign conc
 
 def process_conc():
+    list1 = utils.error_cats()
+
     conc0 = pd.read_csv(utils.conc_csv_path, usecols=['Indicator', 'nzsegment', 'lm1seRes', 'lm1pred_01_2022']).dropna()
 
     conc0.rename(columns={'lm1seRes': 'error', 'lm1pred_01_2022': 'init_conc', 'Indicator': 'indicator'}, inplace=True)
@@ -36,6 +38,8 @@ def process_conc():
 
     conc1 = conc1.dropna()
 
+    conc1['nzsegment'] = conc1['nzsegment'].astype('int32')
+
     ## Create rough values from all reaches per indicator
     grp1 = conc1.groupby('indicator')
 
@@ -43,6 +47,8 @@ def process_conc():
     stdev1 = grp1[['error', 'init_conc']].std()
 
     ## Assign init conc and errors to each catchment
+    # conc1['error_cat'] = pd.cut(conc1['error'], list1, labels=list1[:-1])
+
     starts = list(mapping.keys())
     indicators = conc1.indicator.unique()
 
@@ -57,9 +63,11 @@ def process_conc():
             else:
                 mean2 = c_conc[['error', 'init_conc']].mean().round(3)
 
-            conc_dict[ind][catch_id] = mean2.to_dict()
+            # conc_dict[ind][catch_id] = mean2.to_dict()
+            conc_dict[ind][catch_id] = pd.cut(mean2[['error']], list1, labels=list1[:-1])[0]
 
-    utils.write_pkl_zstd(conc_dict, utils.conc_pkl_path)
+
+    utils.write_pkl_zstd(conc_dict, utils.error_pkl_path)
 
     # conc_dict0 = utils.read_pkl_zstd(utils.conc_pkl_path, True)
 

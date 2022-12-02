@@ -226,10 +226,14 @@ def calc_reach_reductions(catch_id, base_path, plan_file, reduction_col='reducti
         p1 = (np.sum(prop_area)/np.sum(t_area))
         props_val[h] = p1
 
-    props = xr.Dataset(data_vars={'reduction': (('reach'), props_val)
+    props = xr.Dataset(data_vars={'reduction': (('reach'), (np.round(props_val*100*0.5)*2).astype('int8')) # Round to nearest even number
                                   },
-                       coords={'reach': props_index}
-                       )
+                        coords={'reach': props_index}
+                        )
+    # props = xr.Dataset(data_vars={'reduction': (('reach'), props_val) # Round to nearest even number
+    #                               },
+    #                    coords={'reach': props_index}
+    #                    )
 
     ## Filter out lower stream orders
     so3 = c1.loc[c1.stream_order > 2, 'nzsegment'].to_numpy()
@@ -261,54 +265,22 @@ def calc_reach_reductions(catch_id, base_path, plan_file, reduction_col='reducti
 #     return props
 
 
-def big_test(props, n_samples_year, n_years, conc_reach, p_cutoff=0.05, sims=200):
+def get_power(props, n_samples_year, n_years, power_data):
     """
 
     """
-    # vec_func = np.vectorize(np.interp)
-
-    red1 = ((1 - props.reduction.values)*10000).astype('int16')
+    red1 = 100 - props.reduction.values
 
     n_samples = n_samples_year*n_years
 
-    # vec_func(np.arange(n_samples), [0, n_samples-1], [[10000, i] for i in red1])
+    power_data1 = power_data.sel(n_samples=n_samples).sel(conc_perc=red1).power.values.astype('int8')
 
-    red2a = np.empty((red1.shape[0], n_samples), dtype='int16')
-    for i, v in enumerate(red1):
-        samples = np.interp(np.arange(n_samples), [0, n_samples-1], [10000, v]).round().astype('int16')
-        red2a[i] = samples
-
-    red2 = np.tile(red2a, (sims, 1)).reshape((sims, red1.shape[0], n_samples))
-    # red2 = np.tile(red1, (n_samples_year*n_years,1)).transpose()
-    ones = np.ones(red2.shape, dtype='int16')*10000
-
-    error = int(conc_reach['error']*10000)
-
-    rng = np.random.default_rng()
-
-    rand_shape = (sims, n_samples)
-
-    r1a = rng.integers(-error, error, rand_shape, dtype='int16', endpoint=True)
-    r1 = np.tile(r1a, red1.shape[0]).reshape((sims, red1.shape[0], n_samples))
-    r2a = rng.integers(-error, error, rand_shape, dtype='int16', endpoint=True)
-    r2 = np.tile(r2a, red1.shape[0]).reshape((sims, red1.shape[0], n_samples))
-
-    ind1 = ones + r1
-    dep1 = red2 + r2
-
-    p1 = np.empty(dep1.shape[:2], dtype='int16')
-    for i, v in enumerate(ind1):
-        o1 = stats.ttest_ind(v, dep1[i], axis=1)
-        p1[i] = o1.pvalue*10000
-
-    p2 = (((p1 < 500).sum(0)/sims) *100).round().astype('int8')
-
-    props = props.assign(power=(('reach'), p2))
+    props = props.assign(power=(('reach'), power_data1))
 
     return props
 
 
-def apply_filters(props, t_bins=[0, 10, 20, 40, 60, 80, 100], p_cutoff=1, reduction_cutoff=0.01):
+def apply_filters(props, reduction_cutoff=5):
     """
 
     """
@@ -316,7 +288,8 @@ def apply_filters(props, t_bins=[0, 10, 20, 40, 60, 80, 100], p_cutoff=1, reduct
 
     # props = props.assign(t_cat=(('reach'), c1.to_numpy().astype('int8')))
 
-    props['power'] = xr.where((props.power > p_cutoff) & (props.reduction >= reduction_cutoff), props['reduction'], 0)
+    # props['power'] = xr.where((props.power > p_cutoff) & (props.reduction >= reduction_cutoff), props['reduction'], 0)
+    props['power'] = xr.where((props.reduction > reduction_cutoff), props['power'], 0)
     # props['t_cat'] = props['t_cat'].astype('int8')
 
     return props
