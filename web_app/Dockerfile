@@ -1,11 +1,10 @@
 # FROM tiangolo/uwsgi-nginx-flask:python3.8
-FROM tethysts/tethys-dash-base:1.4
+FROM tethysts/tethys-dash-base:1.5
 
 # RUN apt-get update && apt-get install -y libspatialindex-dev python-rtree
 
-# COPY requirements.txt ./
-#
-# RUN pip install --no-cache-dir -r requirements.txt
+COPY requirements.txt ./
+RUN pip install --no-cache-dir -r requirements.txt
 
 # Copy hello-cron file to the cron.d directory
 # COPY tethys-cron /etc/cron.d/tethys-cron
@@ -15,7 +14,8 @@ FROM tethysts/tethys-dash-base:1.4
 
 # Apply cron job
 # RUN crontab /etc/cron.d/tethys-cron
-
-COPY ./app /app
+COPY ./app/assets /app/assets
+COPY ./app/*.ini /app/
+COPY ./app/*.py /app/
 
 CMD ["gunicorn", "--conf", "app/gunicorn_conf.py", "--bind", "0.0.0.0:80", "app.main:server"]

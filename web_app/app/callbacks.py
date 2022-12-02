@@ -14,6 +14,8 @@ import xarray as xr
 import pathlib
 import os
 import hdf5plugin
+from dash_extensions.javascript import assign
+from dash.exceptions import PreventUpdate
 
 from .app import app
 from . import utils
@@ -28,28 +30,49 @@ base_path = pathlib.Path(os.path.realpath(os.path.dirname(__file__))).joinpath('
 app_base_path = pathlib.Path('/assets')
 
 reaches_path = 'reaches'
-# reach_path_str = '{base_path}/{catch_id}.pbf'
 
-sel_data_h5 = 'selection_data.h5'
-catch_reaches_file = 'catch_reach_mapping.pkl.zst'
+sel_data_h5 = base_path.joinpath('sims_10000.h5')
+# catch_reaches_file = 'catch_reach_mapping.pkl.zst'
 
 style = dict(weight=4, opacity=1, color='white')
 classes = [0, 20, 40, 60, 80]
 bins = classes.copy()
-bins.append(100)
-colorscale = ['#FFEDA0', '#FEB24C', '#FC4E2A', '#BD0026', '#800026']
-ctg = ["{}%+".format(cls, classes[i + 1]) for i, cls in enumerate(classes[:-1])] + ["{}%+".format(classes[-1])]
+bins.append(101)
+colorscale = ['#808080', '#FED976', '#FD8D3C', '#E31A1C', '#800026']
+ctg = ["{}%+".format(cls, classes[i + 1]) for i, cls in enumerate(classes[1:-1])] + ["{}%+".format(classes[-1])]
+ctg.insert(0, 'NA')
 colorbar = dlx.categorical_colorbar(categories=ctg, colorscale=colorscale, width=300, height=30, position="bottomleft")
 
-catch_reaches = utils.read_pkl_zstd(str(base_path.joinpath(catch_reaches_file)), True)
+# catch_reaches = utils.read_pkl_zstd(str(base_path.joinpath(catch_reaches_file)), True)
+
+base_reach_style_handle = assign("""function style3(feature) {
+    return {
+        weight: 2,
+        opacity: 0.75,
+        color: 'grey',
+    };
+}""")
+
+reach_style_handle = assign("""function style2(feature, context){
+    const {classes, colorscale, style, colorProp} = context.props.hideout;  // get props from hideout
+    const value = feature.properties[colorProp];  // get value the determines the color
+    for (let i = 0; i < classes.length; ++i) {
+        if (value == classes[i]) {
+            style.color = colorscale[i];  // set the fill color according to the class
+        }
+    }
+    return style;
+}""")
 
 
 ################################################
 ### Callbacks
 
 
-# @app.callback(Output("catch_map", "children"), [Input("catch_map", "click_feature")])
-# def catch_hover(feature):
+# @app.callback(Output("catch_map", "children"),
+#               [Input("catch_map", "click_feature")],
+#               State('reaches_obj', 'data'))
+# def catch_hover(feature, reaches_obj):
 #     if feature is not None:
 #         print(feature['id'])
 #         return feature['id']
@@ -73,36 +96,243 @@ def update_catch_id(feature):
 
 @app.callback(
         Output('reach_map', 'url'),
-        [Input('catch_id', 'value')],
+        Input('catch_id', 'value'),
+        Input('map_checkboxes', 'value'),
         )
 # @cache.memoize()
-def update_reaches_map(catch_id):
-    url = app_base_path.joinpath(reaches_path).joinpath(str(catch_id) + '.pbf')
+def update_reaches(catch_id, map_checkboxes):
+    if (catch_id is not None) and ('reach_map' in map_checkboxes):
+        url = app_base_path.joinpath(reaches_path).joinpath(str(catch_id) + '.pbf')
+        # print(url)
+    else:
+        url = ''
+
+    print(url)
 
     return str(url)
 
 
 @app.callback(
-    Output('reach_map', 'hideout'),
-    [Input('catch_id', 'value'), Input('indicator', 'value'), Input('percent_change', 'value'), Input('time_period', 'value'), Input('freq', 'value')],
+        Output('reach_map', 'options'),
+        Input('reach_map', 'hideout'),
+        Input('catch_id', 'value')
+        )
+# @cache.memoize()
+def update_reaches_option(hideout, catch_id):
+    if len(hideout) > 0:
+        options = dict(style=reach_style_handle)
+    else:
+        options = dict(style=base_reach_style_handle)
+
+    return options
+
+
+@app.callback(
+        Output('reductions_obj', 'data'),
+        [Input('upload-data', 'contents'),
+        Input('demo-data', 'n_clicks')],
+        [State('upload-data', 'filename'),
+        State('demo_obj', 'data')]
+        )
+# @cache.memoize()
+def update_reductions_obj(contents, n_clicks, filename, demo_obj):
+    if n_clicks is None:
+        if contents is not None:
+            data = utils.parse_gis_file(contents, filename)
+
+            if isinstance(data, str):
+                return data
+    else:
+        return demo_obj
+
+
+@app.callback(
+        Output('reductions_poly', 'data'),
+        Input('reductions_obj', 'data'),
+        Input('map_checkboxes', 'value'),
+        Input('col_name', 'value')
+        )
+# @cache.memoize()
+def update_reductions_poly(reductions_obj, map_checkboxes, col_name):
+    # print(reductions_obj)
+    # print(col_name)
+    if (reductions_obj != '') and (reductions_obj is not None) and ('reductions_poly' in map_checkboxes):
+
+        data = utils.decode_obj(reductions_obj).to_crs(4326)
+
+        if isinstance(col_name, str):
+            data[col_name] = data[col_name].astype(str).str[:] + '% reduction'
+            data.rename(columns={col_name: 'tooltip'}, inplace=True)
+
+        gbuf = dlx.geojson_to_geobuf(data.__geo_interface__)
+
+        return gbuf
+    else:
+        return ''
+
+
+@app.callback(
+        Output('col_name', 'options'),
+        Input('reductions_obj', 'data')
+        )
+# @cache.memoize()
+def update_column_options(reductions_obj):
+    # print(reductions_obj)
+    if (reductions_obj != '') and (reductions_obj is not None):
+        data = utils.decode_obj(reductions_obj)
+        cols = [{'label': col, 'value': col} for col in data.columns if col not in ['geometry', 'id']]
+
+        return cols
+    else:
+        return []
+
+
+@app.callback(
+    Output('reaches_obj', 'data'),
+    [Input('catch_id', 'value'), Input('reductions_obj', 'data'), Input('col_name', 'value')],
     )
-def update_sel_data(catch_id, indicator, percent_change, time_period, freq):
+def update_reach_data(catch_id, reductions_obj, col_name):
     """
 
     """
-    if isinstance(catch_id, str) and isinstance(indicator, str) and isinstance(percent_change, int) and isinstance(time_period, int) and isinstance(freq, int):
-        x1 = xr.open_dataset(base_path.joinpath(sel_data_h5), engine='h5netcdf')
-        reaches = catch_reaches[int(catch_id)]
-        x2 = x1['percent_likelihood'].sel(indicator=indicator, frequency=freq, percent_change=percent_change, time_period=time_period, nzsegment=reaches, drop=True).copy().load()
-        x1.close()
-        del x1
-        color_arr = pd.cut(x2.values, bins, labels=colorscale).tolist()
+    if isinstance(catch_id, str) and (reductions_obj != '') and (reductions_obj is not None) and isinstance(col_name, str):
+        plan_file = utils.decode_obj(reductions_obj)
+        props = utils.calc_reach_reductions(catch_id, base_path, plan_file, reduction_col=col_name)
+        data = utils.encode_obj(props)
+    else:
+        data = ''
 
-        hideout = {'colorscale': color_arr, 'classes': x2.nzsegment.values.tolist(), 'style': style, 'colorProp': 'nzsegment'}
+    return data
+
+
+@app.callback(
+    Output('props_obj', 'data'),
+    [Input('reaches_obj', 'data'), Input('indicator', 'value'), Input('time_period', 'value'), Input('freq', 'value')],
+    [State('error_obj', 'data'), State('catch_id', 'value')]
+    )
+def update_props_data(reaches_obj, indicator, n_years, n_samples_year, error_obj, catch_id):
+    """
+
+    """
+    if (reaches_obj != '') and (reaches_obj is not None) and isinstance(n_years, int) and isinstance(n_samples_year, int) and isinstance(indicator, str):
+        error_dict = utils.decode_obj(error_obj)
+        error_reach = error_dict[indicator][int(catch_id)]
+        # print(error_reach)
+        props = utils.decode_obj(reaches_obj)
+        power_data = xr.open_dataset(sel_data_h5, engine='h5netcdf')
+        power_data = power_data.sel(error=round(error_reach*1000))
+        props = utils.get_power(props, n_samples_year, n_years, power_data)
+        props = utils.apply_filters(props)
+
+        data = utils.encode_obj(props)
+    else:
+        data = ''
+
+    return data
+
+
+@app.callback(
+    Output('reach_map', 'hideout'),
+    [Input('props_obj', 'data')],
+    )
+def update_hideout(props_obj):
+    """
+
+    """
+    if (props_obj != '') and (props_obj is not None):
+        props = utils.decode_obj(props_obj)
+
+        color_arr = pd.cut(props.power.values, bins, labels=colorscale, right=False).tolist()
+
+        hideout = {'colorscale': color_arr, 'classes': props.reach.values.tolist(), 'style': style, 'colorProp': 'nzsegment'}
     else:
         hideout = {}
 
     return hideout
+
+
+@app.callback(
+    Output("info", "children"),
+    [Input('props_obj', 'data'),
+     Input('reductions_obj', 'data')],
+    )
+def update_map_info(props_obj, reductions_obj):
+    """
+
+    """
+    info = [html.H6("Likelihood of significant reduction (%)")]
+
+    if (reductions_obj != '') and (reductions_obj is not None):
+        info = info + [html.P("Hover over the polygons to see reduction %")]
+
+    if (props_obj != '') and (props_obj is not None):
+        info = info + [html.P("Click on a reach to see info")]
+
+    return info
+
+
+@app.callback(Output('plots', 'children'),
+              [Input('plot_tabs', 'value'), Input("reach_map", "click_feature")],
+              State('props_obj', 'data')
+              )
+# @cache.memoize()
+def update_tabs(tab, feature, props_obj):
+    """
+    """
+    # if feature is not None:
+    #     print(feature['id'])
+
+    if (feature is not None) and (props_obj != '') and (props_obj is not None):
+        # print(feature['id'])
+        props = utils.decode_obj(props_obj)
+        reach_data = props.sel(reach=int(feature['id']))
+
+        info_str = """
+                ###### Reduction:
+                {red}%
+
+                ###### Likelihood of significant reduction (power):
+                {t_stat}%
+            """.format(red=int(reach_data.reduction), t_stat=int(reach_data.power))
+
+        fig1 = info_str
+
+        return dcc.Markdown(fig1)
+
+
+# @app.callback(
+#     Output('reductions_poly', 'url'),
+#     [Input('map2', 'center')]
+#     )
+# def get_center(center):
+#     """
+
+#     """
+#     print(center)
+
+#     return ''
+
+# @app.callback(
+#     Output('reach_map', 'hideout'),
+#     [Input('catch_id', 'value'), Input('indicator', 'value'), Input('percent_change', 'value'), Input('time_period', 'value'), Input('freq', 'value')],
+#     )
+# def update_sel_data(catch_id, indicator, percent_change, time_period, freq):
+#     """
+
+#     """
+#     if isinstance(catch_id, str) and isinstance(indicator, str) and isinstance(percent_change, int) and isinstance(time_period, int) and isinstance(freq, int):
+#         x1 = xr.open_dataset(base_path.joinpath(sel_data_h5), engine='h5netcdf')
+#         reaches = catch_reaches[int(catch_id)]
+#         x2 = x1['percent_likelihood'].sel(indicator=indicator, frequency=freq, percent_change=percent_change, time_period=time_period, nzsegment=reaches, drop=True).copy().load()
+#         x1.close()
+#         del x1
+#         color_arr = pd.cut(x2.values, bins, labels=colorscale).tolist()
+
+#         hideout = {'colorscale': color_arr, 'classes': x2.nzsegment.values.tolist(), 'style': style, 'colorProp': 'nzsegment'}
+#     else:
+#         hideout = {}
+
+#     return hideout
 
 
 
