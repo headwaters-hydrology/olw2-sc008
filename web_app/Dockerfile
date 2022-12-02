@@ -14,7 +14,8 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Apply cron job
 # RUN crontab /etc/cron.d/tethys-cron
-
-COPY ./app /app
+COPY ./app/assets /app/assets
+COPY ./app/*.ini /app/
+COPY ./app/*.py /app/
 
 CMD ["gunicorn", "--conf", "app/gunicorn_conf.py", "--bind", "0.0.0.0:80", "app.main:server"]

@@ -165,6 +165,9 @@ def layout1():
                 },
                 multiple=False
             ),
+            html.Label('Or', style={
+                'textAlign': 'center',
+                            }),
             html.Button('Use demo reductions polygons', id='demo-data',
                         style={
                             'width': '100%',
