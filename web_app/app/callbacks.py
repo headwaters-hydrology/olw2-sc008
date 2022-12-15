@@ -107,7 +107,7 @@ def update_reaches(catch_id, map_checkboxes):
     else:
         url = ''
 
-    print(url)
+    # print(url)
 
     return str(url)
 
@@ -188,10 +188,11 @@ def update_column_options(reductions_obj):
 
 
 @app.callback(
-    Output('reaches_obj', 'data'),
-    [Input('catch_id', 'value'), Input('reductions_obj', 'data'), Input('col_name', 'value')],
-    )
-def update_reach_data(catch_id, reductions_obj, col_name):
+    Output('reaches_obj', 'data'), Output('process_text', 'children'),
+    Input('process', 'n_clicks'),
+    [State('catch_id', 'value'), State('reductions_obj', 'data'), State('col_name', 'value')],
+    prevent_initial_call=True)
+def update_reach_data(click, catch_id, reductions_obj, col_name):
     """
 
     """
@@ -199,10 +200,12 @@ def update_reach_data(catch_id, reductions_obj, col_name):
         plan_file = utils.decode_obj(reductions_obj)
         props = utils.calc_reach_reductions(catch_id, base_path, plan_file, reduction_col=col_name)
         data = utils.encode_obj(props)
+        text_out = 'Routing complete'
     else:
         data = ''
+        text_out = 'Not all inputs have been selected'
 
-    return data
+    return data, text_out
 
 
 @app.callback(
@@ -254,50 +257,60 @@ def update_hideout(props_obj):
 @app.callback(
     Output("info", "children"),
     [Input('props_obj', 'data'),
-     Input('reductions_obj', 'data')],
+      Input('reductions_obj', 'data'),
+      Input('map_checkboxes', 'value'),
+      Input("reach_map", "click_feature")],
     )
-def update_map_info(props_obj, reductions_obj):
+def update_map_info(props_obj, reductions_obj, map_checkboxes, feature):
     """
 
     """
-    info = [html.H6("Likelihood of significant reduction (%)")]
+    info = """###### Likelihood of significant reduction (%)"""
 
-    if (reductions_obj != '') and (reductions_obj is not None):
-        info = info + [html.P("Hover over the polygons to see reduction %")]
+    if (reductions_obj != '') and (reductions_obj is not None) and ('reductions_poly' in map_checkboxes):
+        info = info + """\n\nHover over the polygons to see reduction %"""
 
     if (props_obj != '') and (props_obj is not None):
-        info = info + [html.P("Click on a reach to see info")]
+        if feature is not None:
+            props = utils.decode_obj(props_obj)
+            reach_data = props.sel(reach=int(feature['id']))
+
+            info_str = """\n\nReduction: {red}%\n\nLikelihood of significant reduction (power): {t_stat}%""".format(red=int(reach_data.reduction), t_stat=int(reach_data.power))
+
+            info = info + info_str
+
+        else:
+            info = info + """\n\nClick on a reach to see info"""
 
     return info
 
+# @app.callback(Output('plots', 'children'),
+#               [Input('plot_tabs', 'value'), Input("reach_map", "click_feature")],
+#               State('props_obj', 'data')
+#               )
+# # @cache.memoize()
+# def update_tabs(tab, feature, props_obj):
+#     """
+#     """
+#     # if feature is not None:
+#     #     print(feature['id'])
 
-@app.callback(Output('plots', 'children'),
-              [Input('plot_tabs', 'value'), Input("reach_map", "click_feature")],
-              State('props_obj', 'data')
-              )
-# @cache.memoize()
-def update_tabs(tab, feature, props_obj):
-    """
-    """
-    # if feature is not None:
-    #     print(feature['id'])
+#     if (feature is not None) and (props_obj != '') and (props_obj is not None):
+#         # print(feature['id'])
+#         props = utils.decode_obj(props_obj)
+#         reach_data = props.sel(reach=int(feature['id']))
 
-    if (feature is not None) and (props_obj != '') and (props_obj is not None):
-        # print(feature['id'])
-        props = utils.decode_obj(props_obj)
-        reach_data = props.sel(reach=int(feature['id']))
+#         info_str = """
+#                 ###### Reduction:
+#                 {red}%
 
-        info_str = """
-                ###### Reduction:
-                {red}%
+#                 ###### Likelihood of significant reduction (power):
+#                 {t_stat}%
+#             """.format(red=int(reach_data.reduction), t_stat=int(reach_data.power))
 
-                ###### Likelihood of significant reduction (power):
-                {t_stat}%
-            """.format(red=int(reach_data.reduction), t_stat=int(reach_data.power))
+#         fig1 = info_str
 
-        fig1 = info_str
-
-        return dcc.Markdown(fig1)
+#         return dcc.Markdown(fig1)
 
 
 # @app.callback(
