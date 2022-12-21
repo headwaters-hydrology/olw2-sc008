@@ -115,6 +115,16 @@ error_dict = utils.read_pkl_zstd(base_path.joinpath('catch_error.pkl.zst'), True
 
 indicator_dict = {'BD': 'Black disk', 'EC': 'Electrical conductivity', 'DRP': 'Dissolved reactive phosporus', 'NH': 'Ammonium', 'NO': 'Nitrate', 'TN': 'Total nitrogen', 'TP': 'Total phosphorus', 'TU': 'Turbidity'}
 
+attribution_text = """
+####### Data attribution
+A number of datasets were used in the development of this app:
+    * Regional and District Council monitoring data
+    * [New Zealand River Environment Classification (REC)](https://data.mfe.govt.nz/layer/51845-river-environment-classification-new-zealand-2010/) version 2.5 - Data licensed by the Ministry for the Environment (MfE)
+    * [New Zealand Land Cover Database (LCDB)](https://lris.scinfo.org.nz/layer/104400-lcdb-v50-land-cover-database-version-50-mainland-new-zealand/) version 5 - Data licensed by Landcare Research
+    * [New Zealand Primary Land Parcels](https://data.linz.govt.nz/layer/50823-nz-primary-land-parcels/) - Data licensed by LINZ
+
+"""
+
 ###############################################
 ### Initial processing
 
@@ -186,9 +196,10 @@ def layout1():
             type="default",
             children=html.Div([html.Button('Process reductions', id='process', n_clicks=0),
                                html.Div(id='process_text')],
-                              style={'margin-top': 20}
+                              style={'margin-top': 20, 'margin-bottom': 260}
                               )
         ),
+            dcc.Markdown(attribution_text, id="attribution"),
 
             # html.Label('Select Indicator:'),
             # dcc.Dropdown(options=[{'label': d, 'value': d} for d in indicators], id='indicator', optionHeight=40, clearable=False, value='NH4'),
@@ -231,7 +242,7 @@ def layout1():
             colorbar,
             info
                             ], style={'width': '100%', 'height': 780, 'margin': "auto", "display": "block"}, id="map2")
-    ], className='six columns', style={'margin': 10}),
+    ], className='five columns', style={'margin': 10}),
 
     # html.Div([
     #     dcc.Loading(

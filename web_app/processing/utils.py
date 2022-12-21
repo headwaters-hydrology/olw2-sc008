@@ -62,15 +62,20 @@ conc_csv_path = base_path.joinpath('StBD3.csv')
 
 error_pkl_path = assets_path.joinpath('catch_error.pkl.zst')
 
+land_cover_path = base_path.joinpath('lcdb-v50-land-cover-database-version-50-mainland-new-zealand.gpkg')
+parcels_path = base_path.joinpath('nz-primary-land-parcels.gpkg')
+
 ## Sims params
 conc_perc = np.arange(2, 101, 2, dtype='int8')
 n_samples_year = [12, 26, 52, 104, 364]
 n_years = [5, 10, 20, 30]
 
+catch_parcels_path = output_path.joinpath('catch_parcels.shelf')
+catch_lc_path = output_path.joinpath('catch_lc.shelf')
 
+land_cover_reductions = {'Exotic Forest': 0, 'High Producing Exotic Grassland': 20, 'Low Producing Grassland': 10, 'Forest - Harvested': 0, 'Orchard, Vineyard or Other Perennial Crop': 10, 'Short-rotation Cropland': 20, 'Other': 0}
 
-
-
+catch_parcels_lc_path = output_path.joinpath('catch_parcels_lc.shelf')
 
 
 #############################################
