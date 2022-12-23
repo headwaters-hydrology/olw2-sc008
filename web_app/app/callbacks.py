@@ -17,7 +17,7 @@ import hdf5plugin
 from dash_extensions.javascript import assign
 from dash.exceptions import PreventUpdate
 
-from .app import app
+# from .app import app
 from . import utils
 
 # from app import app

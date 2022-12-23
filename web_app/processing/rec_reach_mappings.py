@@ -7,6 +7,7 @@ Created on Wed Nov 23 09:40:22 2022
 """
 import utils
 from gistools import vector, rec
+import shelflet
 
 ############################################
 ### Functions
@@ -17,20 +18,18 @@ def reach_mapping():
 
     grp1 = reaches2.groupby('start')
 
-    mapping = {}
-    for catch_id, reaches in grp1:
-        print(catch_id)
+    with shelflet.open(utils.river_reach_mapping_path, 'n') as mapping:
+        for catch_id, reaches in grp1:
+            print(catch_id)
 
-        up1 = rec.find_upstream(reaches.nzsegment.tolist(), reaches, from_node_col='from_node', to_node_col='to_node')
+            up1 = rec.find_upstream(reaches.nzsegment.tolist(), reaches, from_node_col='from_node', to_node_col='to_node')
 
-        branches = {}
-        for grp, segs in up1['nzsegment'].reset_index().groupby('start')['nzsegment']:
-            branches[grp] = segs.values.astype('int32')
+            branches = {}
+            for grp, segs in up1['nzsegment'].reset_index().groupby('start')['nzsegment']:
+                branches[grp] = segs.values.astype('int32')
 
-        mapping[catch_id] = branches
-
-    path = utils.output_path.joinpath(utils.reach_mapping_file)
-    utils.write_pkl_zstd(mapping, path)
+            mapping[str(catch_id)] = branches
+            mapping.sync()
 
 
 

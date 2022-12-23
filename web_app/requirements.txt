@@ -1,1 +1,3 @@
 gistools==1.2.27
+dash-bootstrap-components==1.2.1
+shelflet==0.1.1

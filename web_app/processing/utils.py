@@ -40,8 +40,8 @@ output_path = base_path.joinpath('output')
 
 output_path.mkdir(parents=True, exist_ok=True)
 
-rec_delin_file = 'reach_delineation.pkl.zst'
 reach_mapping_file = 'reach_mapping.pkl.zst'
+rec_delin_file = 'reach_delineation.pkl.zst'
 major_catch_file = 'major_catch.pkl.zst'
 catch_file = 'catch.pkl.zst'
 catch_simple_file = 'catch_simple.pkl.zst'
@@ -49,24 +49,22 @@ catch_simple_file = 'catch_simple.pkl.zst'
 assets_path = output_path.joinpath('assets')
 assets_path.mkdir(parents=True, exist_ok=True)
 
-reach_gbuf_path = assets_path.joinpath('reaches')
-reach_gbuf_path.mkdir(parents=True, exist_ok=True)
-
-catch_path = assets_path.joinpath('catchments')
-catch_path.mkdir(parents=True, exist_ok=True)
-
-reach_map_path = assets_path.joinpath('reach_mappings')
-reach_map_path.mkdir(parents=True, exist_ok=True)
+river_reach_mapping_path = assets_path.joinpath('rivers_reaches_mapping.self')
+river_reach_gbuf_path = assets_path.joinpath('rivers_reaches.shelf')
+river_catch_path = assets_path.joinpath('rivers_catchments.shelf')
 
 conc_csv_path = base_path.joinpath('StBD3.csv')
 
-error_pkl_path = assets_path.joinpath('catch_error.pkl.zst')
+river_sims_path = output_path.joinpath('river_sims')
+river_sims_h5_path = river_sims_path.joinpath('river_sims.h5')
+river_reach_error_path = assets_path.joinpath('rivers_reaches_error.h5')
 
 land_cover_path = base_path.joinpath('lcdb-v50-land-cover-database-version-50-mainland-new-zealand.gpkg')
 parcels_path = base_path.joinpath('nz-primary-land-parcels.gpkg')
 
 ## Sims params
-conc_perc = np.arange(2, 101, 2, dtype='int8')
+# conc_perc = np.arange(2, 101, 2, dtype='int8')
+conc_perc = np.arange(1, 101, 1, dtype='int8')
 n_samples_year = [12, 26, 52, 104, 364]
 n_years = [5, 10, 20, 30]
 
@@ -75,8 +73,24 @@ catch_lc_path = output_path.joinpath('catch_lc.shelf')
 
 land_cover_reductions = {'Exotic Forest': 0, 'High Producing Exotic Grassland': 20, 'Low Producing Grassland': 10, 'Forest - Harvested': 0, 'Orchard, Vineyard or Other Perennial Crop': 10, 'Short-rotation Cropland': 20, 'Other': 0}
 
-catch_parcels_lc_path = output_path.joinpath('catch_parcels_lc.shelf')
+# catch_parcels_lc_path = output_path.joinpath('catch_parcels_lc.shelf')
+catch_lc_clean_path = output_path.joinpath('catch_lc_clean.shelf')
 
+raw_lakes_path = base_path.joinpath('lake_errors.csv')
+
+lakes_points_gbuf_path = assets_path.joinpath('lakes_points.pbf')
+lakes_poly_gbuf_path = assets_path.joinpath('lakes_poly.shelf')
+lakes_poly_path = base_path.joinpath('lakes_sampled_polygons.gpkg')
+lakes_delin_points_path = base_path.joinpath('lake_delineate_points.gpkg')
+lakes_reaches_mapping_path = assets_path.joinpath('lakes_reaches_mapping.shelf')
+lakes_catches_major_path = assets_path.joinpath('lakes_catchments_major.shelf')
+lakes_catches_minor_path = assets_path.joinpath('lakes_catchments_minor.shelf')
+lakes_reaches_path = assets_path.joinpath('lakes_reaches.shelf')
+
+lakes_sims_path = output_path.joinpath('lake_sims')
+lakes_sims_h5_path = lakes_sims_path.joinpath('lake_sims.h5')
+lakes_error_path = assets_path.joinpath('lakes_error.h5')
+lakes_lc_path = assets_path.joinpath('lakes_lc.shelf')
 
 #############################################
 ### Functions

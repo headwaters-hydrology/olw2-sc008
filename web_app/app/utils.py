@@ -23,6 +23,7 @@ from scipy import stats
 import base64
 from dash import dcc, html
 import pathlib
+import shelflet
 # import plotly.graph_objs as go
 
 #####################################
@@ -32,7 +33,13 @@ import pathlib
 # base_url = 'http://tethys-api-int:80/tethys/data/'
 # base_url = 'https://api.tethys-ts.xyz/tethys/data/'
 # base_url = 'http://tethys-api-ext:80/tethys/data/'
+assets_path = pathlib.Path(os.path.realpath(os.path.dirname(__file__))).joinpath('assets')
 
+river_catch_path = assets_path.joinpath('rivers_catchments.shelf')
+river_reach_mapping_path = assets_path.joinpath('rivers_reaches_mapping.self')
+
+lakes_reaches_mapping_path = assets_path.joinpath('lakes_reaches_mapping.shelf')
+lakes_catches_minor_path = assets_path.joinpath('lakes_catchments_minor.shelf')
 
 #####################################
 ### Functions
@@ -170,12 +177,18 @@ def seasonal_sine(n_samples_year, n_years):
     return s2
 
 
-def calc_reach_reductions(catch_id, base_path, plan_file, reduction_col='reduction'):
+def calc_river_reach_reductions(catch_id, plan_file, reduction_col='reduction'):
     """
     This assumes that the concentration is the same throughout the entire greater catchment. If it's meant to be different, then each small catchment must be set and multiplied by the area to weight the contribution downstream.
     """
+    with shelflet.open(river_catch_path, 'r') as f:
+        c1 = f[str(catch_id)]
+
+    with shelflet.open(river_reach_mapping_path, 'r') as f:
+        branches = f[str(catch_id)]
+
     plan1 = plan_file[[reduction_col, 'geometry']].to_crs(2193)
-    c1 = read_pkl_zstd(os.path.join(base_path, 'catchments', '{}.pkl.zst'.format(catch_id)), True)
+    # c1 = read_pkl_zstd(os.path.join(base_path, 'catchments', '{}.pkl.zst'.format(catch_id)), True)
 
     c2 = vector.sjoin(c1, plan1, how='left').drop('index_right', axis=1)
     c2.loc[c2[reduction_col].isnull(), reduction_col] = 0
@@ -194,7 +207,7 @@ def calc_reach_reductions(catch_id, base_path, plan_file, reduction_col='reducti
     c5 = c4[['nzsegment', 'base_area', 'prop_area']].set_index('nzsegment').copy()
     c5 = {r: list(v.values()) for r, v in c5.to_dict('index').items()}
 
-    branches = read_pkl_zstd(os.path.join(base_path, 'reach_mappings', '{}.pkl.zst'.format(catch_id)), True)
+    # branches = read_pkl_zstd(os.path.join(base_path, 'reach_mappings', '{}.pkl.zst'.format(catch_id)), True)
 
     # props = {}
     # for reach, branch in branches.items():
@@ -242,6 +255,40 @@ def calc_reach_reductions(catch_id, base_path, plan_file, reduction_col='reducti
     return props
 
 
+def calc_lake_reach_reductions(lake_id, plan_file, reduction_col='reduction'):
+    """
+    This assumes that the concentration is the same throughout the entire greater catchment. If it's meant to be different, then each small catchment must be set and multiplied by the area to weight the contribution downstream.
+    """
+    with shelflet.open(lakes_catches_minor_path, 'r') as f:
+        c1 = f[str(lake_id)]
+
+    # with shelflet.open(lakes_reaches_mapping_path, 'r') as f:
+    #     branches = f[str(lake_id)]
+
+    plan1 = plan_file[[reduction_col, 'geometry']].to_crs(2193)
+    # c1 = read_pkl_zstd(os.path.join(base_path, 'catchments', '{}.pkl.zst'.format(catch_id)), True)
+
+    c2 = vector.sjoin(c1, plan1, how='left').drop('index_right', axis=1)
+    c2.loc[c2[reduction_col].isnull(), reduction_col] = 0
+    c2['s_area'] = c2.area
+
+    c2['combo_area'] = c2.groupby('nzsegment')['s_area'].transform('sum')
+
+    c2['prop'] = c2[reduction_col]*(c2['s_area']/c2['combo_area'])
+
+    c3 = c2.groupby('nzsegment')['prop'].sum()
+    c4 = c1.merge(c3.reset_index(), on='nzsegment')
+    area = c4.area
+    c4['base_area'] = area * 100
+    c4['prop_area'] = area * c4['prop']
+
+    c5 = c4[['nzsegment', 'base_area', 'prop_area']].set_index('nzsegment').copy()
+
+    c6 = c5.sum()
+    props = (np.round((c6.prop_area/c6.base_area)*100*0.5)*2).astype('int8')
+
+    return props
+
 # def t_test(props, n_samples_year, n_years):
 #     """
 
@@ -265,34 +312,34 @@ def calc_reach_reductions(catch_id, base_path, plan_file, reduction_col='reducti
 #     return props
 
 
-def get_power(props, n_samples_year, n_years, power_data):
-    """
+# def get_power(props, n_samples_year, n_years, power_data):
+#     """
 
-    """
-    red1 = 100 - props.reduction.values
+#     """
+#     red1 = 100 - props.reduction.values
 
-    n_samples = n_samples_year*n_years
+#     n_samples = n_samples_year*n_years
 
-    power_data1 = power_data.sel(n_samples=n_samples).sel(conc_perc=red1).power.values.astype('int8')
+#     power_data1 = power_data.sel(n_samples=n_samples).sel(conc_perc=red1).power.values.astype('int8')
 
-    props = props.assign(power=(('reach'), power_data1))
+#     props = props.assign(power=(('reach'), power_data1))
 
-    return props
+#     return props
 
 
-def apply_filters(props, reduction_cutoff=5):
-    """
+# def apply_filters(props, reduction_cutoff=5):
+#     """
 
-    """
-    # c1 = pd.cut(props.t_stat.values, t_bins, labels=t_bins[:-1])
+#     """
+#     # c1 = pd.cut(props.t_stat.values, t_bins, labels=t_bins[:-1])
 
-    # props = props.assign(t_cat=(('reach'), c1.to_numpy().astype('int8')))
+#     # props = props.assign(t_cat=(('reach'), c1.to_numpy().astype('int8')))
 
-    # props['power'] = xr.where((props.power > p_cutoff) & (props.reduction >= reduction_cutoff), props['reduction'], 0)
-    props['power'] = xr.where((props.reduction > reduction_cutoff), props['power'], 0)
-    # props['t_cat'] = props['t_cat'].astype('int8')
+#     # props['power'] = xr.where((props.power > p_cutoff) & (props.reduction >= reduction_cutoff), props['reduction'], 0)
+#     props['power'] = xr.where((props.reduction >= reduction_cutoff), props['power'], 0)
+#     # props['t_cat'] = props['t_cat'].astype('int8')
 
-    return props
+#     return props
 
 
 def parse_gis_file(contents, filename):

@@ -14,7 +14,4 @@ __pycache__/
 .tox
 .cache
 
-web_app/app/assets/catchments.pbf
-web_app/app/assets/catchments/*
-web_app/app/assets/reaches/*
-web_app/app/assets/reach_mappings/*
+web_app/app/assets/*
