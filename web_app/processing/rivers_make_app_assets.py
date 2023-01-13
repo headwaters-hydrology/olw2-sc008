@@ -18,7 +18,7 @@ from gistools import vector, rec
 import geopandas as gpd
 import pandas as pd
 import numpy as np
-import shelflet
+import booklet
 
 import utils
 
@@ -32,22 +32,22 @@ def process_assets():
     """
 
     """
-    reaches2 = utils.read_pkl_zstd(utils.output_path.joinpath(utils.rec_delin_file), True)
+    reaches2 = gpd.read_feather(utils.rec_delin_file)
 
     ## Save reaches geobuf
     reaches3 = reaches2.loc[reaches2.stream_order > 2].to_crs(4326)
     starts = reaches3.start.unique()
 
-    with shelflet.open(utils.river_reach_gbuf_path, 'n') as f:
+    with booklet.open(utils.river_reach_gbuf_path, 'n', key_serializer='uint4', value_serializer='zstd') as f:
         for s in starts:
             df1 = reaches3[reaches3['start'] == s].drop('start', axis=1).set_index('nzsegment', drop=False)
             gjson = orjson.loads(df1.to_json())
             gbuf = geobuf.encode(gjson)
 
-            f[str(s)] = gbuf
+            f[int(s)] = gbuf
 
     ## Save catchments geobufs
-    rec_shed = utils.read_pkl_zstd(utils.output_path.joinpath(utils.major_catch_file), True)
+    rec_shed = gpd.read_feather(utils.major_catch_file)
 
     gjson = orjson.loads(rec_shed.set_index('nzsegment').to_crs(4326).to_json())
 
@@ -55,29 +55,30 @@ def process_assets():
         f.write(geobuf.encode(gjson))
 
 
-    rec_catch2 = utils.read_pkl_zstd(utils.output_path.joinpath(utils.catch_file), True)
+    rec_catch2 = gpd.read_feather(utils.catch_file)
 
     grp1 = rec_catch2.groupby('start')
 
-    with shelflet.open(utils.river_catch_path, 'n') as f:
+    with booklet.open(utils.river_catch_path, 'n', key_serializer='uint4', value_serializer='gpd_zstd') as f:
         for catch_id, catches in grp1:
-            f[str(catch_id)] = catches.drop('start', axis=1)
+            f[catch_id] = catches.drop('start', axis=1)
 
     ## Save reach mappings
-    mapping = utils.read_pkl_zstd(utils.output_path.joinpath(utils.reach_mapping_file), True)
+    # mapping = gpd.read_feather(utils.reach_mapping_file)
 
-    with shelflet.open(utils.river_reach_mapping_path, 'n') as f:
-        for catch_id, reaches in mapping.items():
-            f[str(catch_id)] = reaches
-
-
+    # with booklet.open(utils.river_reach_mapping_path, 'n') as f:
+    #     for catch_id, reaches in mapping.items():
+    #         f[catch_id] = reaches
 
 
 
 
+# f = booklet.open(utils.river_catch_path)
 
+# keys = list(f.keys())
 
-
+# for key in keys:
+#     r1 = f[key]
 
 
 

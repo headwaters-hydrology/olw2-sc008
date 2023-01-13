@@ -14,7 +14,7 @@ from shapely import intersection
 import hdf5tools
 import xarray as xr
 # import dbm
-import shelflet
+import booklet
 # import shelve
 import multiprocessing as mp
 import concurrent.futures
@@ -27,39 +27,40 @@ pd.options.display.max_columns = 10
 ##################################################
 ### preprocessing
 
-lakes0 = pd.read_csv(utils.raw_lakes_path)
-lakes_poly0 = gpd.read_file(utils.lakes_poly_path)
-lakes_poly0['geometry'] = lakes_poly0.simplify(20)
+def lakes_location_process():
+    lakes0 = pd.read_csv(utils.raw_lakes_path)
+    lakes_poly0 = gpd.read_file(utils.lakes_poly_path)
+    lakes_poly0['geometry'] = lakes_poly0.simplify(20)
 
-lakes0 = lakes0.rename(columns={'SiteID': 'site_id'})
+    lakes0 = lakes0.rename(columns={'SiteID': 'site_id'})
 
-# Locations
-lakes1 = pd.merge(lakes_poly0.drop(['elevation', 'geometry'], axis=1), lakes0, on='site_id').drop('site_id', axis=1)
+    # Locations
+    lakes1 = pd.merge(lakes_poly0.drop(['elevation', 'geometry'], axis=1), lakes0, on='site_id').drop('site_id', axis=1)
 
-sites0 = lakes1[['name', 'Latitude', 'Longitude']].drop_duplicates(subset=['name']).sort_values('name')
+    sites0 = lakes1[['name', 'Latitude', 'Longitude']].drop_duplicates(subset=['name']).sort_values('name')
 
-sites = vector.xy_to_gpd('name', 'Longitude', 'Latitude', sites0, 4326)
-sites_geo = sites.set_index('name').__geo_interface__
+    sites = vector.xy_to_gpd('name', 'Longitude', 'Latitude', sites0, 4326)
+    sites_geo = sites.set_index('name').__geo_interface__
 
-sites_gbuf = geobuf.encode(sites_geo)
+    sites_gbuf = geobuf.encode(sites_geo)
 
-with open(utils.lakes_points_gbuf_path, 'wb') as f:
-    f.write(sites_gbuf)
+    with open(utils.lakes_points_gbuf_path, 'wb') as f:
+        f.write(sites_gbuf)
 
-sites.to_file(utils.output_path.joinpath('lake_locations.gpkg'))
+    sites.to_file(utils.output_path.joinpath('lake_locations.gpkg'))
 
-with shelflet.open(utils.lakes_poly_gbuf_path, 'n') as s:
-    for name in lakes_poly0.name:
-        geo = lakes_poly0[lakes_poly0.name == name].set_index('name', drop=False).to_crs(4326).__geo_interface__
-        gbuf = geobuf.encode(geo)
-        s[name] = gbuf
+    with booklet.open(utils.lakes_poly_gbuf_path, 'n', value_serializer='zstd', key_serializer='str', n_buckets=200) as s:
+        for name in lakes_poly0.name:
+            geo = lakes_poly0[lakes_poly0.name == name].set_index('name', drop=False).to_crs(4326).__geo_interface__
+            gbuf = geobuf.encode(geo)
+            s[name] = gbuf
 
 
-## Error assessments
-lakes0['CV'] = lakes0.CV.round(3)
+    ## Error assessments
+    # lakes0['CV'] = lakes0.CV.round(3)
 
-errors = lakes0['CV'].unique()
-errors.sort()
+    # errors = lakes0['CV'].unique()
+    # errors.sort()
 
 
 

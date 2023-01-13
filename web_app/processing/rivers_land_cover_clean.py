@@ -15,7 +15,7 @@ import hdf5tools
 import xarray as xr
 # import dbm
 import utils
-import shelflet
+import booklet
 # import shelve
 import multiprocessing as mp
 import concurrent.futures
@@ -34,8 +34,8 @@ pd.options.display.max_columns = 10
 #     seg = str(row.nzsegment)
 #     print(seg)
 
-#     parcels_dict = shelflet.open(utils.catch_parcels_path, 'r')
-#     land_cover_dict = shelflet.open(utils.catch_lc_path, 'r')
+#     parcels_dict = booklet.open(utils.catch_parcels_path, 'r')
+#     land_cover_dict = booklet.open(utils.catch_lc_path, 'r')
 
 #     parcels = parcels_dict[seg]
 
@@ -64,20 +64,18 @@ pd.options.display.max_columns = 10
 #     return seg, combo1
 
 
-def land_cover_process(row, catch_lc_path, red1, lc_red_dict):
+def land_cover_process(row, red1, lc_red_dict):
     """
 
     """
-    seg = str(row.nzsegment)
+    seg = row.nzsegment
     print(seg)
 
-    land_cover_dict = shelflet.open(utils.catch_lc_path, 'r')
+    with booklet.open(utils.catch_lc_path, 'r') as land_cover_dict:
+        lc = land_cover_dict[seg].copy()
+        lc.rename(columns={'Name_2018': 'land_cover'}, inplace=True)
+        lc_names = lc['land_cover'].tolist()
 
-    lc = land_cover_dict[seg].copy()
-    lc.rename(columns={'Name_2018': 'land_cover'}, inplace=True)
-    lc_names = lc['land_cover'].tolist()
-
-    land_cover_dict.close()
 
     new_names = []
     for name in lc_names:
@@ -89,6 +87,8 @@ def land_cover_process(row, catch_lc_path, red1, lc_red_dict):
 
     lc['land_cover'] = new_names
 
+    lc['geometry'] = lc['geometry'].buffer(0)
+
     lc2 = lc.dissolve('land_cover').reset_index()
     lc2['geometry'] = lc2.simplify(20)
     combo1 = lc2.merge(red1.reset_index(), on='land_cover')
@@ -98,16 +98,23 @@ def land_cover_process(row, catch_lc_path, red1, lc_red_dict):
 
 
 if __name__ == '__main__':
-    catch0 = utils.read_pkl_zstd(utils.output_path.joinpath(utils.major_catch_file), True)
+    catch0 = gpd.read_feather(utils.major_catch_file)
+    catch0['geometry'] = catch0['geometry'].buffer(0)
 
     lc_red_dict = utils.land_cover_reductions.copy()
     red1 = pd.DataFrame.from_dict(lc_red_dict, orient='index', columns=['reduction'])
     red1.index.name = 'land_cover'
 
+    # combo_list = []
+    # for i, row in catch0.iterrows():
+    #     output = land_cover_process(row, red1, lc_red_dict)
+    #     combo_list.append(output)
+
+
     with concurrent.futures.ProcessPoolExecutor(max_workers=4, mp_context=mp.get_context("spawn")) as executor:
         futures = []
         for i, row in catch0.iterrows():
-            f = executor.submit(land_cover_process, row, utils.catch_lc_path, red1, lc_red_dict)
+            f = executor.submit(land_cover_process, row, red1, lc_red_dict)
             futures.append(f)
 
         runs = concurrent.futures.wait(futures)
@@ -115,10 +122,9 @@ if __name__ == '__main__':
     combo_list = [r.result() for r in runs[0]]
 
     ## Save data
-    with shelflet.open(utils.catch_lc_clean_path) as parcels_lc:
+    with booklet.open(utils.catch_lc_clean_path, 'n', value_serializer='gpd_zstd', key_serializer='uint4') as parcels_lc:
         for seg, data in combo_list:
             parcels_lc[seg] = data
-            parcels_lc.sync()
 
 
 
@@ -134,7 +140,7 @@ if __name__ == '__main__':
 
 # segs = set(catch0.nzsegment.astype(str).tolist())
 
-# parcels_lc = shelflet.open(utils.catch_parcels_lc_path, 'r')
+# parcels_lc = booklet.open(utils.catch_parcels_lc_path, 'r')
 
 # p_segs = set(parcels_lc.keys())
 
@@ -145,7 +151,7 @@ if __name__ == '__main__':
 
 # new1 = intersection(p1, lc2.geometry.tolist())
 
-# lc = shelflet.open(utils.catch_lc_clean_path, 'r')
+# lc = booklet.open(utils.catch_lc_clean_path, 'r')
 
 # n1 = lc[seg]
 

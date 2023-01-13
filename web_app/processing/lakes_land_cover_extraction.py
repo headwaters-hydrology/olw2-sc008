@@ -13,14 +13,15 @@ import numpy as np
 from shapely import intersection
 import hdf5tools
 import xarray as xr
-import shelflet
-import geobuf
-import orjson
+import booklet
+import pickle
+import zstandard as zstd
 
 import utils
 
 
 pd.options.display.max_columns = 10
+
 
 ##########################################
 ### parcels
@@ -45,53 +46,54 @@ pd.options.display.max_columns = 10
 # # close/delete objects
 # del parcels
 
-lc_red_dict = utils.land_cover_reductions.copy()
-red1 = pd.DataFrame.from_dict(lc_red_dict, orient='index', columns=['reduction'])
-red1.index.name = 'land_cover'
+def lakes_lc_process():
+    lc_red_dict = utils.land_cover_reductions.copy()
+    red1 = pd.DataFrame.from_dict(lc_red_dict, orient='index', columns=['reduction'])
+    red1.index.name = 'land_cover'
 
-## land cover
-land_cover = gpd.read_file(utils.land_cover_path)
-land_cover = land_cover[['Name_2018', 'geometry']].rename(columns={'Name_2018': 'land_cover'}).copy()
+    ## land cover
+    land_cover = gpd.read_file(utils.land_cover_path)
+    land_cover = land_cover[['Name_2018', 'geometry']].rename(columns={'Name_2018': 'land_cover'}).copy()
 
-with shelflet.open(utils.lakes_lc_path, 'n') as land_cover_dict:
-    with shelflet.open(utils.lakes_catches_minor_path) as f:
-        for lake in f:
-            print(lake)
+    with booklet.open(utils.lakes_lc_path, 'n', value_serializer='gpd_zstd', key_serializer='str', n_buckets=200) as land_cover_dict:
+        with booklet.open(utils.lakes_catches_minor_path) as f:
+            for lake in f:
+                print(lake)
 
-            catch = f[lake]
+                catch = f[lake]
 
-            # Land cover
-            lc2 = land_cover.loc[land_cover.sindex.query(catch.unary_union, predicate="intersects")].copy()
-            lc2b = intersection(lc2.geometry.tolist(), catch.unary_union)
-            lc2['geometry'] = lc2b
+                # Land cover
+                lc2 = land_cover.loc[land_cover.sindex.query(catch.unary_union, predicate="intersects")].copy()
+                lc2b = intersection(lc2.geometry.tolist(), catch.unary_union)
+                lc2['geometry'] = lc2b
 
-            lc_names = lc2['land_cover'].tolist()
+                lc_names = lc2['land_cover'].tolist()
 
-            new_names = []
-            for name in lc_names:
-                if name not in lc_red_dict:
-                    new_name = 'Other'
-                else:
-                    new_name = name
-                new_names.append(new_name)
+                new_names = []
+                for name in lc_names:
+                    if name not in lc_red_dict:
+                        new_name = 'Other'
+                    else:
+                        new_name = name
+                    new_names.append(new_name)
 
-            lc2['land_cover'] = new_names
+                lc2['land_cover'] = new_names
+                lc2['geometry'] = lc2.buffer(0)
 
-            lc3 = lc2.dissolve('land_cover').reset_index()
-            lc3['geometry'] = lc3.simplify(20)
-            combo1 = lc3.merge(red1.reset_index(), on='land_cover')
+                lc3 = lc2.dissolve('land_cover').reset_index()
+                lc3['geometry'] = lc3.simplify(20)
+                combo1 = lc3.merge(red1.reset_index(), on='land_cover')
 
-            land_cover_dict[str(lake)] = combo1
-            land_cover_dict.sync()
+                land_cover_dict[lake] = combo1
 
-# close/delete objects
-del land_cover
+    # close/delete objects
+    del land_cover
 
 
 ##############################################
 ### Testing
 
-# land_cover_dict = shelflet.open(utils.catch_lc_path, 'r')
+# land_cover_dict = booklet.open(utils.lakes_lc_path, 'r')
 
 
 # with shelve.open('/media/nvme1/data/OLW/web_app/output/shelve_test.shelf') as t:
@@ -100,11 +102,12 @@ del land_cover
 #         t[seg] = lc2
 #         t.sync()
 
+# file = '/media/nvme1/data/OLW/web_app/output/assets/lakes_lc.blt'
+
+# land_cover_dict = open(file, 'n', value_serializer=PickleZstd, key_serializer=Str, n_buckets=200)
 
 
-
-
-
+# f = booklet.open(utils.lakes_catches_minor_path)
 
 
 

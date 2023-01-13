@@ -14,7 +14,6 @@ from shapely import intersection
 import hdf5tools
 import xarray as xr
 # import dbm
-import shelflet
 # import shelve
 import multiprocessing as mp
 import concurrent.futures

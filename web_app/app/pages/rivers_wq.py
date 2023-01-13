@@ -28,7 +28,7 @@ import dash_leaflet.express as dlx
 from dash_extensions.javascript import assign, arrow_function
 import pathlib
 import hdf5plugin
-import shelflet
+import booklet
 
 # from .app import app
 # from . import utils
@@ -50,14 +50,14 @@ dash.register_page(
 
 app_base_path = pathlib.Path('/assets')
 
-river_reach_error_path = assets_path.joinpath('rivers_reaches_error.h5')
+rivers_reach_error_path = assets_path.joinpath('rivers_reaches_error.h5')
 
-catch_pbf_path = app_base_path.joinpath('catchments.pbf')
+rivers_catch_pbf_path = app_base_path.joinpath('rivers_catchments.pbf')
 
-river_reach_gbuf_path = assets_path.joinpath('rivers_reaches.shelf')
-catch_lc_clean_path = assets_path.joinpath('catch_lc_clean.shelf')
-river_catch_path = assets_path.joinpath('rivers_catchments.shelf')
-river_reach_mapping_path = assets_path.joinpath('rivers_reaches_mapping.self')
+rivers_reach_gbuf_path = assets_path.joinpath('rivers_reaches.blt')
+rivers_lc_clean_path = assets_path.joinpath('rivers_catch_lc_clean.blt')
+rivers_catch_path = assets_path.joinpath('rivers_catchments.blt')
+rivers_reach_mapping_path = assets_path.joinpath('rivers_reaches_mapping.blt')
 
 map_height = 700
 
@@ -135,7 +135,7 @@ base_reach_style = dict(weight=4, opacity=1, color='white')
 info = dcc.Markdown(id="info", className="info", style={"position": "absolute", "top": "10px", "right": "10px", "z-index": "1000"})
 # info = html.Div(id="info", className="info", style={"position": "absolute", "top": "10px", "right": "10px", "z-index": "1000"})
 
-indicator_dict = {'BD': 'Black disk', 'EC': 'Electrical conductivity', 'DRP': 'Dissolved reactive phosporus', 'NH': 'Ammonium', 'NO': 'Nitrate', 'TN': 'Total nitrogen', 'TP': 'Total phosphorus', 'TU': 'Turbidity'}
+indicator_dict = {'BD': 'Black disk', 'EC': 'E.coli', 'DRP': 'Dissolved reactive phosporus', 'NH': 'Ammoniacal nitrogen', 'NO': 'Nitrate', 'TN': 'Total nitrogen', 'TP': 'Total phosphorus', 'TU': 'Turbidity'}
 
 ###############################################
 ### Helper Functions
@@ -236,11 +236,11 @@ def calc_river_reach_reductions(catch_id, plan_file, reduction_col='reduction'):
     """
     This assumes that the concentration is the same throughout the entire greater catchment. If it's meant to be different, then each small catchment must be set and multiplied by the area to weight the contribution downstream.
     """
-    with shelflet.open(river_catch_path, 'r') as f:
-        c1 = f[str(catch_id)]
+    with booklet.open(rivers_catch_path, 'r') as f:
+        c1 = f[int(catch_id)]
 
-    with shelflet.open(river_reach_mapping_path, 'r') as f:
-        branches = f[str(catch_id)]
+    with booklet.open(rivers_reach_mapping_path, 'r') as f:
+        branches = f[int(catch_id)]
 
     plan1 = plan_file[[reduction_col, 'geometry']].to_crs(2193)
     # c1 = read_pkl_zstd(os.path.join(base_path, 'catchments', '{}.pkl.zst'.format(catch_id)), True)
@@ -315,7 +315,7 @@ def calc_river_reach_reductions(catch_id, plan_file, reduction_col='reduction'):
 
 # sel1 = xr.open_dataset(base_path.joinpath(sel_data_h5), engine='h5netcdf')
 
-with shelflet.open(river_reach_gbuf_path, 'r') as f:
+with booklet.open(rivers_reach_gbuf_path, 'r') as f:
     catches = [int(c) for c in f]
 
 catches.sort()
@@ -411,7 +411,7 @@ def layout():
     html.Div([
         dl.Map(children=[
             dl.TileLayer(id='tile_layer', attribution=attribution),
-            dl.GeoJSON(url=str(catch_pbf_path), format="geobuf", id='catch_map', zoomToBoundsOnClick=True, zoomToBounds=True, options=dict(style=catch_style_handle)),
+            dl.GeoJSON(url=str(rivers_catch_pbf_path), format="geobuf", id='catch_map', zoomToBoundsOnClick=True, zoomToBounds=True, options=dict(style=catch_style_handle)),
             # dl.GeoJSON(url='', format="geobuf", id='base_reach_map', options=dict(style=base_reaches_style_handle)),
             dl.GeoJSON(data='', format="geobuf", id='reach_map', options={}, hideout={}, hoverStyle=arrow_function(dict(weight=10, color='black', dashArray=''))),
             dl.GeoJSON(data='', format="geobuf", id='reductions_poly'),
@@ -469,8 +469,8 @@ def update_catch_id(feature):
 # @cache.memoize()
 def update_reaches(catch_id, map_checkboxes):
     if (catch_id is not None) and ('reach_map' in map_checkboxes):
-        with shelflet.open(river_reach_gbuf_path, 'r') as f:
-            data = base64.b64encode(f[str(catch_id)]).decode()
+        with booklet.open(rivers_reach_gbuf_path, 'r') as f:
+            data = base64.b64encode(f[int(catch_id)]).decode()
 
     else:
         data = ''
@@ -514,8 +514,8 @@ def update_reductions_obj(contents, n_clicks, catch_id, filename):
         else:
             return '', None
     elif catch_id is not None:
-        with shelflet.open(catch_lc_clean_path, 'r') as f:
-            data = encode_obj(f[str(catch_id)])
+        with booklet.open(rivers_lc_clean_path, 'r') as f:
+            data = encode_obj(f[int(catch_id)])
 
         return data, 'reduction'
     else:
@@ -598,7 +598,7 @@ def update_props_data(reaches_obj, indicator, n_years, n_samples_year, catch_id)
 
         n_samples = n_samples_year*n_years
 
-        power_data = xr.open_dataset(river_reach_error_path, engine='h5netcdf')
+        power_data = xr.open_dataset(rivers_reach_error_path, engine='h5netcdf')
         power_data1 = power_data.sel(indicator=indicator, nzsegment=int(catch_id), n_samples=n_samples).copy()
         power_data.close()
         del power_data

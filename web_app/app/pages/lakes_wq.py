@@ -28,7 +28,7 @@ import dash_leaflet.express as dlx
 from dash_extensions.javascript import assign, arrow_function
 import pathlib
 import hdf5plugin
-import shelflet
+import booklet
 
 # from .app import app
 # from . import utils
@@ -53,12 +53,12 @@ app_base_path = pathlib.Path('/assets')
 lakes_error_path = assets_path.joinpath('lakes_error.h5')
 
 lakes_pbf_path = app_base_path.joinpath('lakes_points.pbf')
-lakes_poly_gbuf_path = assets_path.joinpath('lakes_poly.shelf')
-lakes_catches_major_path = assets_path.joinpath('lakes_catchments_major.shelf')
-lakes_reach_gbuf_path = assets_path.joinpath('lakes_reaches.shelf')
-lakes_lc_path = assets_path.joinpath('lakes_lc.shelf')
-lakes_reaches_mapping_path = assets_path.joinpath('lakes_reaches_mapping.shelf')
-lakes_catches_minor_path = assets_path.joinpath('lakes_catchments_minor.shelf')
+lakes_poly_gbuf_path = assets_path.joinpath('lakes_poly.blt')
+lakes_catches_major_path = assets_path.joinpath('lakes_catchments_major.blt')
+lakes_reach_gbuf_path = assets_path.joinpath('lakes_reaches.blt')
+lakes_lc_path = assets_path.joinpath('lakes_lc.blt')
+lakes_reaches_mapping_path = assets_path.joinpath('lakes_reaches_mapping.blt')
+lakes_catches_minor_path = assets_path.joinpath('lakes_catchments_minor.blt')
 
 map_height = 700
 
@@ -236,7 +236,7 @@ def calc_lake_reach_reductions(lake_id, plan_file, reduction_col='reduction'):
     """
     This assumes that the concentration is the same throughout the entire greater catchment. If it's meant to be different, then each small catchment must be set and multiplied by the area to weight the contribution downstream.
     """
-    with shelflet.open(lakes_catches_minor_path, 'r') as f:
+    with booklet.open(lakes_catches_minor_path, 'r') as f:
         c1 = f[str(lake_id)]
 
     # with shelflet.open(lakes_reaches_mapping_path, 'r') as f:
@@ -273,7 +273,7 @@ def calc_lake_reach_reductions(lake_id, plan_file, reduction_col='reduction'):
 
 # sel1 = xr.open_dataset(base_path.joinpath(sel_data_h5), engine='h5netcdf')
 
-with shelflet.open(lakes_catches_major_path, 'r') as f:
+with booklet.open(lakes_catches_major_path, 'r') as f:
     lakes = list(f.keys())
 
 lakes.sort()
@@ -430,7 +430,7 @@ def update_lake_id(feature):
 # @cache.memoize()
 def update_reaches_lakes(lake_id, map_checkboxes):
     if isinstance(lake_id, str) and ('reach_map' in map_checkboxes):
-        with shelflet.open(lakes_reach_gbuf_path, 'r') as f:
+        with booklet.open(lakes_reach_gbuf_path, 'r') as f:
             data = base64.b64encode(f[str(lake_id)]).decode()
     else:
         data = ''
@@ -445,7 +445,7 @@ def update_reaches_lakes(lake_id, map_checkboxes):
 # @cache.memoize()
 def update_catch_lakes(lake_id):
     if isinstance(lake_id, str):
-        with shelflet.open(lakes_catches_major_path, 'r') as f:
+        with booklet.open(lakes_catches_major_path, 'r') as f:
             data = base64.b64encode(f[str(lake_id)]).decode()
     else:
         data = ''
@@ -460,7 +460,7 @@ def update_catch_lakes(lake_id):
 # @cache.memoize()
 def update_lake(lake_id):
     if isinstance(lake_id, str):
-        with shelflet.open(lakes_poly_gbuf_path, 'r') as f:
+        with booklet.open(lakes_poly_gbuf_path, 'r') as f:
             data = base64.b64encode(f[str(lake_id)]).decode()
     else:
         data = ''
@@ -504,7 +504,7 @@ def update_reductions_obj_lakes(contents, n_clicks, lake_id, filename):
         else:
             return '', None
     elif isinstance(lake_id, str):
-        with shelflet.open(lakes_lc_path, 'r') as f:
+        with booklet.open(lakes_lc_path, 'r') as f:
             data = encode_obj(f[str(lake_id)])
 
         return data, 'reduction'
