@@ -2,7 +2,7 @@ version: '3'
 
 services:
   olw-app:
-    image: tethysts/olw-monitoring-app:1.4
+    image: tethysts/olw-monitoring-app:1.5
     # extra_hosts:
     #   - "host.docker.internal:host-gateway"
     ports:
