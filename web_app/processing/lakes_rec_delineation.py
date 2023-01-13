@@ -38,10 +38,10 @@ def lakes_catch_delin():
         print(name)
         catches, reaches, pts_seg = rec.catch_delineate(points, rec_rivers0, rec_catch0, segment_id_col='nzsegment', from_node_col='from_node', to_node_col='to_node', ignore_order=1, stream_order_col='stream_order', max_distance=1000, site_delineate='all', returns='all')
 
-        catch = catches.iloc[[0]][['name', 'geometry']].set_index('name').copy()
+        catch = catches.loc[[0], ['name', 'geometry']].set_index('name').copy()
         catch['geometry'] = catches.unary_union
 
-        gbuf = geobuf.encode(catch.simplify(30).to_crs(4326).__geo_interface__)
+        gbuf = geobuf.encode(catch.buffer(1).simplify(10).to_crs(4326).__geo_interface__)
 
         segs = reaches.nzsegment.unique().astype('int32')
 
@@ -49,7 +49,7 @@ def lakes_catch_delin():
         segs_dict[name] = segs
 
         minor_catch1 = rec_catch0[rec_catch0.nzsegment.isin(segs)][['nzsegment', 'geometry']].copy()
-        minor_catch1['geometry'] = minor_catch1.simplify(0)
+        minor_catch1['geometry'] = minor_catch1.buffer(0)
         catches_minor_dict[name] = minor_catch1
 
         reaches1 = rec_rivers0[rec_rivers0.nzsegment.isin(segs)].copy()[['nzsegment', 'stream_order', 'geometry']].set_index('nzsegment', drop=False)
