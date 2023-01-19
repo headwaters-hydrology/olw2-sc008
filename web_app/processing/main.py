@@ -27,12 +27,6 @@ from lakes_conc_error import lakes_conc_error_processing
 ## REC delineate all catchments that start at the sea and have a greater than 2 stream order
 rec_delin()
 
-## Determine the upstream reaches of every reach - Takes 30 minutes to run!
-
-# rivers_reach_mappings.py should be run from the terminal
-
-## Process catchments
-catch_agg()
 
 ## Land cover
 rivers_land_cover()
@@ -45,7 +39,7 @@ process_conc()
 # rivers_sims.py should be run via the terminal
 
 ## Extra assets for web app
-process_assets()
+# process_assets()
 
 ###################################################
 ### Lakes

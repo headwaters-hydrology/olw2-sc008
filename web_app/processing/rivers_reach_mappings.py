@@ -50,7 +50,7 @@ import concurrent.futures
 #             mapping[catch_id] = branches
 
 
-def reach_mapping(reaches_list, reaches):
+def reach_mapping(reaches_list, reaches, catch_id):
     up1 = rec.find_upstream(reaches_list, reaches, from_node_col='from_node', to_node_col='to_node')
 
     grp2 = up1.groupby(level='start')['nzsegment']
@@ -68,16 +68,16 @@ def reach_mapping(reaches_list, reaches):
 if __name__ == '__main__':
     reaches2 = gpd.read_feather(utils.rec_delin_file)
 
-    max_nzsegment = reaches2.nzsegment.max()
+    # max_nzsegment = reaches2.nzsegment.max()
 
     grp1 = reaches2.groupby('start')
 
     with concurrent.futures.ProcessPoolExecutor(max_workers=4, mp_context=mp.get_context("spawn")) as executor:
         futures = []
         for catch_id, reaches in grp1:
-            print(catch_id)
+            # print(catch_id)
             reaches_list = reaches.nzsegment.tolist()
-            f = executor.submit(reach_mapping, reaches_list, reaches)
+            f = executor.submit(reach_mapping, reaches_list, reaches, catch_id)
             futures.append(f)
 
         runs = concurrent.futures.wait(futures)

@@ -12,6 +12,7 @@ import geopandas as gpd
 import pandas as pd
 import numpy as np
 import hdf5tools
+import booklet
 
 import utils
 
@@ -28,10 +29,6 @@ def process_conc():
     conc0.rename(columns={'lm1seRes': 'error', 'lm1pred_01_2022': 'init_conc', 'Indicator': 'indicator'}, inplace=True)
 
     conc1 = conc0.groupby(['indicator', 'nzsegment']).mean().reset_index()
-
-    # reaches2 = utils.read_pkl_zstd(utils.output_path.joinpath(utils.rec_delin_file), True)
-
-    mapping = utils.read_pkl_zstd(utils.output_path.joinpath(utils.reach_mapping_file), True)
 
     ## Clean up data - Excessive max values
     conc1.loc[(conc1.indicator == 'EC') & (conc1.init_conc > 1000)] = np.nan
@@ -51,6 +48,8 @@ def process_conc():
 
     ## Assign init conc and errors to each catchment
     # conc1['error_cat'] = pd.cut(conc1['error'], list1, labels=list1[:-1])
+
+    mapping = booklet.open(utils.river_reach_mapping_path)
 
     starts = list(mapping.keys())
     indicators = conc1.indicator.unique()

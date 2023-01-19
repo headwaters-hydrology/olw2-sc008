@@ -236,10 +236,10 @@ def calc_river_reach_reductions(catch_id, plan_file, reduction_col='reduction'):
     """
     This assumes that the concentration is the same throughout the entire greater catchment. If it's meant to be different, then each small catchment must be set and multiplied by the area to weight the contribution downstream.
     """
-    with booklet.open(rivers_catch_path, 'r') as f:
+    with booklet.open(rivers_catch_path) as f:
         c1 = f[int(catch_id)]
 
-    with booklet.open(rivers_reach_mapping_path, 'r') as f:
+    with booklet.open(rivers_reach_mapping_path) as f:
         branches = f[int(catch_id)]
 
     plan1 = plan_file[[reduction_col, 'geometry']].to_crs(2193)

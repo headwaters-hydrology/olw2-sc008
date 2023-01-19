@@ -29,23 +29,8 @@ pd.options.display.max_columns = 10
 # parcels = parcels[['id', 'geometry']].copy()
 
 def rivers_land_cover():
-    ## Separate parcels and land cover into catchments
-    catch0 = gpd.read_feather(utils.major_catch_file)
-    catch0['geometry'] = catch0.buffer(0)
-
-    # with shelflet.open(utils.catch_parcels_path) as parcels_dict:
-    #     for i, row in catch0.iterrows():
-    #         print(i)
-
-    #         # Parcels
-    #         parcels2 = parcels.loc[parcels.sindex.query(row.geometry, predicate="intersects")].copy()
-    #         parcels2b = intersection(parcels2.geometry.tolist(), row.geometry)
-    #         parcels2['geometry'] = parcels2b
-    #         parcels_dict[str(row.nzsegment)] = parcels2
-    #         parcels_dict.sync()
-
-    # # close/delete objects
-    # del parcels
+    ## Separate land cover into catchments
+    catches = booklet.open(utils.river_catch_major_path)
 
     ## land cover
     land_cover = gpd.read_file(utils.land_cover_path)
@@ -53,19 +38,23 @@ def rivers_land_cover():
     land_cover['geometry'] = land_cover.buffer(0)
 
     lc_dict = {}
-    for i, row in catch0.iterrows():
-        print(i)
+    for way_id, catch in catches.items():
+        print(way_id)
+
+        c1 = catch.to_crs(2193).iloc[0]
 
         # Land cover
-        lc2 = land_cover.loc[land_cover.sindex.query(row.geometry, predicate="intersects")].copy()
+        lc2 = land_cover.loc[land_cover.sindex.query(c1.geometry, predicate="intersects")].copy()
         # lc2['geometry'] = lc2['geometry'].simplify(0)
-        lc2b = intersection(lc2.geometry.tolist(), row.geometry)
+        lc2b = intersection(lc2.geometry.tolist(), c1.geometry)
         lc2['geometry'] = lc2b
         lc2['geometry'] = lc2['geometry'].simplify(30)
-        lc_dict[row.nzsegment] = lc2
+        lc_dict[c1.nzsegment] = lc2
+
+    catches.close()
 
     print('save file')
-    with booklet.open(utils.catch_lc_path, 'n', value_serializer='gpd_zstd', key_serializer='uint4', n_buckets=2000) as land_cover_dict:
+    with booklet.open(utils.catch_lc_path, 'n', value_serializer='gpd_zstd', key_serializer='uint4', n_buckets=1600) as land_cover_dict:
         for i, lc2 in lc_dict.items():
             land_cover_dict[i] = lc2
 

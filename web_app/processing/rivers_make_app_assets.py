@@ -61,7 +61,9 @@ def process_assets():
 
     with booklet.open(utils.river_catch_path, 'n', key_serializer='uint4', value_serializer='gpd_zstd') as f:
         for catch_id, catches in grp1:
-            f[catch_id] = catches.drop('start', axis=1)
+            catches1 = catches.drop(['start', 'stream_order'], axis=1)
+            catches1['geometry'] = catches1.simplify(20)
+            f[catch_id] = catches1
 
     ## Save reach mappings
     # mapping = gpd.read_feather(utils.reach_mapping_file)

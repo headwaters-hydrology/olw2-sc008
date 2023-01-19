@@ -34,6 +34,8 @@ base_path = pathlib.Path(base_path)
 rec_rivers_feather = '/media/nvme1/data/NIWA/REC25_rivers/rec25_rivers_clean.feather'
 rec_catch_feather = '/media/nvme1/data/NIWA/REC25_watersheds/rec25_watersheds_clean.feather'
 
+nzrec_data_path = '/media/nvme1/git/nzrec/data'
+
 segment_id_col = 'nzsegment'
 
 output_path = base_path.joinpath('output')
@@ -46,13 +48,14 @@ assets_path.mkdir(parents=True, exist_ok=True)
 
 conc_csv_path = base_path.joinpath('StBD3.csv')
 
-rec_delin_file = output_path.joinpath('rivers_reach_delineation.feather')
-major_catch_file = output_path.joinpath('rivers_major_catch.feather')
-catch_file = output_path.joinpath('rivers_catch.feather')
+# rec_delin_file = output_path.joinpath('rivers_reach_delineation.feather')
+# major_catch_file = output_path.joinpath('rivers_major_catch.feather')
+# catch_file = output_path.joinpath('rivers_catch.feather')
 
 river_reach_mapping_path = assets_path.joinpath('rivers_reaches_mapping.blt')
 river_reach_gbuf_path = assets_path.joinpath('rivers_reaches.blt')
-river_catch_path = assets_path.joinpath('rivers_catchments.blt')
+river_catch_path = assets_path.joinpath('rivers_catchments_minor.blt')
+river_catch_major_path = assets_path.joinpath('rivers_catchments_major.blt')
 
 river_sims_path = output_path.joinpath('rivers_sims')
 river_sims_path.mkdir(parents=True, exist_ok=True)
@@ -61,7 +64,7 @@ river_sims_h5_path = river_sims_path.joinpath('rivers_sims.h5')
 river_reach_error_path = assets_path.joinpath('rivers_reaches_error.h5')
 
 land_cover_path = base_path.joinpath('lcdb-v50-land-cover-database-version-50-mainland-new-zealand.gpkg')
-parcels_path = base_path.joinpath('nz-primary-land-parcels.gpkg')
+# parcels_path = base_path.joinpath('nz-primary-land-parcels.gpkg')
 
 ## Sims params
 # conc_perc = np.arange(2, 101, 2, dtype='int8')
