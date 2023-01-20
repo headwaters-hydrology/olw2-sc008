@@ -14,6 +14,7 @@ from rivers_catch import catch_agg
 from rivers_make_app_assets import process_assets
 from rivers_land_cover_extraction import rivers_land_cover
 from rivers_assign_conc import process_conc
+from rivers_assign_flow import process_flow
 
 from lakes_locations import lakes_location_process
 from lakes_rec_delineation import lakes_catch_delin
@@ -32,6 +33,9 @@ rec_delin()
 rivers_land_cover()
 
 # rivers_land_cover_clean.py should be run via the terminal
+
+## River flows
+process_flow()
 
 ## River error/conc sims
 process_conc()
