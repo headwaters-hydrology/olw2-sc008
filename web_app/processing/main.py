@@ -10,11 +10,11 @@ import pathlib
 import utils
 from rivers_delineate import rec_delin
 # from rivers_reach_mappings import reach_mapping
-from rivers_catch import catch_agg
-from rivers_make_app_assets import process_assets
+# from rivers_catch import catch_agg
+# from rivers_make_app_assets import process_assets
 from rivers_land_cover_extraction import rivers_land_cover
-from rivers_assign_conc import process_conc
-from rivers_assign_flow import process_flow
+from rivers_assign_errors import process_errors
+from rivers_assign_flow import process_rec_flows
 
 from lakes_locations import lakes_location_process
 from lakes_rec_delineation import lakes_catch_delin
@@ -35,15 +35,14 @@ rivers_land_cover()
 # rivers_land_cover_clean.py should be run via the terminal
 
 ## River flows
-process_flow()
+process_rec_flows()
 
 ## River error/conc sims
-process_conc()
 
 # rivers_sims.py should be run via the terminal
 
-## Extra assets for web app
-# process_assets()
+process_errors()
+
 
 ###################################################
 ### Lakes

@@ -48,7 +48,11 @@ assets_path.mkdir(parents=True, exist_ok=True)
 
 conc_csv_path = base_path.joinpath('StBD3.csv')
 
-river_flows_path = assets_path.joinpath('rivers_flows.blt')
+river_flows_rec_path = assets_path.joinpath('rivers_flows_rec.blt')
+# river_flows_area_path = assets_path.joinpath('rivers_flows_area.blt')
+
+river_loads_rec_path = assets_path.joinpath('rivers_loads_rec.blt')
+river_loads_area_path = assets_path.joinpath('rivers_loads_area.blt')
 
 # rec_delin_file = output_path.joinpath('rivers_reach_delineation.feather')
 # major_catch_file = output_path.joinpath('rivers_major_catch.feather')
