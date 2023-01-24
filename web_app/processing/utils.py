@@ -68,6 +68,7 @@ river_sims_path.mkdir(parents=True, exist_ok=True)
 
 river_sims_h5_path = river_sims_path.joinpath('rivers_sims.h5')
 river_reach_error_path = assets_path.joinpath('rivers_reaches_error.h5')
+river_reach_loads_path = assets_path.joinpath('rivers_reaches_loads.h5')
 
 land_cover_path = base_path.joinpath('lcdb-v50-land-cover-database-version-50-mainland-new-zealand.gpkg')
 # parcels_path = base_path.joinpath('nz-primary-land-parcels.gpkg')

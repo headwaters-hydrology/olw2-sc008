@@ -23,7 +23,7 @@ pd.options.display.max_columns = 10
 #######################################
 ### Assign conc
 
-def process_rec_flows():
+def process_flows_rec():
     w0 = nzrec.Water(utils.nzrec_data_path)
 
     # way = {k: v for k, v in w0._way.items()}
@@ -38,18 +38,26 @@ def process_rec_flows():
 
     reaches = booklet.open(utils.river_reach_mapping_path)
 
-    up_flows = {}
+    ## Calc diff flows
+    up_flows_dict = {}
     for way_id in reaches:
         down_ways = set([way_id])
         down_flow = flows[way_id]
-        if down_flow is None:
-            down_flow = 0
 
         new_ways = set(way_index_3rd_up[way_id])
-        up_flow = sum([0 if flows[f] is None else flows[f] for f in new_ways])
 
-        diff_flow = round(down_flow - up_flow, 4)
-        up_flows[way_id] = diff_flow
+        if (down_flow is None) or (down_flow == 0):
+            up_flows_dict[way_id] = 0
+        else:
+            up_flows_list = [flows[f] for f in new_ways]
+            calc_bool = any([f is None for f in up_flows_list])
+            if calc_bool:
+                up_flows_dict[way_id] = 0
+            else:
+                up_flow = sum(up_flows_list)
+
+                diff_flow = round(down_flow - up_flow, 3)
+                up_flows_dict[way_id] = diff_flow
 
         while new_ways:
             down_ways.update(new_ways)
@@ -60,15 +68,23 @@ def process_rec_flows():
                 new_ways.update(up_ways)
 
                 down_flow = flows[new_way_id]
-                if down_flow is None:
-                    down_flow = 0
-                up_flow = sum([0 if flows[f] is None else flows[f] for f in up_ways])
-                diff_flow = round(down_flow - up_flow, 4)
-                up_flows[new_way_id] = diff_flow
+                if (down_flow is None) or (down_flow == 0):
+                    up_flows_dict[new_way_id] = 0
+                else:
+                    up_flows_list = [flows[f] for f in up_ways]
+                    calc_bool = any([f is None for f in up_flows_list])
+                    if calc_bool:
+                        up_flows_dict[new_way_id] = 0
+                    else:
+                        up_flow = sum(up_flows_list)
+
+                        diff_flow = round(down_flow - up_flow, 3)
+                        up_flows_dict[new_way_id] = diff_flow
 
     with booklet.open(utils.river_flows_rec_path, 'n', key_serializer='uint4', value_serializer='int4') as f:
-        for way_id, flow in up_flows.items():
-            f[way_id] = int(flow * 10000)
+        for way_id, flow in up_flows_dict.items():
+            f[way_id] = int(flow * 1000)
+
 
 
 
@@ -125,7 +141,7 @@ def make_gis_file(output_path):
     """
 
     """
-    flows = booklet.open(utils.river_flows_path)
+    flows = booklet.open(utils.river_flows_rec_path)
     w0 = nzrec.Water(utils.nzrec_data_path)
     node = w0._node
     way = w0._way
