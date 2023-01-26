@@ -41,15 +41,15 @@ def rivers_land_cover():
     for way_id, catch in catches.items():
         print(way_id)
 
-        c1 = catch.to_crs(2193).iloc[0]
+        c1 = gpd.GeoSeries([catch], crs=4326).to_crs(2193).iloc[0]
 
         # Land cover
-        lc2 = land_cover.loc[land_cover.sindex.query(c1.geometry, predicate="intersects")].copy()
+        lc2 = land_cover.loc[land_cover.sindex.query(c1, predicate="intersects")].copy()
         # lc2['geometry'] = lc2['geometry'].simplify(0)
-        lc2b = intersection(lc2.geometry.tolist(), c1.geometry)
+        lc2b = intersection(lc2.geometry.tolist(), c1)
         lc2['geometry'] = lc2b
         lc2['geometry'] = lc2['geometry'].simplify(30)
-        lc_dict[c1.nzsegment] = lc2
+        lc_dict[way_id] = lc2
 
     catches.close()
 

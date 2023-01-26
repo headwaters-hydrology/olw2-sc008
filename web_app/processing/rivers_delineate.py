@@ -93,7 +93,6 @@ def rec_delin():
 
         reaches_dict[int(way_id)] = branches
 
-
     ## Delineate the end segments but excluding the 2nd and 1st reaches
     with booklet.open(utils.river_reach_mapping_path, 'n', value_serializer='pickle_zstd', key_serializer='uint4') as reaches:
         for way_id, branches in reaches_dict.items():
@@ -130,12 +129,12 @@ def rec_delin():
 
 
     # Reach geobufs in blt
-    with booklet.open(utils.river_reach_gbuf_path, 'n', key_serializer='uint4', value_serializer='zstd') as f:
+    with booklet.open(utils.river_reach_gbuf_path, 'n', key_serializer='uint4', value_serializer='zstd', n_buckets=1600) as f:
         for way_id, gbuf in reach_gbuf_dict.items():
             f[way_id] = gbuf
 
     # Catchment gpds in blt
-    with booklet.open(utils.river_catch_major_path, 'n', key_serializer='uint4', value_serializer='wkb_zstd') as f:
+    with booklet.open(utils.river_catch_major_path, 'n', key_serializer='uint4', value_serializer='wkb_zstd', n_buckets=1600) as f:
         for way_id, catches in catches_major_dict.items():
             f[way_id] = catches
 
@@ -150,7 +149,7 @@ def rec_delin():
         f.write(geobuf.encode(gjson))
 
     ## Produce a file grouped by all catchments as geodataframes
-    with booklet.open(utils.river_catch_path, 'n', key_serializer='uint4', value_serializer='gpd_zstd') as f:
+    with booklet.open(utils.river_catch_path, 'n', key_serializer='uint4', value_serializer='gpd_zstd', n_buckets=1600) as f:
         for way_id, branches in catches_minor_dict.items():
             f[way_id] = branches.to_crs(2193)
 

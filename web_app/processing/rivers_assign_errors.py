@@ -39,7 +39,7 @@ def process_errors():
     ## Create rough values from all reaches per indicator
     grp1 = conc1.groupby('indicator')
 
-    mean1 = grp1['init_conc'].mean().round(3)
+    mean1 = grp1['error'].mean().round(3)
 
     ## Assign init conc and errors to each catchment
     mapping = booklet.open(utils.river_reach_mapping_path)
