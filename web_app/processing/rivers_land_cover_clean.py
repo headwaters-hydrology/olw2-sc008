@@ -64,18 +64,14 @@ pd.options.display.max_columns = 10
 #     return seg, combo1
 
 
-def land_cover_process(row, red1, lc_red_dict):
+def land_cover_process(catch_id, lc, red1, lc_red_dict):
     """
 
     """
-    seg = row.nzsegment
-    print(seg)
+    # print(catch_id)
 
-    with booklet.open(utils.catch_lc_path, 'r') as land_cover_dict:
-        lc = land_cover_dict[seg].copy()
-        lc.rename(columns={'Name_2018': 'land_cover'}, inplace=True)
-        lc_names = lc['land_cover'].tolist()
-
+    lc.rename(columns={'Name_2018': 'land_cover'}, inplace=True)
+    lc_names = lc['land_cover'].tolist()
 
     new_names = []
     for name in lc_names:
@@ -93,13 +89,17 @@ def land_cover_process(row, red1, lc_red_dict):
     lc2['geometry'] = lc2.simplify(20)
     combo1 = lc2.merge(red1.reset_index(), on='land_cover')
 
-    return seg, combo1
+    return catch_id, combo1
 
 
 
 if __name__ == '__main__':
-    catch0 = gpd.read_feather(utils.major_catch_file)
-    catch0['geometry'] = catch0['geometry'].buffer(0)
+    # catch0 = gpd.read_feather(utils.major_catch_file)
+    # catch0['geometry'] = catch0['geometry'].buffer(0)
+
+    # catch0 = booklet.open(utils.river_catch_major_path)
+
+    land_cover = booklet.open(utils.catch_lc_path, 'r')
 
     lc_red_dict = utils.land_cover_reductions.copy()
     red1 = pd.DataFrame.from_dict(lc_red_dict, orient='index', columns=['reduction'])
@@ -113,8 +113,8 @@ if __name__ == '__main__':
 
     with concurrent.futures.ProcessPoolExecutor(max_workers=4, mp_context=mp.get_context("spawn")) as executor:
         futures = []
-        for i, row in catch0.iterrows():
-            f = executor.submit(land_cover_process, row, red1, lc_red_dict)
+        for catch_id, lc in land_cover.items():
+            f = executor.submit(land_cover_process, catch_id, lc, red1, lc_red_dict)
             futures.append(f)
 
         runs = concurrent.futures.wait(futures)

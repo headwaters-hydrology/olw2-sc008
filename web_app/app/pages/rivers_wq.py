@@ -55,6 +55,8 @@ rivers_reach_error_path = assets_path.joinpath('rivers_reaches_error.h5')
 rivers_catch_pbf_path = app_base_path.joinpath('rivers_catchments.pbf')
 
 rivers_reach_gbuf_path = assets_path.joinpath('rivers_reaches.blt')
+# rivers_loads_path = assets_path.joinpath('rivers_reaches_loads.h5')
+rivers_flows_path = assets_path.joinpath('rivers_flows_rec.blt')
 rivers_lc_clean_path = assets_path.joinpath('rivers_catch_lc_clean.blt')
 rivers_catch_path = assets_path.joinpath('rivers_catchments_minor.blt')
 rivers_reach_mapping_path = assets_path.joinpath('rivers_reaches_mapping.blt')
@@ -242,11 +244,22 @@ def calc_river_reach_reductions(catch_id, plan_file, reduction_col='reduction'):
     with booklet.open(rivers_reach_mapping_path) as f:
         branches = f[int(catch_id)]
 
+    # TODO: Package the flow up by catch_id so that there is less work here
+    flows = {}
+    with booklet.open(rivers_flows_path) as f:
+        for way_id in branches:
+            flows[int(way_id)] = f[int(way_id)]
+
+    flows_df = pd.DataFrame.from_dict(flows, orient='index', columns=['flow'])
+    flows_df.index.name = 'nzsegment'
+    flows_df = flows_df.reset_index()
+
     plan1 = plan_file[[reduction_col, 'geometry']].to_crs(2193)
     # c1 = read_pkl_zstd(os.path.join(base_path, 'catchments', '{}.pkl.zst'.format(catch_id)), True)
 
     c2 = vector.sjoin(c1, plan1, how='left').drop('index_right', axis=1)
     c2.loc[c2[reduction_col].isnull(), reduction_col] = 0
+
     c2['s_area'] = c2.area
 
     c2['combo_area'] = c2.groupby('nzsegment')['s_area'].transform('sum')
@@ -255,11 +268,15 @@ def calc_river_reach_reductions(catch_id, plan_file, reduction_col='reduction'):
 
     c3 = c2.groupby('nzsegment')['prop'].sum()
     c4 = c1.merge(c3.reset_index(), on='nzsegment')
-    area = c4.area
-    c4['base_area'] = area * 100
-    c4['prop_area'] = area * c4['prop']
+    c4 = c4.merge(flows_df, on='nzsegment')
+    # area = c4.area
+    # c4['base_area'] = area * 100
+    # c4['prop_area'] = area * c4['prop']
 
-    c5 = c4[['nzsegment', 'base_area', 'prop_area']].set_index('nzsegment').copy()
+    c4['base_flow'] = c4.flow * 100
+    c4['prop_flow'] = c4.flow * c4['prop']
+
+    c5 = c4[['nzsegment', 'base_flow', 'prop_flow']].set_index('nzsegment').copy()
     c5 = {r: list(v.values()) for r, v in c5.to_dict('index').items()}
 
     # branches = read_pkl_zstd(os.path.join(base_path, 'reach_mappings', '{}.pkl.zst'.format(catch_id)), True)
@@ -304,8 +321,8 @@ def calc_river_reach_reductions(catch_id, plan_file, reduction_col='reduction'):
     #                    )
 
     ## Filter out lower stream orders
-    so3 = c1.loc[c1.stream_order > 2, 'nzsegment'].to_numpy()
-    props = props.sel(reach=so3)
+    # so3 = c1.loc[c1.stream_order > 2, 'nzsegment'].to_numpy()
+    # props = props.sel(reach=so3)
 
     return props
 
@@ -599,18 +616,25 @@ def update_props_data(reaches_obj, indicator, n_years, n_samples_year, catch_id)
         n_samples = n_samples_year*n_years
 
         power_data = xr.open_dataset(rivers_reach_error_path, engine='h5netcdf')
-        power_data1 = power_data.sel(indicator=indicator, nzsegment=int(catch_id), n_samples=n_samples).copy()
+
+        with booklet.open(rivers_reach_mapping_path) as f:
+            branches = f[int(catch_id)][int(catch_id)]
+
+        power_data1 = power_data.sel(indicator=indicator, nzsegment=branches, n_samples=n_samples).load().copy()
         power_data.close()
         del power_data
 
-        red1 = 100 - props.reduction.values
+        props['conc_perc'] = 100 - props.reduction
 
-        power_data1 = power_data1.sel(conc_perc=red1).power.values.astype('int8')
+        power = []
+        for reach in props.reach:
+            p = int(props.loc[{'reach': reach}].conc_perc.values)
+            power.append(int(power_data1.sel(conc_perc=p, nzsegment=reach).power.values))
 
-        props = props.assign(power=(('reach'), power_data1))
+        props = props.assign(power=(('reach'), np.array(power, dtype='int8')))
         props['power'] = xr.where((props.reduction >= 5), props['power'], 0)
 
-        data = encode_obj(props)
+        data = encode_obj(props.drop('conc_perc'))
     else:
         data = ''
 
