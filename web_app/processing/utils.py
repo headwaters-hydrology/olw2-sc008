@@ -26,8 +26,8 @@ from scipy import stats
 ##############################################
 ### Parameters
 
-# base_path = '/media/nvme1/data/OLW/web_app'
-base_path = '/home/mike/data/OLW/web_app'
+base_path = '/media/nvme1/data/OLW/web_app'
+# base_path = '/home/mike/data/OLW/web_app'
 # %cd '/home/mike/data/OLW/web_app'
 
 base_path = pathlib.Path(base_path)
@@ -70,6 +70,7 @@ river_sims_path.mkdir(parents=True, exist_ok=True)
 river_sims_h5_path = river_sims_path.joinpath('rivers_sims.h5')
 river_reach_error_path = assets_path.joinpath('rivers_reaches_error.h5')
 river_reach_loads_path = assets_path.joinpath('rivers_reaches_loads.h5')
+river_reach_loads_area_path = assets_path.joinpath('rivers_reaches_loads_area.h5')
 
 land_cover_path = base_path.joinpath('lcdb-v50-land-cover-database-version-50-mainland-new-zealand.gpkg')
 # parcels_path = base_path.joinpath('nz-primary-land-parcels.gpkg')
@@ -270,7 +271,70 @@ def catch_sims(error, n_years, n_samples_year, n_sims, output_path):
     return output
 
 
+def xr_concat(datasets):
+    """
+    A much more efficient concat/combine of xarray datasets. It's also much safer on memory.
+    """
+    # Get variables for the creation of blank dataset
+    coords_list = []
+    chunk_dict = {}
 
+    for chunk in datasets:
+        coords_list.append(chunk.coords.to_dataset())
+        for var in chunk.data_vars:
+            if var not in chunk_dict:
+                dims = tuple(chunk[var].dims)
+                enc = chunk[var].encoding.copy()
+                dtype = chunk[var].dtype
+                _ = [enc.pop(d) for d in ['original_shape', 'source'] if d in enc]
+                var_dict = {'dims': dims, 'enc': enc, 'dtype': dtype, 'attrs': chunk[var].attrs}
+                chunk_dict[var] = var_dict
+
+    try:
+        xr3 = xr.combine_by_coords(coords_list, compat='override', data_vars='minimal', coords='all', combine_attrs='override')
+    except:
+        xr3 = xr.merge(coords_list, compat='override', combine_attrs='override')
+
+    # Run checks - requires psutil which I don't want to make it a dep yet...
+    # available_memory = getattr(psutil.virtual_memory(), 'available')
+    # dims_dict = dict(xr3.coords.dims)
+    # size = 0
+    # for var, var_dict in chunk_dict.items():
+    #     dims = var_dict['dims']
+    #     dtype_size = var_dict['dtype'].itemsize
+    #     n_dims = np.prod([dims_dict[dim] for dim in dims])
+    #     size = size + (n_dims*dtype_size)
+
+    # if size >= available_memory:
+    #     raise MemoryError('Trying to create a dataset of size {}MB, while there is only {}MB available.'.format(int(size*10**-6), int(available_memory*10**-6)))
+
+    # Create the blank dataset
+    for var, var_dict in chunk_dict.items():
+        dims = var_dict['dims']
+        shape = tuple(xr3[c].shape[0] for c in dims)
+        xr3[var] = (dims, np.full(shape, np.nan, var_dict['dtype']))
+        xr3[var].attrs = var_dict['attrs']
+        xr3[var].encoding = var_dict['enc']
+
+    # Update the attributes in the coords from the first ds
+    for coord in xr3.coords:
+        xr3[coord].encoding = datasets[0][coord].encoding
+        xr3[coord].attrs = datasets[0][coord].attrs
+
+    # Fill the dataset with data
+    for chunk in datasets:
+        for var in chunk.data_vars:
+            if isinstance(chunk[var].variable._data, np.ndarray):
+                xr3[var].loc[chunk[var].transpose(*chunk_dict[var]['dims']).coords.indexes] = chunk[var].transpose(*chunk_dict[var]['dims']).values
+            elif isinstance(chunk[var].variable._data, xr.core.indexing.MemoryCachedArray):
+                c1 = chunk[var].copy().load().transpose(*chunk_dict[var]['dims'])
+                xr3[var].loc[c1.coords.indexes] = c1.values
+                c1.close()
+                del c1
+            else:
+                raise TypeError('Dataset data should be either an ndarray or a MemoryCachedArray.')
+
+    return xr3
 
 
 

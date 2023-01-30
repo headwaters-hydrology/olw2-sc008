@@ -309,9 +309,12 @@ def calc_river_reach_reductions(catch_id, plan_file, reduction_col='reduction'):
             prop_area[i] = prop_area1
 
         p1 = (np.sum(prop_area)/np.sum(t_area))
-        props_val[h] = p1
+        if p1 < 0:
+            props_val[h] = 0
+        else:
+            props_val[h] = p1
 
-    props = xr.Dataset(data_vars={'reduction': (('reach'), (np.round(props_val*100*0.5)*2).astype('int8')) # Round to nearest even number
+    props = xr.Dataset(data_vars={'reduction': (('reach'), np.round(props_val*100).astype('int8')) # Round to nearest even number
                                   },
                         coords={'reach': props_index}
                         )
@@ -680,14 +683,44 @@ def update_map_info(props_obj, reductions_obj, map_checkboxes, feature):
 
     if (props_obj != '') and (props_obj is not None):
         if feature is not None:
+            feature_id = int(feature['id'])
             props = decode_obj(props_obj)
-            reach_data = props.sel(reach=int(feature['id']))
 
-            info_str = """\n\nReduction: {red}%\n\nLikelihood of significant reduction (power): {t_stat}%""".format(red=int(reach_data.reduction), t_stat=int(reach_data.power))
+            if feature_id in props.reach:
 
-            info = info + info_str
+                reach_data = props.sel(reach=int(feature['id']))
+
+                info_str = """\n\nReduction: {red}%\n\nLikelihood of significant reduction (power): {t_stat}%""".format(red=int(reach_data.reduction), t_stat=int(reach_data.power))
+
+                info = info + info_str
+
+            else:
+                info = info + """\n\nClick on a reach to see info"""
 
         else:
             info = info + """\n\nClick on a reach to see info"""
 
     return info
+
+
+# count = 0
+# with booklet.open(rivers_flows_path) as f:
+#     for k, v in f.items():
+#         if v < 0:
+#             count += 1
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

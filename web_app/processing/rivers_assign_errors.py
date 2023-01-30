@@ -84,9 +84,9 @@ def process_errors():
 
         error_list.append(river_sims1)
 
-    h5 = hdf5tools.H5(error_list)
+    combo = utils.xr_concat(error_list)
 
-    h5.to_hdf5(utils.river_reach_error_path)
+    hdf5tools.xr_to_hdf5(combo, utils.river_reach_error_path)
 
 
 
@@ -126,7 +126,24 @@ def process_errors():
 #                 break
 
 
+# def make_gis_file(output_path):
+#     """
 
+#     """
+#     w0 = nzrec.Water(utils.nzrec_data_path)
+#     node = w0._node
+#     way = w0._way
+
+#     data = []
+#     geo = []
+#     for i, row in conc1[conc1.indicator == 'BD'].iterrows():
+#         nodes = way[row.nzsegment]
+#         geo.append(LineString(np.array([node[int(i)] * 0.0000001 for i in nodes])))
+#         data.append([row.nzsegment, row.error])
+
+#     gdf = gpd.GeoDataFrame(data, columns = ['nzsegment', 'error'], geometry=geo, crs=4326)
+
+#     gdf.to_file(output_path)
 
 
 

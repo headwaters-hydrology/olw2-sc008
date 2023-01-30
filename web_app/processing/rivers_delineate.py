@@ -114,7 +114,7 @@ def rec_delin():
             geo.append(LineString(np.array([w0._node[i] * 0.0000001 for i in nodes])))
         data = [{'nzsegment': int(i)} for i in ways_up]
 
-        gdf = gpd.GeoDataFrame(data, geometry=geo, crs=4326).set_index('nzsegment')
+        gdf = gpd.GeoDataFrame(data, geometry=geo, crs=4326).set_index('nzsegment', drop=False)
         gjson = orjson.loads(gdf.to_json())
         gbuf = geobuf.encode(gjson)
         reach_gbuf_dict[way_id] = gbuf

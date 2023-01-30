@@ -57,7 +57,11 @@ def process_flows_rec():
                 up_flow = sum(up_flows_list)
 
                 diff_flow = round(down_flow - up_flow, 3)
-                up_flows_dict[way_id] = diff_flow
+                if diff_flow < 0:
+                    up_flows_dict[way_id] = 0
+                else:
+                    up_flows_dict[way_id] = diff_flow
+
 
         while new_ways:
             down_ways.update(new_ways)
@@ -79,7 +83,10 @@ def process_flows_rec():
                         up_flow = sum(up_flows_list)
 
                         diff_flow = round(down_flow - up_flow, 3)
-                        up_flows_dict[new_way_id] = diff_flow
+                        if diff_flow < 0:
+                            up_flows_dict[way_id] = 0
+                        else:
+                            up_flows_dict[way_id] = diff_flow
 
     with booklet.open(utils.river_flows_rec_path, 'n', key_serializer='uint4', value_serializer='int4') as f:
         for way_id, flow in up_flows_dict.items():

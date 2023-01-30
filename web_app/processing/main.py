@@ -36,7 +36,7 @@ rivers_land_cover()
 
 ## River flows
 process_flows_rec()
-process_loads_rec()
+# process_loads_rec()
 
 ## River error/conc sims
 
