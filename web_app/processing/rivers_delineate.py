@@ -111,7 +111,7 @@ def rec_delin():
         geo = []
         for w in ways_up:
             nodes = way[w]
-            geo.append(LineString(np.array([w0._node[i] * 0.0000001 for i in nodes])))
+            geo.append(LineString(np.array([w0._node[i] * 0.0000001 for i in nodes])).simplify(0.0005))
         data = [{'nzsegment': int(i)} for i in ways_up]
 
         gdf = gpd.GeoDataFrame(data, geometry=geo, crs=4326).set_index('nzsegment', drop=False)
@@ -141,11 +141,11 @@ def rec_delin():
     # Catchments geobuf
     catch_ids = list(catches_major_dict.keys())
     rec_shed = gpd.GeoDataFrame(catch_ids, geometry=list(catches_major_dict.values()), crs=4326, columns=['nzsegment'])
-    rec_shed['geometry'] = rec_shed.simplify(0.00004)
+    rec_shed['geometry'] = rec_shed.simplify(0.0004)
 
     gjson = orjson.loads(rec_shed.set_index('nzsegment').to_json())
 
-    with open(utils.assets_path.joinpath('catchments.pbf'), 'wb') as f:
+    with open(utils.assets_path.joinpath('rivers_catchments.pbf'), 'wb') as f:
         f.write(geobuf.encode(gjson))
 
     ## Produce a file grouped by all catchments as geodataframes
