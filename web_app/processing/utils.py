@@ -184,14 +184,14 @@ def write_pkl_zstd(obj, file_path=None, compress_level=1, pkl_protocol=pickle.HI
         return c_obj
 
 
-def error_cats():
+def error_cats(max_error=2.7):
     """
 
     """
     start = 0.025
     list1 = [0.001, 0.005, 0.01, start]
 
-    while start < 2.7:
+    while start < max_error:
         if start < 0.1:
             start = round(start*2, 3)
         else:
