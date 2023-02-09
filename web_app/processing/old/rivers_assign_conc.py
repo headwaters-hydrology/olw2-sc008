@@ -6,10 +6,14 @@ Created on Tue Nov 29 11:51:17 2022
 @author: mike
 """
 import os
+import xarray as xr
 from gistools import vector, rec
 import geopandas as gpd
 import pandas as pd
 import numpy as np
+import hdf5tools
+import booklet
+
 import utils
 
 pd.options.display.max_columns = 10
@@ -25,10 +29,6 @@ def process_conc():
     conc0.rename(columns={'lm1seRes': 'error', 'lm1pred_01_2022': 'init_conc', 'Indicator': 'indicator'}, inplace=True)
 
     conc1 = conc0.groupby(['indicator', 'nzsegment']).mean().reset_index()
-
-    # reaches2 = utils.read_pkl_zstd(utils.output_path.joinpath(utils.rec_delin_file), True)
-
-    mapping = utils.read_pkl_zstd(utils.output_path.joinpath(utils.reach_mapping_file), True)
 
     ## Clean up data - Excessive max values
     conc1.loc[(conc1.indicator == 'EC') & (conc1.init_conc > 1000)] = np.nan
@@ -49,6 +49,8 @@ def process_conc():
     ## Assign init conc and errors to each catchment
     # conc1['error_cat'] = pd.cut(conc1['error'], list1, labels=list1[:-1])
 
+    mapping = booklet.open(utils.river_reach_mapping_path)
+
     starts = list(mapping.keys())
     indicators = conc1.indicator.unique()
 
@@ -66,8 +68,29 @@ def process_conc():
             # conc_dict[ind][catch_id] = mean2.to_dict()
             conc_dict[ind][catch_id] = pd.cut(mean2[['error']], list1, labels=list1[:-1])[0]
 
+    river_sims = xr.open_dataset(utils.river_sims_h5_path, engine='h5netcdf')
 
-    utils.write_pkl_zstd(conc_dict, utils.error_pkl_path)
+    error_list = []
+    for ind in conc_dict:
+        errors0 = conc_dict[ind]
+        segs = np.array(list(errors0.keys()), dtype='int32')
+        values = (np.array(list(errors0.values())) * 1000).astype(int)
+
+        river_sims1 = river_sims.sel(error=values).copy()
+        river_sims1['error'] = segs
+        river_sims1 = river_sims1.rename({'error': 'nzsegment'})
+        river_sims1 = river_sims1.assign_coords(indicator=ind).expand_dims('indicator')
+
+        error_list.append(river_sims1)
+
+    h5 = hdf5tools.H5(error_list)
+
+    h5.to_hdf5(utils.river_reach_error_path)
+
+
+
+
+    # utils.write_pkl_zstd(conc_dict, utils.error_pkl_path)
 
     # conc_dict0 = utils.read_pkl_zstd(utils.conc_pkl_path, True)
 

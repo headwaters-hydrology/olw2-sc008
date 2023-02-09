@@ -9,14 +9,16 @@ networks:
 
 services:
   dash:
-    image: tethysts/olw-monitoring-app:1.2
+    image: tethysts/olw-monitoring-app:1.7
     networks:
       # - net
       - traefik-public
     deploy:
+      replicas: 2
       placement:
         constraints:
           - node.labels.function == web_server
+          - node.hostname == uswest3.tethys-ts.xyz
       labels:
         - traefik.enable=true
         - traefik.docker.network=traefik-public

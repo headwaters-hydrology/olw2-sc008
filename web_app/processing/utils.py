@@ -27,51 +27,86 @@ from scipy import stats
 ### Parameters
 
 base_path = '/media/nvme1/data/OLW/web_app'
+# base_path = '/home/mike/data/OLW/web_app'
 # %cd '/home/mike/data/OLW/web_app'
 
 base_path = pathlib.Path(base_path)
 
-rec_rivers_shp = '/media/nvme1/data/NIWA/REC25_rivers/rec25_rivers.shp'
-rec_catch_shp ='/media/nvme1/data/NIWA/REC25_watersheds/rec25_watersheds.shp'
+rec_rivers_feather = '/media/nvme1/data/NIWA/REC25_rivers/rec25_rivers_clean.feather'
+rec_catch_feather = '/media/nvme1/data/NIWA/REC25_watersheds/rec25_watersheds_clean.feather'
+
+nzrec_data_path = '/media/nvme1/git/nzrec/data'
 
 segment_id_col = 'nzsegment'
 
 output_path = base_path.joinpath('output')
-
 output_path.mkdir(parents=True, exist_ok=True)
-
-rec_delin_file = 'reach_delineation.pkl.zst'
-reach_mapping_file = 'reach_mapping.pkl.zst'
-major_catch_file = 'major_catch.pkl.zst'
-catch_file = 'catch.pkl.zst'
-catch_simple_file = 'catch_simple.pkl.zst'
 
 assets_path = output_path.joinpath('assets')
 assets_path.mkdir(parents=True, exist_ok=True)
 
-reach_gbuf_path = assets_path.joinpath('reaches')
-reach_gbuf_path.mkdir(parents=True, exist_ok=True)
-
-catch_path = assets_path.joinpath('catchments')
-catch_path.mkdir(parents=True, exist_ok=True)
-
-reach_map_path = assets_path.joinpath('reach_mappings')
-reach_map_path.mkdir(parents=True, exist_ok=True)
+### Rivers
 
 conc_csv_path = base_path.joinpath('StBD3.csv')
 
-error_pkl_path = assets_path.joinpath('catch_error.pkl.zst')
+river_flows_rec_path = assets_path.joinpath('rivers_flows_rec.blt')
+river_flows_area_path = assets_path.joinpath('rivers_flows_area.blt')
+
+river_loads_rec_path = assets_path.joinpath('rivers_loads_rec.blt')
+river_loads_area_path = assets_path.joinpath('rivers_loads_area.blt')
+
+# rec_delin_file = output_path.joinpath('rivers_reach_delineation.feather')
+# major_catch_file = output_path.joinpath('rivers_major_catch.feather')
+# catch_file = output_path.joinpath('rivers_catch.feather')
+
+river_reach_mapping_path = assets_path.joinpath('rivers_reaches_mapping.blt')
+river_reach_gbuf_path = assets_path.joinpath('rivers_reaches.blt')
+river_catch_path = assets_path.joinpath('rivers_catchments_minor.blt')
+river_catch_major_path = assets_path.joinpath('rivers_catchments_major.blt')
+
+river_sims_path = output_path.joinpath('rivers_sims')
+river_sims_path.mkdir(parents=True, exist_ok=True)
+
+river_sims_h5_path = river_sims_path.joinpath('rivers_sims.h5')
+river_reach_error_path = assets_path.joinpath('rivers_reaches_error.h5')
+river_reach_loads_path = assets_path.joinpath('rivers_reaches_loads.h5')
+river_reach_loads_area_path = assets_path.joinpath('rivers_reaches_loads_area.h5')
+
+land_cover_path = base_path.joinpath('lcdb-v50-land-cover-database-version-50-mainland-new-zealand.gpkg')
+# parcels_path = base_path.joinpath('nz-primary-land-parcels.gpkg')
 
 ## Sims params
-conc_perc = np.arange(2, 101, 2, dtype='int8')
+# conc_perc = np.arange(2, 101, 2, dtype='int8')
+conc_perc = np.arange(1, 101, 1, dtype='int8')
 n_samples_year = [12, 26, 52, 104, 364]
 n_years = [5, 10, 20, 30]
 
+catch_lc_path = output_path.joinpath('rivers_catch_lc.blt')
+
+land_cover_reductions = {'Exotic Forest': 0, 'High Producing Exotic Grassland': 20, 'Low Producing Grassland': 10, 'Forest - Harvested': 0, 'Orchard, Vineyard or Other Perennial Crop': 10, 'Short-rotation Cropland': 20, 'Other': 0}
+
+catch_lc_clean_path = assets_path.joinpath('rivers_catch_lc_clean.blt')
 
 
+### Lakes
 
+raw_lakes_path = base_path.joinpath('lakes_errors.csv')
 
+lakes_points_gbuf_path = assets_path.joinpath('lakes_points.pbf')
+lakes_poly_gbuf_path = assets_path.joinpath('lakes_poly.blt')
+lakes_poly_path = base_path.joinpath('lakes_sampled_polygons.gpkg')
+lakes_delin_points_path = base_path.joinpath('lakes_delineate_points.gpkg')
+lakes_reaches_mapping_path = assets_path.joinpath('lakes_reaches_mapping.blt')
+lakes_catches_major_path = assets_path.joinpath('lakes_catchments_major.blt')
+lakes_catches_minor_path = assets_path.joinpath('lakes_catchments_minor.blt')
+lakes_reaches_path = assets_path.joinpath('lakes_reaches.blt')
 
+lakes_sims_path = output_path.joinpath('lakes_sims')
+lakes_sims_path.mkdir(parents=True, exist_ok=True)
+
+lakes_sims_h5_path = lakes_sims_path.joinpath('lakes_sims.h5')
+lakes_error_path = assets_path.joinpath('lakes_error.h5')
+lakes_lc_path = assets_path.joinpath('lakes_lc.blt')
 
 #############################################
 ### Functions
@@ -149,14 +184,14 @@ def write_pkl_zstd(obj, file_path=None, compress_level=1, pkl_protocol=pickle.HI
         return c_obj
 
 
-def error_cats():
+def error_cats(max_error=2.7):
     """
 
     """
     start = 0.025
     list1 = [0.001, 0.005, 0.01, start]
 
-    while start < 2.7:
+    while start < max_error:
         if start < 0.1:
             start = round(start*2, 3)
         else:
@@ -236,7 +271,70 @@ def catch_sims(error, n_years, n_samples_year, n_sims, output_path):
     return output
 
 
+def xr_concat(datasets):
+    """
+    A much more efficient concat/combine of xarray datasets. It's also much safer on memory.
+    """
+    # Get variables for the creation of blank dataset
+    coords_list = []
+    chunk_dict = {}
 
+    for chunk in datasets:
+        coords_list.append(chunk.coords.to_dataset())
+        for var in chunk.data_vars:
+            if var not in chunk_dict:
+                dims = tuple(chunk[var].dims)
+                enc = chunk[var].encoding.copy()
+                dtype = chunk[var].dtype
+                _ = [enc.pop(d) for d in ['original_shape', 'source'] if d in enc]
+                var_dict = {'dims': dims, 'enc': enc, 'dtype': dtype, 'attrs': chunk[var].attrs}
+                chunk_dict[var] = var_dict
+
+    try:
+        xr3 = xr.combine_by_coords(coords_list, compat='override', data_vars='minimal', coords='all', combine_attrs='override')
+    except:
+        xr3 = xr.merge(coords_list, compat='override', combine_attrs='override')
+
+    # Run checks - requires psutil which I don't want to make it a dep yet...
+    # available_memory = getattr(psutil.virtual_memory(), 'available')
+    # dims_dict = dict(xr3.coords.dims)
+    # size = 0
+    # for var, var_dict in chunk_dict.items():
+    #     dims = var_dict['dims']
+    #     dtype_size = var_dict['dtype'].itemsize
+    #     n_dims = np.prod([dims_dict[dim] for dim in dims])
+    #     size = size + (n_dims*dtype_size)
+
+    # if size >= available_memory:
+    #     raise MemoryError('Trying to create a dataset of size {}MB, while there is only {}MB available.'.format(int(size*10**-6), int(available_memory*10**-6)))
+
+    # Create the blank dataset
+    for var, var_dict in chunk_dict.items():
+        dims = var_dict['dims']
+        shape = tuple(xr3[c].shape[0] for c in dims)
+        xr3[var] = (dims, np.full(shape, np.nan, var_dict['dtype']))
+        xr3[var].attrs = var_dict['attrs']
+        xr3[var].encoding = var_dict['enc']
+
+    # Update the attributes in the coords from the first ds
+    for coord in xr3.coords:
+        xr3[coord].encoding = datasets[0][coord].encoding
+        xr3[coord].attrs = datasets[0][coord].attrs
+
+    # Fill the dataset with data
+    for chunk in datasets:
+        for var in chunk.data_vars:
+            if isinstance(chunk[var].variable._data, np.ndarray):
+                xr3[var].loc[chunk[var].transpose(*chunk_dict[var]['dims']).coords.indexes] = chunk[var].transpose(*chunk_dict[var]['dims']).values
+            elif isinstance(chunk[var].variable._data, xr.core.indexing.MemoryCachedArray):
+                c1 = chunk[var].copy().load().transpose(*chunk_dict[var]['dims'])
+                xr3[var].loc[c1.coords.indexes] = c1.values
+                c1.close()
+                del c1
+            else:
+                raise TypeError('Dataset data should be either an ndarray or a MemoryCachedArray.')
+
+    return xr3
 
 
 

@@ -8,25 +8,64 @@ Created on Wed Nov 23 09:18:20 2022
 import os
 import pathlib
 import utils
-from rec_rivers_delineate import rec_delin
-from rec_reach_mappings import reach_mapping
-from rec_catch import catch_agg
-from make_app_assets import process_assets
+from rivers_delineate import rec_delin
+# from rivers_reach_mappings import reach_mapping
+# from rivers_catch import catch_agg
+# from rivers_make_app_assets import process_assets
+from rivers_land_cover_extraction import rivers_land_cover
+from rivers_assign_errors import process_errors
+from rivers_assign_flow import process_flows_rec
+from rivers_assign_loads import process_loads_rec
+
+from lakes_locations import lakes_location_process
+from lakes_rec_delineation import lakes_catch_delin
+from lakes_land_cover_extraction import lakes_lc_process
+from lakes_conc_error import lakes_conc_error_processing
+
 
 #####################################################
-### Run processing sequence
+### Rivers
 
 ## REC delineate all catchments that start at the sea and have a greater than 2 stream order
 rec_delin()
 
-## Determine the upstream reaches of every reach - Takes 30 minutes to run!
-reach_mapping()
+## Land cover
+rivers_land_cover()
 
-## Process catchments
-catch_agg()
+# rivers_land_cover_clean.py should be run via the terminal
 
-## Process data for web app assets
-process_assets()
+## River flows
+process_flows_rec()
+# process_loads_rec()
+
+## River error/conc sims
+
+# rivers_sims.py should be run via the terminal
+
+process_errors()
+
+
+###################################################
+### Lakes
+
+## Lakes location
+lakes_location_process()
+
+## Lakes catch delineation
+lakes_catch_delin()
+
+## Lakes land cover processing
+lakes_lc_process()
+
+## Lakes error/conc sims
+lakes_conc_error_processing()
+
+# lakes_sims.py should be run via the terminal
+
+
+###################################################
+### GW
+
 
 
 

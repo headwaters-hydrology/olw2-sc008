@@ -19,9 +19,9 @@ pd.options.display.max_columns = 10
 ### Catchment agg
 
 def catch_agg():
-    rec_catch0 = gpd.read_file(utils.rec_catch_shp)
+    rec_catch0 = gpd.read_feather(utils.rec_catch_feather)
 
-    reaches2 = utils.read_pkl_zstd(utils.output_path.joinpath(utils.rec_delin_file), True)
+    reaches2 = gpd.read_feather(utils.rec_delin_file)
 
     # rec_catch0['geometry'] = rec_catch0['geometry'].simplify(10)
 
@@ -39,9 +39,9 @@ def catch_agg():
     # rec_catch3['geometry'] = rec_catch3['geometry'].simplify(10)
 
     ## Save
-    utils.write_pkl_zstd(rec_shed.drop('area', axis=1), utils.output_path.joinpath(utils.major_catch_file))
+    rec_shed.drop('area', axis=1).to_feather(utils.major_catch_file, compression='zstd', compression_level=1)
     # utils.write_pkl_zstd(rec_catch3, utils.output_path.joinpath(utils.catch_simple_file))
-    utils.write_pkl_zstd(rec_catch2[['nzsegment', 'start', 'stream_order', 'geometry']], utils.output_path.joinpath(utils.catch_file))
+    rec_catch2[['nzsegment', 'start', 'stream_order', 'geometry']].to_feather(utils.catch_file, compression='zstd', compression_level=1)
 
 
 

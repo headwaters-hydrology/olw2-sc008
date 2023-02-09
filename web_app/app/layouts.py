@@ -108,9 +108,22 @@ colorbar = dl.Colorbar(min=0, max=len(ctg), classes=indices, colorscale=colorsca
 
 base_reach_style = dict(weight=4, opacity=1, color='white')
 
-info = html.Div(id="info", className="info", style={"position": "absolute", "top": "10px", "right": "10px", "z-index": "1000"})
+info = dcc.Markdown(id="info", className="info", style={"position": "absolute", "top": "10px", "right": "10px", "z-index": "1000"})
+# info = html.Div(id="info", className="info", style={"position": "absolute", "top": "10px", "right": "10px", "z-index": "1000"})
 
 error_dict = utils.read_pkl_zstd(base_path.joinpath('catch_error.pkl.zst'), True)
+
+indicator_dict = {'BD': 'Black disk', 'EC': 'Electrical conductivity', 'DRP': 'Dissolved reactive phosporus', 'NH': 'Ammonium', 'NO': 'Nitrate', 'TN': 'Total nitrogen', 'TP': 'Total phosphorus', 'TU': 'Turbidity'}
+
+attribution_text = """
+####### Data attribution
+A number of datasets were used in the development of this app:
+    * Regional and District Council monitoring data
+    * [New Zealand River Environment Classification (REC)](https://data.mfe.govt.nz/layer/51845-river-environment-classification-new-zealand-2010/) version 2.5 - Data licensed by the Ministry for the Environment (MfE)
+    * [New Zealand Land Cover Database (LCDB)](https://lris.scinfo.org.nz/layer/104400-lcdb-v50-land-cover-database-version-50-mainland-new-zealand/) version 5 - Data licensed by Landcare Research
+    * [New Zealand Primary Land Parcels](https://data.linz.govt.nz/layer/50823-nz-primary-land-parcels/) - Data licensed by LINZ
+
+"""
 
 ###############################################
 ### Initial processing
@@ -149,9 +162,9 @@ def layout1():
     ### Dash layout
     layout = html.Div(children=[
         html.Div([
-            html.Label('Select Indicator:'),
-            dcc.Dropdown(options=[{'label': d, 'value': d} for d in indicators], id='indicator', optionHeight=40, clearable=False),
-            html.Label('Select a catchment on the map:', style={'margin-top': 40}),
+            html.H3('(1) Reductions routing'),
+
+            html.Label('Select a catchment on the map:'),
             dcc.Dropdown(options=[{'label': d, 'value': d} for d in catches], id='catch_id', optionHeight=40, clearable=False),
 
             dcc.Upload(
@@ -165,7 +178,7 @@ def layout1():
                 },
                 multiple=False
             ),
-            html.Label('Or', style={
+            dcc.Markdown('''##### **Or**''', style={
                 'textAlign': 'center',
                             }),
             html.Button('Use demo reductions polygons', id='demo-data',
@@ -173,34 +186,51 @@ def layout1():
                             'width': '100%',
                             'height': '50%',
                             'textAlign': 'center',
+                            'margin-top': 20
                         }),
 
-            html.Label('Select a reductions column in the GIS file:', style={'margin-top': 0}),
+            html.Label('Select a reductions column in the GIS file:', style={'margin-top': 20}),
             dcc.Dropdown(options=[], id='col_name', optionHeight=40, clearable=False),
+            dcc.Loading(
+            id="loading-1",
+            type="default",
+            children=html.Div([html.Button('Process reductions', id='process', n_clicks=0),
+                               html.Div(id='process_text')],
+                              style={'margin-top': 20, 'margin-bottom': 260}
+                              )
+        ),
+            dcc.Markdown(attribution_text, id="attribution"),
 
             # html.Label('Select Indicator:'),
             # dcc.Dropdown(options=[{'label': d, 'value': d} for d in indicators], id='indicator', optionHeight=40, clearable=False, value='NH4'),
             # html.Label('Select expected percent improvement:'),
             # dcc.Dropdown(options=[{'label': d, 'value': d} for d in percent_changes], id='percent_change', clearable=False, value=10),
-            html.Label('Select sampling length (years):', style={'margin-top': 40}),
-            dcc.Dropdown(options=[{'label': d, 'value': d} for d in time_periods], id='time_period', clearable=False, value=5),
-            html.Label('Select sampling frequency:'),
-            dcc.Dropdown(options=[{'label': v, 'value': k} for k, v in freq_mapping.items()], id='freq', clearable=False, value=12),
 
-            html.H4(children='Map Layers', style={'margin-top': 20}),
-            dcc.Checklist(
-                   options=[
-                       {'label': 'Reductions polygons', 'value': 'reductions_poly'},
-                       # {'label': 'River reach reductions', 'value': 'reach_map'},
-                       {'label': 'River reaches', 'value': 'reach_map'}
-                   ],
-                   value=['reductions_poly', 'reach_map'],
-                   id='map_checkboxes',
-                   style={'padding': 5, 'margin-bottom': 120}
-                ),
-
-            dcc.Link(html.Img(src=str(app_base_path.joinpath('our-land-and-water-logo.svg'))), href='https://ourlandandwater.nz/')
+            # dcc.Link(html.Img(src=str(app_base_path.joinpath('our-land-and-water-logo.svg'))), href='https://ourlandandwater.nz/')
             ], className='two columns', style={'margin': 10}),
+
+    html.Div([
+        html.H3('(2) Sampling options'),
+        html.Label('Select Indicator:'),
+        dcc.Dropdown(options=[{'label': indicator_dict[d], 'value': d} for d in indicators], id='indicator', optionHeight=40, clearable=False),
+        html.Label('Select sampling length (years):', style={'margin-top': 20}),
+        dcc.Dropdown(options=[{'label': d, 'value': d} for d in time_periods], id='time_period', clearable=False, value=5),
+        html.Label('Select sampling frequency:'),
+        dcc.Dropdown(options=[{'label': v, 'value': k} for k, v in freq_mapping.items()], id='freq', clearable=False, value=12),
+
+        html.H4(children='Map Layers', style={'margin-top': 20}),
+        dcc.Checklist(
+               options=[
+                   {'label': 'Reductions polygons', 'value': 'reductions_poly'},
+                   # {'label': 'River reach reductions', 'value': 'reach_map'},
+                   {'label': 'River reaches', 'value': 'reach_map'}
+               ],
+               value=['reductions_poly', 'reach_map'],
+               id='map_checkboxes',
+               style={'padding': 5, 'margin-bottom': 330}
+            ),
+        dcc.Link(html.Img(src=str(app_base_path.joinpath('our-land-and-water-logo.svg'))), href='https://ourlandandwater.nz/')
+        ], className='two columns', style={'margin': 10}),
 
     html.Div([
         dl.Map(children=[
@@ -212,22 +242,22 @@ def layout1():
             colorbar,
             info
                             ], style={'width': '100%', 'height': 780, 'margin': "auto", "display": "block"}, id="map2")
-    ], className='six columns', style={'margin': 10}),
+    ], className='five columns', style={'margin': 10}),
 
-    html.Div([
-        dcc.Loading(
-                id="loading-tabs",
-                type="default",
-                children=[dcc.Tabs(id='plot_tabs', value='info_tab', style=tabs_styles, children=[
-                            dcc.Tab(label='Info', value='info_tab', style=tab_style, selected_style=tab_selected_style),
-                            # dcc.Tab(label='Habitat Suitability', value='hs_tab', style=tab_style, selected_style=tab_selected_style),
-                            ]
-                        ),
-                    html.Div(id='plots')
-                    ]
-                ),
+    # html.Div([
+    #     dcc.Loading(
+    #             id="loading-tabs",
+    #             type="default",
+    #             children=[dcc.Tabs(id='plot_tabs', value='info_tab', style=tabs_styles, children=[
+    #                         dcc.Tab(label='Info', value='info_tab', style=tab_style, selected_style=tab_selected_style),
+    #                         # dcc.Tab(label='Habitat Suitability', value='hs_tab', style=tab_style, selected_style=tab_selected_style),
+    #                         ]
+    #                     ),
+    #                 html.Div(id='plots')
+    #                 ]
+    #             ),
 
-    ], className='three columns', style={'margin': 10}),
+    # ], className='three columns', style={'margin': 10}),
 
     dcc.Store(id='error_obj', data=utils.encode_obj(error_dict)),
     dcc.Store(id='props_obj', data=''),
