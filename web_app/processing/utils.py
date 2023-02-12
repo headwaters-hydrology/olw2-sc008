@@ -26,8 +26,8 @@ from scipy import stats
 ##############################################
 ### Parameters
 
-base_path = '/media/nvme1/data/OLW/web_app'
-# base_path = '/home/mike/data/OLW/web_app'
+# base_path = '/media/nvme1/data/OLW/web_app'
+base_path = '/home/mike/data/OLW/web_app'
 # %cd '/home/mike/data/OLW/web_app'
 
 base_path = pathlib.Path(base_path)
@@ -80,6 +80,9 @@ land_cover_path = base_path.joinpath('lcdb-v50-land-cover-database-version-50-ma
 conc_perc = np.arange(1, 101, 1, dtype='int8')
 n_samples_year = [12, 26, 52, 104, 364]
 n_years = [5, 10, 20, 30]
+start = 0.01
+end = 2.72
+change = 0.1
 
 catch_lc_path = output_path.joinpath('rivers_catch_lc.blt')
 
@@ -184,19 +187,50 @@ def write_pkl_zstd(obj, file_path=None, compress_level=1, pkl_protocol=pickle.HI
         return c_obj
 
 
-def error_cats(max_error=2.7):
+# def error_cats(max_error=2.7):
+#     """
+
+#     """
+#     start = 0.025
+#     list1 = [0.001, 0.005, 0.01, start]
+
+#     while start < max_error:
+#         if start < 0.1:
+#             start = round(start*2, 3)
+#         else:
+#             start = round(start*1.2, 3)
+#         list1.append(start)
+
+#     return list1
+
+
+def error_cats(start, end, change):
     """
 
     """
-    start = 0.025
-    list1 = [0.001, 0.005, 0.01, start]
+    list1 = [start]
 
-    while start < max_error:
-        if start < 0.1:
-            start = round(start*2, 3)
-        else:
-            start = round(start*1.2, 3)
+    while start < end:
+        delta = abs(start*change)
+        if delta < 0.002:
+            delta = 0.002
+        start = round(start + delta, 3)
         list1.append(start)
+
+    return list1
+
+
+def log_error_cats(start, end, change):
+    """
+
+    """
+    s1 = round(start, 3)
+    list1 = [s1]
+
+    while s1 < end:
+        delta = change
+        s1 = round(s1 + delta, 3)
+        list1.append(s1)
 
     return list1
 
@@ -206,7 +240,6 @@ def catch_sims(error, n_years, n_samples_year, n_sims, output_path):
 
     """
     print(error)
-    error1 = int(error*1000)
 
     n_samples = np.prod(hdf5tools.utils.cartesian([n_samples_year, n_years]), axis=1)
     n_samples = list(set(n_samples))
@@ -220,7 +253,7 @@ def catch_sims(error, n_years, n_samples_year, n_sims, output_path):
         # print(n)
 
         for pi, perc in enumerate(conc_perc):
-            red1 = np.interp(np.arange(n), [0, n-1], [10000, perc*100 ]).round().astype('int16')
+            red1 = np.log(np.interp(np.arange(n), [0, n-1], [1, perc*0.01]))
 
             # red1 = np.empty((len(conc_perc), n), dtype='int16')
             # for i, v in enumerate(conc_perc):
@@ -232,22 +265,21 @@ def catch_sims(error, n_years, n_samples_year, n_sims, output_path):
 
             rand_shape = (n_sims, n)
 
+            # r1 = np.log(rng.lognormal(0, error, rand_shape))
             r1 = rng.normal(0, error, rand_shape)
-            r1[r1 < -1] = -1
-            r1 = (r1*10000).astype('int16')
+            # r1[r1 < -1] = -1
+            # r1 = (r1*10000).astype('int16')
             # r1 = np.tile(r1a, len(conc_perc)).reshape((len(conc_perc), n_sims, n))
+            # r2 = np.log(rng.lognormal(0, error, rand_shape))
             r2 = rng.normal(0, error, rand_shape)
-            r2[r2 < -1] = -1
-            r2 = (r2*red2).astype('int16')
+            # r2[r2 < -1] = -1
+            # r2 = (r2*red2).astype('int16')
             # r2 = r2.astype('uint16')
             # r2 = np.tile(r2a, len(conc_perc)).reshape((len(conc_perc), n_sims, n))
 
             # ones = np.ones(red2.shape)*10
 
-            ind1 = 10000 + r1
-            dep1 = red2 + r2
-
-            o1 = stats.ttest_ind(ind1, dep1, axis=1)
+            o1 = stats.ttest_ind(r1, red2 + r2, axis=1)
 
             # p1 = np.empty(dep1.shape[:2], dtype='int16')
             # for i, v in enumerate(ind1):
@@ -257,6 +289,8 @@ def catch_sims(error, n_years, n_samples_year, n_sims, output_path):
             p2 = (((o1.pvalue < 0.05).sum()/n_sims) *100).round().astype('int8')
 
             filler[0][ni][pi] = p2
+
+    error1 = int(error*1000)
 
     props = xr.Dataset(data_vars={'power': (('error', 'n_samples', 'conc_perc'), filler)
                                   },
@@ -342,7 +376,14 @@ def xr_concat(datasets):
 
 
 
-
+# import matplotlib.pyplot as plt
+# count, bins, ignored = plt.hist(s, 100, density=True, align='mid')
+# x = np.linspace(min(bins), max(bins), 10000)
+# pdf = (np.exp(-(np.log(x) - mu)**2 / (2 * sigma**2))
+#         / (x * sigma * np.sqrt(2 * np.pi)))
+# plt.plot(x, pdf, linewidth=2, color='r')
+# plt.axis('tight')
+# plt.show()
 
 
 

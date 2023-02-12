@@ -22,13 +22,15 @@ pd.options.display.max_columns = 10
 ### Assign conc
 
 def process_errors():
-    list1 = utils.error_cats()
+    list1 = utils.log_error_cats(-6.9, 6.9, 0.5)
 
-    conc0 = pd.read_csv(utils.conc_csv_path, usecols=['Indicator', 'nzsegment', 'lm1seRes']).dropna()
+    conc0 = pd.read_csv(utils.conc_csv_path, usecols=['Indicator', 'nzsegment', 'lm1seRes', 'lm1pred_01_2022']).dropna()
 
-    conc0.rename(columns={'lm1seRes': 'error', 'Indicator': 'indicator'}, inplace=True)
+    conc0.rename(columns={'lm1seRes': 'error', 'Indicator': 'indicator', 'lm1pred_01_2022': 'init_conc'}, inplace=True)
 
     conc1 = conc0.groupby(['indicator', 'nzsegment']).mean().reset_index()
+    conc1.loc[(conc1.indicator == 'EC') & (conc1.init_conc > 1000)] = np.nan
+    conc1.loc[(conc1.indicator == 'NO') & (conc1.init_conc > 20)] = np.nan
 
     conc1['error'] = conc1['error'].abs()
 
@@ -39,7 +41,7 @@ def process_errors():
     ## Create rough values from all reaches per indicator
     grp1 = conc1.groupby('indicator')
 
-    mean1 = grp1['error'].mean().round(3)
+    median1 = grp1['error'].median().round(3)
 
     ## Assign init conc and errors to each catchment
     mapping = booklet.open(utils.river_reach_mapping_path)
@@ -50,7 +52,7 @@ def process_errors():
     # error_set = set()
     error_dict = {ind: {} for ind in indicators}
     for ind, grp in grp1:
-        miss_error = mean1.loc[ind]
+        miss_error = median1.loc[ind]
         for catch_id in starts:
             c_reaches = mapping[catch_id][catch_id]
             df1 = pd.DataFrame(c_reaches, columns=['nzsegment'])
