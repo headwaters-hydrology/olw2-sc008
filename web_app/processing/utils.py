@@ -25,8 +25,8 @@ from scipy import stats
 ##############################################
 ### Parameters
 
-base_path = '/media/nvme1/data/OLW/web_app'
-# base_path = '/home/mike/data/OLW/web_app'
+# base_path = '/media/nvme1/data/OLW/web_app'
+base_path = '/home/mike/data/OLW/web_app'
 # %cd '/home/mike/data/OLW/web_app'
 
 base_path = pathlib.Path(base_path)
@@ -234,7 +234,7 @@ def log_error_cats(start, end, change):
     return list1
 
 
-def catch_sims(error, n_years, n_samples_year, n_sims, output_path):
+def power_sims(error, n_years, n_samples_year, n_sims, output_path):
     """
 
     """
