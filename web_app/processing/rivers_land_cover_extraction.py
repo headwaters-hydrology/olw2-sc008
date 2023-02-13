@@ -45,7 +45,6 @@ def rivers_land_cover():
 
         # Land cover
         lc2 = land_cover.loc[land_cover.sindex.query(c1, predicate="intersects")].copy()
-        # lc2['geometry'] = lc2['geometry'].simplify(0)
         lc2b = intersection(lc2.geometry.tolist(), c1)
         lc2['geometry'] = lc2b
         lc2['geometry'] = lc2['geometry'].simplify(30)

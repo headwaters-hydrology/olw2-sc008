@@ -15,7 +15,7 @@ from rivers_delineate import rec_delin
 from rivers_land_cover_extraction import rivers_land_cover
 from rivers_assign_errors import process_errors
 from rivers_assign_flow import process_flows_rec
-from rivers_assign_loads import process_loads_rec
+# from rivers_assign_loads import process_loads_rec
 
 from lakes_locations import lakes_location_process
 from lakes_rec_delineation import lakes_catch_delin
