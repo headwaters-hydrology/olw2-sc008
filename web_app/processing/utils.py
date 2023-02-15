@@ -110,6 +110,11 @@ lakes_sims_h5_path = lakes_sims_path.joinpath('lakes_sims.h5')
 lakes_error_path = assets_path.joinpath('lakes_error.h5')
 lakes_lc_path = assets_path.joinpath('lakes_lc.blt')
 
+## Model data
+lakes_data_path = base_path.joinpath('lakes_wq_data.csv')
+lakes_data_clean_path = base_path.joinpath('lakes_wq_data_clean.feather')
+
+
 #############################################
 ### Functions
 
