@@ -257,7 +257,7 @@ def calc_river_reach_reductions(catch_id, plan_file, reduction_col='reduction'):
     plan1 = plan_file[[reduction_col, 'geometry']].to_crs(2193)
     # c1 = read_pkl_zstd(os.path.join(base_path, 'catchments', '{}.pkl.zst'.format(catch_id)), True)
 
-    c2 = vector.sjoin(c1, plan1, how='left').drop('index_right', axis=1)
+    c2 = plan1.overlay(c1)
     c2.loc[c2[reduction_col].isnull(), reduction_col] = 0
 
     c2['s_area'] = c2.area
