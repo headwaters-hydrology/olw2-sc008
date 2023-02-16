@@ -176,21 +176,7 @@ for indicator in indicators:
 
     categorical_columns = X.columns.isin(cat_cols)
 
-    # ordinal_encoder = make_column_transformer(
-    #     (
-    #         # OrdinalEncoder(handle_unknown="use_encoded_value", unknown_value=np.nan),
-    #         OrdinalEncoder(),
-    #         make_column_selector(dtype_include="category"),
-    #     ),
-    #     remainder="passthrough",
-    #     # Use short feature names to make it easier to specify the categorical
-    #     # variables in the HistGradientBoostingRegressor in the next step
-    #     # of the pipeline.
-    #     verbose_feature_names_out=False,
-    # )
-
     br_model = make_pipeline(
-        # ordinal_encoder,
         HistGradientBoostingRegressor(
             min_samples_leaf=2,
             # random_state=42,
@@ -199,7 +185,6 @@ for indicator in indicators:
     )
 
     rf_model = make_pipeline(
-        # ordinal_encoder,
         RandomForestRegressor(
             # min_samples_leaf=2,
             # random_state=42,
@@ -208,7 +193,6 @@ for indicator in indicators:
     )
 
     ridge_model = make_pipeline(
-        # ordinal_encoder,
         linear_model.Ridge(
             # random_state=42,
             # categorical_features=categorical_columns,
@@ -216,7 +200,6 @@ for indicator in indicators:
     )
 
     lasso_model = make_pipeline(
-        # ordinal_encoder,
         linear_model.Lasso(
             # random_state=42,
             # categorical_features=categorical_columns,
@@ -224,7 +207,6 @@ for indicator in indicators:
     )
 
     b_ridge_model = make_pipeline(
-        # ordinal_encoder,
         linear_model.BayesianRidge(
             # random_state=42,
             # categorical_features=categorical_columns,
@@ -232,7 +214,6 @@ for indicator in indicators:
     )
 
     b_ard_model = make_pipeline(
-        # ordinal_encoder,
         linear_model.ARDRegression(
             # random_state=42,
             # categorical_features=categorical_columns,
@@ -240,7 +221,6 @@ for indicator in indicators:
     )
 
     kr_model = make_pipeline(
-        # ordinal_encoder,
         kernel_ridge.KernelRidge(
             # random_state=42,
             # categorical_features=categorical_columns,
@@ -248,7 +228,6 @@ for indicator in indicators:
     )
 
     lr_model = make_pipeline(
-        # ordinal_encoder,
         linear_model.LinearRegression(
             # random_state=42,
             # categorical_features=categorical_columns,
