@@ -10,8 +10,6 @@ import sys
 import pandas as pd
 import numpy as np
 
-
-
 if '..' not in sys.path:
     sys.path.append('..')
 

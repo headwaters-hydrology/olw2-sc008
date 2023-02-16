@@ -113,7 +113,8 @@ lakes_lc_path = assets_path.joinpath('lakes_lc.blt')
 ## Model data
 lakes_data_path = base_path.joinpath('lakes_wq_data.csv')
 lakes_data_clean_path = base_path.joinpath('lakes_wq_data_clean.feather')
-
+lakes_class_csv = base_path.joinpath('fenz_lakes_classification.csv')
+lakes_stdev_path = output_path.joinpath('lakes_stdev.h5')
 
 #############################################
 ### Functions
