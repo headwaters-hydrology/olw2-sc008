@@ -229,7 +229,7 @@ def log_error_cats(start, end, change):
     """
 
     """
-    s1 = round(start, 3)
+    s1 = np.asarray(start).round(3)
     list1 = [s1]
 
     while s1 < end:

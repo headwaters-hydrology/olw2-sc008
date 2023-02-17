@@ -71,7 +71,7 @@ data0 = pd.read_feather(utils.lakes_data_clean_path)
 
 grp1 = data0.groupby(['indicator'])['value']
 for i, v in grp1:
-    new_data, l = scipy.stats.boxcox(v)
+    new_data = np.log(v)
     data0.loc[data0.indicator == i, 'value'] = new_data
 
 

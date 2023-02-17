@@ -26,13 +26,17 @@ pd.options.display.max_columns = 10
 ##################################################
 ### preprocessing
 
-lakes0 = pd.read_csv(utils.raw_lakes_path)
-
 ## Error assessments
-lakes0['CV'] = lakes0.CV.round(3)
+indicators = ['ECOLI', 'Secchi', 'TN', 'TP', 'CHLA', 'NH4N', 'CYANOTOT']
 
-errors = lakes0['CV'].unique()
-errors.sort()
+lakes0 = xr.open_dataset(utils.lakes_stdev_path, engine='h5netcdf')
+
+lakes1 = lakes0.sel(model='BoostingRegressor', indicator=indicators)
+
+start = lakes1.stdev.min().round(3).values
+end = lakes1.stdev.max().round(3).values
+
+errors = utils.log_error_cats(start, end, 0.1)
 
 n_samples_year = utils.n_samples_year
 n_years = utils.n_years
