@@ -137,7 +137,7 @@ base_reach_style = dict(weight=4, opacity=1, color='white')
 info = dcc.Markdown(id="info", className="info", style={"position": "absolute", "top": "10px", "right": "10px", "z-index": "1000"})
 # info = html.Div(id="info", className="info", style={"position": "absolute", "top": "10px", "right": "10px", "z-index": "1000"})
 
-indicator_dict = {'BD': 'Black disk', 'EC': 'E.coli', 'DRP': 'Dissolved reactive phosporus', 'NH': 'Ammoniacal nitrogen', 'NO': 'Nitrate', 'TN': 'Total nitrogen', 'TP': 'Total phosphorus', 'TU': 'Turbidity'}
+indicator_dict = {'BD': 'Black disk', 'EC': 'E.coli', 'DRP': 'Dissolved reactive phosporus', 'NH': 'Ammoniacal nitrogen', 'NO': 'Nitrate', 'TN': 'Total nitrogen', 'TP': 'Total phosphorus'}
 
 ###############################################
 ### Helper Functions
@@ -429,7 +429,7 @@ def layout():
         ], className='two columns', style={'margin': 10}),
 
     html.Div([
-        dl.Map(children=[
+        dl.Map(center=center, zoom=7, children=[
             dl.TileLayer(id='tile_layer', attribution=attribution),
             dl.GeoJSON(url=str(rivers_catch_pbf_path), format="geobuf", id='catch_map', zoomToBoundsOnClick=True, zoomToBounds=True, options=dict(style=catch_style_handle)),
             # dl.GeoJSON(url='', format="geobuf", id='base_reach_map', options=dict(style=base_reaches_style_handle)),
