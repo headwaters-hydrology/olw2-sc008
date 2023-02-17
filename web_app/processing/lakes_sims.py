@@ -27,14 +27,17 @@ pd.options.display.max_columns = 10
 ### preprocessing
 
 ## Error assessments
-indicators = ['ECOLI', 'Secchi', 'TN', 'TP', 'CHLA', 'NH4N', 'CYANOTOT']
+# indicators = ['ECOLI', 'Secchi', 'TN', 'TP', 'CHLA', 'NH4N', 'CYANOTOT']
 
-lakes0 = xr.open_dataset(utils.lakes_stdev_path, engine='h5netcdf')
+# lakes0 = xr.open_dataset(utils.lakes_stdev_path, engine='h5netcdf')
 
-lakes1 = lakes0.sel(model='BoostingRegressor', indicator=indicators)
+# lakes1 = lakes0.sel(model='BoostingRegressor', indicator=indicators)
 
-start = lakes1.stdev.min().round(3).values
-end = lakes1.stdev.max().round(3).values
+# start = lakes1.stdev.min().round(3).values
+# end = lakes1.stdev.max().round(3).values
+
+start = 0.069
+end = 4.299
 
 errors = utils.log_error_cats(start, end, 0.1)
 
