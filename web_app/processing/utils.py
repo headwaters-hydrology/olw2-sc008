@@ -240,6 +240,22 @@ def log_error_cats(start, end, change):
     return list1
 
 
+def power_test(x, Y, min_p_value=0.05):
+    """
+
+    """
+    n_sims, n_samples = Y.shape
+    p_list = []
+    append = p_list.append
+    for y in Y:
+        o2 = stats.linregress(x, y)
+        append(o2.pvalue < min_p_value)
+
+    power = round((sum(p_list)/n_sims) * 100)
+
+    return power
+
+
 def power_sims(error, n_years, n_samples_year, n_sims, output_path):
     """
 
@@ -260,18 +276,18 @@ def power_sims(error, n_years, n_samples_year, n_sims, output_path):
         for pi, perc in enumerate(conc_perc):
             red1 = np.log(np.interp(np.arange(n), [0, n-1], [1, perc*0.01]))
 
+            rand_shape = (n_sims, n)
+
             # red1 = np.empty((len(conc_perc), n), dtype='int16')
             # for i, v in enumerate(conc_perc):
             #     l1 = np.interp(np.arange(n), [0, n-1], [10000, v*100 ]).round().astype('int16')
             #     red1[i] = l1
 
             # red2 = np.tile(red1, n_sims).reshape((len(conc_perc), n_sims, n))
-            red2 = np.tile(red1, n_sims).reshape((n_sims, n))
-
-            rand_shape = (n_sims, n)
+            red2 = np.tile(red1, n_sims).reshape(rand_shape)
 
             # r1 = np.log(rng.lognormal(0, error, rand_shape))
-            r1 = rng.normal(0, error, rand_shape)
+            # r1 = rng.normal(0, error, rand_shape)
             # r1[r1 < -1] = -1
             # r1 = (r1*10000).astype('int16')
             # r1 = np.tile(r1a, len(conc_perc)).reshape((len(conc_perc), n_sims, n))
@@ -284,14 +300,16 @@ def power_sims(error, n_years, n_samples_year, n_sims, output_path):
 
             # ones = np.ones(red2.shape)*10
 
-            o1 = stats.ttest_ind(r1, red2 + r2, axis=1)
+            # o1 = stats.ttest_ind(r1, red2 + r2, axis=1)
+
+            p2 = power_test(np.arange(n), red2 + r2, min_p_value=0.05)
 
             # p1 = np.empty(dep1.shape[:2], dtype='int16')
             # for i, v in enumerate(ind1):
             #     o1 = stats.ttest_ind(v, dep1[i])
             #     p1[i] = o1.pvalue*10000
 
-            p2 = (((o1.pvalue < 0.05).sum()/n_sims) *100).round().astype('int8')
+            # p2 = (((o1.pvalue < 0.05).sum()/n_sims) *100).round().astype('int8')
 
             filler[0][ni][pi] = p2
 
