@@ -44,7 +44,7 @@ n_sims = 10000
 
 
 if __name__ == '__main__':
-    with concurrent.futures.ProcessPoolExecutor(max_workers=4, mp_context=mp.get_context("spawn")) as executor:
+    with concurrent.futures.ProcessPoolExecutor(max_workers=8, mp_context=mp.get_context("spawn")) as executor:
         futures = []
         for error in errors:
             f = executor.submit(utils.catch_sims, error, n_years, n_samples_year, n_sims, utils.lakes_sims_path)
