@@ -49,8 +49,8 @@ n_sims = 10000
 if __name__ == '__main__':
     with concurrent.futures.ProcessPoolExecutor(max_workers=8, mp_context=mp.get_context("spawn")) as executor:
         futures = []
-        for error in errors:
-            f = executor.submit(utils.catch_sims, error, n_years, n_samples_year, n_sims, utils.lakes_sims_path)
+        for error in errors[:-1]:
+            f = executor.submit(utils.power_sims, error, n_years, n_samples_year, n_sims, utils.lakes_sims_path)
             futures.append(f)
         runs = concurrent.futures.wait(futures)
 
@@ -59,6 +59,10 @@ if __name__ == '__main__':
 
     h5 = hdf5tools.H5(paths)
     h5.to_hdf5(utils.lakes_sims_h5_path)
+
+    ## Remove temp files
+    for path in paths:
+        os.remove(path)
 
 
 
