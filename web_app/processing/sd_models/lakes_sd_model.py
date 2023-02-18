@@ -116,7 +116,7 @@ lakes_class0[cat_cols] = lakes_class0[cat_cols].astype("category")
 for cat_col in cat_cols:
     lakes_class0[cat_col] = lakes_class0[cat_col].cat.codes
 
-lakes_class1 = lakes_class0[((lakes_class0.Shape_Area > min_area) | (lakes_class0.Name.notnull())) & lakes_class0.LFENZID.notnull()].copy()
+lakes_class1 = lakes_class0[lakes_class0.Name.notnull() & lakes_class0.LFENZID.notnull()].copy()
 lakes_class1['LFENZID'] = lakes_class1['LFENZID'].astype('int32')
 lakes_class1 = lakes_class1.drop_duplicates(subset=['LFENZID'])
 

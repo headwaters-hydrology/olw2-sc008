@@ -92,11 +92,11 @@ catch_lc_clean_path = assets_path.joinpath('rivers_catch_lc_clean.blt')
 
 ### Lakes
 
-raw_lakes_path = base_path.joinpath('lakes_errors.csv')
+lakes_stdev_path = base_path.joinpath('lakes_stdev.h5')
 
 lakes_points_gbuf_path = assets_path.joinpath('lakes_points.pbf')
 lakes_poly_gbuf_path = assets_path.joinpath('lakes_poly.blt')
-lakes_poly_path = base_path.joinpath('lakes_sampled_polygons.gpkg')
+lakes_poly_path = base_path.joinpath('lakes_locations_fenz.gpkg')
 lakes_delin_points_path = base_path.joinpath('lakes_delineate_points.gpkg')
 lakes_reaches_mapping_path = assets_path.joinpath('lakes_reaches_mapping.blt')
 lakes_catches_major_path = assets_path.joinpath('lakes_catchments_major.blt')

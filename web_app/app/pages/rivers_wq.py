@@ -676,7 +676,7 @@ def update_map_info(props_obj, reductions_obj, map_checkboxes, feature):
     """
 
     """
-    info = """###### Likelihood of significant reduction (%)"""
+    info = """###### Likelihood of reduction (%)"""
 
     if (reductions_obj != '') and (reductions_obj is not None) and ('reductions_poly' in map_checkboxes):
         info = info + """\n\nHover over the polygons to see reduction %"""
@@ -690,7 +690,7 @@ def update_map_info(props_obj, reductions_obj, map_checkboxes, feature):
 
                 reach_data = props.sel(reach=int(feature['id']))
 
-                info_str = """\n\nReduction: {red}%\n\nLikelihood of significant reduction (power): {t_stat}%""".format(red=int(reach_data.reduction), t_stat=int(reach_data.power))
+                info_str = """\n\nReduction: {red}%\n\nLikelihood of reduction (power): {t_stat}%""".format(red=int(reach_data.reduction), t_stat=int(reach_data.power))
 
                 info = info + info_str
 

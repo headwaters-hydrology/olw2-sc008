@@ -24,13 +24,13 @@ pd.options.display.max_columns = 10
 def process_errors():
     list1 = utils.log_error_cats(0.01, 2.72, 0.1)
 
-    conc0 = pd.read_csv(utils.conc_csv_path, usecols=['Indicator', 'nzsegment', 'lm1seRes', 'lm1pred_01_2022']).dropna()
+    conc0 = pd.read_csv(utils.conc_csv_path, usecols=['Indicator', 'nzsegment', 'lm1seRes']).dropna()
 
-    conc0.rename(columns={'lm1seRes': 'error', 'Indicator': 'indicator', 'lm1pred_01_2022': 'init_conc'}, inplace=True)
+    conc0.rename(columns={'lm1seRes': 'error', 'Indicator': 'indicator'}, inplace=True)
 
     conc1 = conc0.groupby(['indicator', 'nzsegment']).mean().reset_index()
-    conc1.loc[(conc1.indicator == 'EC') & (conc1.init_conc > 1000)] = np.nan
-    conc1.loc[(conc1.indicator == 'NO') & (conc1.init_conc > 20)] = np.nan
+    # conc1.loc[(conc1.indicator == 'EC') & (conc1.init_conc > 1000)] = np.nan
+    # conc1.loc[(conc1.indicator == 'NO') & (conc1.init_conc > 20)] = np.nan
 
     conc1['error'] = conc1['error'].abs()
 
@@ -61,7 +61,7 @@ def process_errors():
 
             null_rows = r_errors.isnull()
             r_errors.loc[null_rows] = miss_error
-            r_errors[r_errors <= list1[0]] = list1[0] *2
+            r_errors[r_errors <= list1[0]] = list1[0] *1.1
             r_errors[r_errors > list1[-1]] = list1[-1]
             # error_set.update(set((r_errors * 1000).round().tolist()))
 
@@ -72,6 +72,14 @@ def process_errors():
             error_dict[ind].update(r_errors1.to_dict())
 
     river_sims = xr.open_dataset(utils.river_sims_h5_path, engine='h5netcdf')
+    river_sims['n_samples'] = river_sims.n_samples.astype('int16')
+    river_sims.n_samples.encoding = {}
+    river_sims['conc_perc'] = river_sims.conc_perc.astype('int8')
+    river_sims.conc_perc.encoding = {}
+    river_sims['error'] = river_sims.error.astype('int16')
+    river_sims.error.encoding = {}
+    river_sims['power'] = river_sims.power.astype('int8')
+    river_sims['power'].encoding = {}
 
     error_list = []
     for ind in error_dict:
