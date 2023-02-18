@@ -105,7 +105,7 @@ attribution = 'Map data &copy; <a href="https://www.openstreetmap.org/copyright"
 #                             };
 #                         }""")
 
-lake_style_handle = assign("""function style2(feature, context){
+lake_style_handle = assign("""function style4(feature, context){
     const {classes, colorscale, style, colorProp} = context.props.hideout;  // get props from hideout
     const value = feature.properties[colorProp];  // get value the determines the color
     for (let i = 0; i < classes.length; ++i) {
@@ -115,7 +115,7 @@ lake_style_handle = assign("""function style2(feature, context){
     }
 
     return style;
-}""")
+}""", name='lakes_lake_style_handle')
 
 freq_mapping = {12: 'once a month', 26: 'once a fortnight', 52: 'once a week', 104: 'twice a week', 364: 'once a day'}
 time_periods = [5, 10, 20, 30]

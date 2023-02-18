@@ -1,6 +1,6 @@
 window.dashExtensions = Object.assign({}, window.dashExtensions, {
     default: {
-        function0: function style(feature) {
+        rivers_catch_style_handle: function style(feature) {
             return {
                 fillColor: 'grey',
                 weight: 2,
@@ -9,14 +9,14 @@ window.dashExtensions = Object.assign({}, window.dashExtensions, {
                 fillOpacity: 0.1
             };
         },
-        function1: function style3(feature) {
+        rivers_base_reach_style_handle: function style3(feature) {
             return {
                 weight: 2,
                 opacity: 0.75,
                 color: 'grey',
             };
         },
-        function2: function style2(feature, context) {
+        rivers_reach_style_handle: function style2(feature, context) {
             const {
                 classes,
                 colorscale,
@@ -31,7 +31,7 @@ window.dashExtensions = Object.assign({}, window.dashExtensions, {
             }
             return style;
         },
-        function3: function style2(feature, context) {
+        lakes_lake_style_handle: function style4(feature, context) {
             const {
                 classes,
                 colorscale,
