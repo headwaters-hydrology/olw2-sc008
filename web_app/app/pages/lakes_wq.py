@@ -85,39 +85,46 @@ tab_selected_style = {
 
 attribution = 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 
-catch_style_handle = assign("""function style(feature) {
-    return {
-        fillColor: 'grey',
-        weight: 2,
-        opacity: 1,
-        color: 'black',
-        fillOpacity: 0.1
-    };
-}""")
+# catch_style_handle = assign("""function style(feature) {
+#                             return {
+#                                 fillColor: 'grey',
+#                                 weight: 2,
+#                                 opacity: 1,
+#                                 color: 'black',
+#                                 fillOpacity: 0.1
+#                             };
+#                         }""")
 
-base_reach_style_handle = assign("""function style3(feature) {
-    return {
-        weight: 2,
-        opacity: 0.75,
-        color: 'grey',
-    };
-}""")
+# lake_style_handle = assign("""function style4(feature) {
+#                             return {
+#                                 fillColor: '#A4DCCC',
+#                                 weight: 2,
+#                                 opacity: 1,
+#                                 color: 'black',
+#                                 fillOpacity: 1
+#                             };
+#                         }""")
 
-reach_style_handle = assign("""function style2(feature, context){
+lake_style_handle = assign("""function style2(feature, context){
     const {classes, colorscale, style, colorProp} = context.props.hideout;  // get props from hideout
     const value = feature.properties[colorProp];  // get value the determines the color
     for (let i = 0; i < classes.length; ++i) {
         if (value == classes[i]) {
-            style.color = colorscale[i];  // set the fill color according to the class
+            style.color = colorscale[i];  // set the color according to the class
         }
     }
+
     return style;
 }""")
 
 freq_mapping = {12: 'once a month', 26: 'once a fortnight', 52: 'once a week', 104: 'twice a week', 364: 'once a day'}
 time_periods = [5, 10, 20, 30]
 
-style = dict(weight=4, opacity=1, color='white')
+catch_style = {'fillColor': 'grey', 'weight': 2, 'opacity': 1, 'color': 'black', 'fillOpacity': 0.1}
+lake_style = {'fillColor': '#A4DCCC', 'weight': 4, 'opacity': 1, 'color': 'black', 'fillOpacity': 1}
+reach_style = {'weight': 2, 'opacity': 0.75, 'color': 'grey'}
+# lake_style2 = dict(weight=4, opacity=1, color='white', fillColor='#A4DCCC', fillOpacity=1)
+# style = dict(weight=4, opacity=1, color='white')
 classes = [0, 20, 40, 60, 80]
 bins = classes.copy()
 bins.append(101)
@@ -368,13 +375,13 @@ def layout():
         ], className='two columns', style={'margin': 10}),
 
     html.Div([
-        dl.Map(children=[
+        dl.Map(center=center, zoom=7, children=[
             dl.TileLayer(id='tile_layer_lakes', attribution=attribution),
             dl.GeoJSON(url=str(lakes_pbf_path), format="geobuf", id='lake_points', zoomToBoundsOnClick=True, zoomToBounds=True, cluster=True),
-            dl.GeoJSON(data='', format="geobuf", id='catch_map_lakes', zoomToBoundsOnClick=True, options=dict(style=catch_style_handle)),
+            dl.GeoJSON(data='', format="geobuf", id='catch_map_lakes', zoomToBoundsOnClick=True, options=dict(style=catch_style)),
             # dl.GeoJSON(url='', format="geobuf", id='base_reach_map', options=dict(style=base_reaches_style_handle)),
-            dl.GeoJSON(data='', format="geobuf", id='reach_map_lakes', options={}, hideout={}, hoverStyle=arrow_function(dict(weight=10, color='black', dashArray=''))),
-            dl.GeoJSON(data='', format="geobuf", id='lake_poly', options=dict(style=catch_style_handle), hideout={}, hoverStyle=arrow_function(dict(weight=10, color='black', dashArray=''))),
+            dl.GeoJSON(data='', format="geobuf", id='reach_map_lakes', options=dict(style=reach_style), hideout={}),
+            dl.GeoJSON(data='', format="geobuf", id='lake_poly', options=dict(style=lake_style_handle), hideout={'classes': [''], 'colorscale': ['#808080'], 'style': lake_style, 'colorProp': 'name'}),
             dl.GeoJSON(data='', format="geobuf", id='reductions_poly_lakes'),
             colorbar,
             info
@@ -466,23 +473,6 @@ def update_lake(lake_id):
         data = ''
 
     return data
-
-
-@callback(
-        Output('lake_poly', 'options'),
-        Input('lake_poly', 'hideout'),
-        Input('lake_id', 'value')
-        )
-# @cache.memoize()
-def update_lakes_option(hideout, lake_id):
-    trig = ctx.triggered_id
-
-    if (len(hideout) == 0) or (trig == 'lake_id'):
-        options = dict(style=catch_style_handle)
-    else:
-        options = dict(style=reach_style_handle)
-
-    return options
 
 
 @callback(
@@ -603,23 +593,50 @@ def update_props_data_lakes(reaches_obj, indicator, n_years, n_samples_year, lak
     return data
 
 
+# @callback(
+#         Output('lake_poly', 'options'),
+#         Input('lake_poly', 'hideout'),
+#         # State('lake_id', 'value')
+#         )
+# # @cache.memoize()
+# def update_lakes_option(hideout):
+#     trig = ctx.triggered_id
+#     # print(trig)
+#     # print(len(hideout))
+
+#     if (len(hideout) == 1) or (trig == 'lake_id'):
+#         options = dict(style=lake_style)
+#     else:
+#         options = dict(style=lake_style_handle)
+
+#     return options
+
+
 @callback(
     Output('lake_poly', 'hideout'),
     [Input('props_obj_lakes', 'data')],
+    Input('lake_id', 'value'),
     prevent_initial_call=True
     )
-def update_hideout_lakes(props_obj):
+def update_hideout_lakes(props_obj, lake_id):
     """
 
     """
     if (props_obj != '') and (props_obj is not None):
+        # print('trigger')
         props = decode_obj(props_obj)
 
-        color_arr = pd.cut([props['power']], bins, labels=colorscale, right=False).tolist()
+        if props['lake_id'] == lake_id:
 
-        hideout = {'colorscale': color_arr, 'classes': [props['lake_id']], 'style': style, 'colorProp': 'name'}
+            color_arr = pd.cut([props['power']], bins, labels=colorscale, right=False).tolist()
+            # print(color_arr)
+            # print(props['lake_id'])
+
+            hideout = {'classes': [props['lake_id']], 'colorscale': color_arr, 'style': lake_style, 'colorProp': 'name'}
+        else:
+            hideout = {'classes': [lake_id], 'colorscale': ['#808080'], 'style': lake_style, 'colorProp': 'name'}
     else:
-        hideout = {}
+        hideout = {'classes': [lake_id], 'colorscale': ['#808080'], 'style': lake_style, 'colorProp': 'name'}
 
     return hideout
 

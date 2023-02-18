@@ -31,23 +31,7 @@ window.dashExtensions = Object.assign({}, window.dashExtensions, {
             }
             return style;
         },
-        function3: function style(feature) {
-            return {
-                fillColor: 'grey',
-                weight: 2,
-                opacity: 1,
-                color: 'black',
-                fillOpacity: 0.1
-            };
-        },
-        function4: function style3(feature) {
-            return {
-                weight: 2,
-                opacity: 0.75,
-                color: 'grey',
-            };
-        },
-        function5: function style2(feature, context) {
+        function3: function style2(feature, context) {
             const {
                 classes,
                 colorscale,
@@ -57,9 +41,10 @@ window.dashExtensions = Object.assign({}, window.dashExtensions, {
             const value = feature.properties[colorProp]; // get value the determines the color
             for (let i = 0; i < classes.length; ++i) {
                 if (value == classes[i]) {
-                    style.color = colorscale[i]; // set the fill color according to the class
+                    style.color = colorscale[i]; // set the color according to the class
                 }
             }
+
             return style;
         }
     }
