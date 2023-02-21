@@ -143,7 +143,7 @@ base_reach_style = dict(weight=4, opacity=1, color='white')
 info = dcc.Markdown(id="info_lakes", className="info", style={"position": "absolute", "top": "10px", "right": "10px", "z-index": "1000"})
 # info = html.Div(id="info", className="info", style={"position": "absolute", "top": "10px", "right": "10px", "z-index": "1000"})
 
-# indicator_dict = {'BD': 'Black disk', 'EC': 'Electrical conductivity', 'DRP': 'Dissolved reactive phosporus', 'NH': 'Ammonium', 'NO': 'Nitrate', 'TN': 'Total nitrogen', 'TP': 'Total phosphorus', 'TU': 'Turbidity'}
+indicator_dict = {'CHLA': 'Chlorophyll a', 'CYANOTOT': 'Total Cyanobacteria', 'ECOLI': 'E.coli', 'NH4N': 'Ammoniacal nitrogen', 'Secchi': 'Secchi depth', 'TN': 'Total nitrogen', 'TP': 'Total phosphorus', 'pH': 'pH'}
 
 ###############################################
 ### Helper Functions
@@ -280,22 +280,27 @@ def calc_lake_reach_reductions(lake_id, plan_file, reduction_col='reduction'):
 
 # sel1 = xr.open_dataset(base_path.joinpath(sel_data_h5), engine='h5netcdf')
 
-with booklet.open(lakes_catches_major_path, 'r') as f:
-    lakes = list(f.keys())
+# with booklet.open(lakes_catches_major_path, 'r') as f:
+#     lakes = list(f.keys())
 
-lakes.sort()
+# lakes.sort()
+
+with open(assets_path.joinpath('lakes_points.pbf'), 'rb') as f:
+    geodict = geobuf.decode(f.read())
+
+lakes = [{'value': f['id'], 'label': ' '.join(f['properties']['name'].split())} for f in geodict['features']]
 # freqs = sel1['frequency'].values
-x1 = xr.open_dataset(lakes_error_path, engine='h5netcdf')
-indicators = x1.indicator.values
-indicators.sort()
+# x1 = xr.open_dataset(lakes_error_path, engine='h5netcdf')
+# indicators = x1.indicator.values
+# indicators.sort()
 # nzsegments = sel1['nzsegment'].values
 # percent_changes = sel1['percent_change'].values
 # time_periods = sel1['time_period'].values
 
-x1.close()
-del x1
+# x1.close()
+# del x1
 
-
+indicators = [{'value': k, 'label': v} for k, v in indicator_dict.items()]
 
 ###############################################
 ### App layout
@@ -308,7 +313,7 @@ def layout():
             html.H3('(1) Reductions routing'),
 
             html.Label('Select a lake/lagoon on the map:'),
-            dcc.Dropdown(options=[{'label': d, 'value': d} for d in lakes], id='lake_id', optionHeight=40, clearable=False),
+            dcc.Dropdown(options=lakes, id='lake_id', optionHeight=40, clearable=False),
 
             dcc.Upload(
                 id='upload_data_lakes',
@@ -354,7 +359,7 @@ def layout():
     html.Div([
         html.H3('(2) Sampling options'),
         html.Label('Select Indicator:'),
-        dcc.Dropdown(options=[{'label': d, 'value': d} for d in indicators], id='indicator_lakes', optionHeight=40, clearable=False),
+        dcc.Dropdown(options=indicators, id='indicator_lakes', optionHeight=40, clearable=False),
         html.Label('Select sampling length (years):', style={'margin-top': 20}),
         dcc.Dropdown(options=[{'label': d, 'value': d} for d in time_periods], id='time_period_lakes', clearable=False, value=5),
         html.Label('Select sampling frequency:'),
@@ -575,12 +580,13 @@ def update_props_data_lakes(reaches_obj, indicator, n_years, n_samples_year, lak
     """
     if (reaches_obj != '') and (reaches_obj is not None) and isinstance(n_years, int) and isinstance(n_samples_year, int) and isinstance(indicator, str):
         props = decode_obj(reaches_obj)
+        # print(props)
 
         n_samples = n_samples_year*n_years
 
         power_data = xr.open_dataset(lakes_error_path, engine='h5netcdf')
         try:
-            power_data1 = int(power_data.sel(indicator=indicator, name=lake_id, n_samples=n_samples, conc_perc=100-props).power.values)
+            power_data1 = int(power_data.sel(indicator=indicator, LFENZID=int(lake_id), n_samples=n_samples, conc_perc=100-props).power.values)
         except:
             power_data1 = 0
         power_data.close()
@@ -625,6 +631,8 @@ def update_hideout_lakes(props_obj, lake_id):
     if (props_obj != '') and (props_obj is not None):
         # print('trigger')
         props = decode_obj(props_obj)
+        # print(props)
+        # print(type(lake_id))
 
         if props['lake_id'] == lake_id:
 
@@ -632,11 +640,11 @@ def update_hideout_lakes(props_obj, lake_id):
             # print(color_arr)
             # print(props['lake_id'])
 
-            hideout = {'classes': [props['lake_id']], 'colorscale': color_arr, 'style': lake_style, 'colorProp': 'name'}
+            hideout = {'classes': [props['lake_id']], 'colorscale': color_arr, 'style': lake_style, 'colorProp': 'LFENZID'}
         else:
-            hideout = {'classes': [lake_id], 'colorscale': ['#808080'], 'style': lake_style, 'colorProp': 'name'}
+            hideout = {'classes': [lake_id], 'colorscale': ['#808080'], 'style': lake_style, 'colorProp': 'LFENZID'}
     else:
-        hideout = {'classes': [lake_id], 'colorscale': ['#808080'], 'style': lake_style, 'colorProp': 'name'}
+        hideout = {'classes': [lake_id], 'colorscale': ['#808080'], 'style': lake_style, 'colorProp': 'LFENZID'}
 
     return hideout
 

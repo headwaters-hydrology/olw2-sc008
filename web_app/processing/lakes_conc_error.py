@@ -63,7 +63,7 @@ def lakes_conc_error_processing():
         lake_sims1 = lake_sims1.rename({'error': 'LFENZID'})
         lake_sims1 = lake_sims1.assign_coords(indicator=ind).expand_dims('indicator')
 
-        lake_sims1['LFENZID'] = lake_sims1['LFENZID'].astype('int16')
+        lake_sims1['LFENZID'] = lake_sims1['LFENZID'].astype('int32')
 
         error_list.append(lake_sims1)
 
