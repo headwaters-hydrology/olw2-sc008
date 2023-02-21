@@ -85,18 +85,21 @@ change = 0.1
 
 catch_lc_path = output_path.joinpath('rivers_catch_lc.blt')
 
-land_cover_reductions = {'Exotic Forest': 0, 'High Producing Exotic Grassland': 20, 'Low Producing Grassland': 10, 'Forest - Harvested': 0, 'Orchard, Vineyard or Other Perennial Crop': 10, 'Short-rotation Cropland': 20, 'Other': 0}
+land_cover_reductions = {'Exotic Forest': 0, 'High Producing Exotic Grassland': 30, 'Low Producing Grassland': 10, 'Forest - Harvested': 0, 'Orchard, Vineyard or Other Perennial Crop': 10, 'Short-rotation Cropland': 30, 'Other': 0}
 
-catch_lc_clean_path = assets_path.joinpath('rivers_catch_lc_clean.blt')
+catch_lc_clean_path = assets_path.joinpath('rivers_catch_lc.blt')
 
 
 ### Lakes
-
-lakes_stdev_path = base_path.joinpath('lakes_stdev.h5')
+lakes_fenz_catch_path = base_path.joinpath('lakes_catchments_fenz.gpkg')
+lakes_fenz_poly_path = base_path.joinpath('lakes_polygons_fenz.gpkg')
+lakes_points_path = output_path.joinpath('lakes_points.feather')
+lakes_poly_path = output_path.joinpath('lakes_poly.feather')
+lakes_catch_path = output_path.joinpath('lakes_catch.feather')
 
 lakes_points_gbuf_path = assets_path.joinpath('lakes_points.pbf')
 lakes_poly_gbuf_path = assets_path.joinpath('lakes_poly.blt')
-lakes_poly_path = base_path.joinpath('lakes_locations_fenz.gpkg')
+# lakes_poly_path = base_path.joinpath('lakes_locations_fenz.gpkg')
 lakes_delin_points_path = base_path.joinpath('lakes_delineate_points.gpkg')
 lakes_reaches_mapping_path = assets_path.joinpath('lakes_reaches_mapping.blt')
 lakes_catches_major_path = assets_path.joinpath('lakes_catchments_major.blt')
@@ -108,7 +111,7 @@ lakes_sims_path.mkdir(parents=True, exist_ok=True)
 
 lakes_sims_h5_path = lakes_sims_path.joinpath('lakes_sims.h5')
 lakes_error_path = assets_path.joinpath('lakes_error.h5')
-lakes_lc_path = assets_path.joinpath('lakes_lc.blt')
+lakes_lc_path = assets_path.joinpath('lakes_catch_lc.blt')
 
 ## Model data
 lakes_data_path = base_path.joinpath('lakes_wq_data.csv')
@@ -122,6 +125,14 @@ lakes_stdev_path = output_path.joinpath('lakes_stdev.h5')
 
 # def geojson_to_geobuf(geojson):
 #     return base64.b64encode(geobuf.encode(geojson)).decode()
+
+
+def gpd_to_feather(gdf, output):
+    """
+
+    """
+    gdf.to_feather(output, compression='zstd', compression_level=1)
+
 
 
 def read_pkl_zstd(obj, unpickle=False):

@@ -55,7 +55,7 @@ def lakes_lc_process():
     land_cover = gpd.read_file(utils.land_cover_path)
     land_cover = land_cover[['Name_2018', 'geometry']].rename(columns={'Name_2018': 'land_cover'}).copy()
 
-    with booklet.open(utils.lakes_lc_path, 'n', value_serializer='gpd_zstd', key_serializer='str', n_buckets=200) as land_cover_dict:
+    with booklet.open(utils.lakes_lc_path, 'n', value_serializer='gpd_zstd', key_serializer='uint2', n_buckets=400) as land_cover_dict:
         with booklet.open(utils.lakes_catches_minor_path) as f:
             for lake in f:
                 print(lake)

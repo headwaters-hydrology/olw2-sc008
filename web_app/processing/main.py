@@ -17,8 +17,8 @@ from rivers_assign_errors import process_errors
 from rivers_assign_flow import process_flows_rec
 # from rivers_assign_loads import process_loads_rec
 
-from lakes_locations import lakes_location_process
-from lakes_rec_delineation import lakes_catch_delin
+from lakes_geo_processing import lakes_geo_process
+from lakes_delineation import lakes_catch_delin
 from lakes_land_cover_extraction import lakes_lc_process
 from lakes_conc_error import lakes_conc_error_processing
 
@@ -49,7 +49,7 @@ process_errors()
 ### Lakes
 
 ## Lakes location
-lakes_location_process()
+lakes_geo_process()
 
 ## Lakes catch delineation
 lakes_catch_delin()
@@ -58,9 +58,10 @@ lakes_catch_delin()
 lakes_lc_process()
 
 ## Lakes error/conc sims
-lakes_conc_error_processing()
 
 # lakes_sims.py should be run via the terminal
+
+lakes_conc_error_processing()
 
 
 ###################################################

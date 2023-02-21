@@ -56,7 +56,7 @@ lakes_pbf_path = app_base_path.joinpath('lakes_points.pbf')
 lakes_poly_gbuf_path = assets_path.joinpath('lakes_poly.blt')
 lakes_catches_major_path = assets_path.joinpath('lakes_catchments_major.blt')
 lakes_reach_gbuf_path = assets_path.joinpath('lakes_reaches.blt')
-lakes_lc_path = assets_path.joinpath('lakes_lc.blt')
+lakes_lc_path = assets_path.joinpath('lakes_catch_lc.blt')
 lakes_reaches_mapping_path = assets_path.joinpath('lakes_reaches_mapping.blt')
 lakes_catches_minor_path = assets_path.joinpath('lakes_catchments_minor.blt')
 
@@ -438,7 +438,7 @@ def update_lake_id(feature):
 def update_reaches_lakes(lake_id, map_checkboxes):
     if isinstance(lake_id, str) and ('reach_map' in map_checkboxes):
         with booklet.open(lakes_reach_gbuf_path, 'r') as f:
-            data = base64.b64encode(f[str(lake_id)]).decode()
+            data = base64.b64encode(f[int(lake_id)]).decode()
     else:
         data = ''
 
@@ -453,7 +453,7 @@ def update_reaches_lakes(lake_id, map_checkboxes):
 def update_catch_lakes(lake_id):
     if isinstance(lake_id, str):
         with booklet.open(lakes_catches_major_path, 'r') as f:
-            data = base64.b64encode(f[str(lake_id)]).decode()
+            data = base64.b64encode(f[int(lake_id)]).decode()
     else:
         data = ''
 
@@ -468,7 +468,7 @@ def update_catch_lakes(lake_id):
 def update_lake(lake_id):
     if isinstance(lake_id, str):
         with booklet.open(lakes_poly_gbuf_path, 'r') as f:
-            data = base64.b64encode(f[str(lake_id)]).decode()
+            data = base64.b64encode(f[int(lake_id)]).decode()
     else:
         data = ''
 
@@ -495,7 +495,7 @@ def update_reductions_obj_lakes(contents, n_clicks, lake_id, filename):
             return '', None
     elif isinstance(lake_id, str):
         with booklet.open(lakes_lc_path, 'r') as f:
-            data = encode_obj(f[str(lake_id)])
+            data = encode_obj(f[int(lake_id)])
 
         return data, 'reduction'
     else:

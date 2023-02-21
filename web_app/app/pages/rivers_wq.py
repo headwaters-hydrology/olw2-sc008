@@ -57,7 +57,7 @@ rivers_catch_pbf_path = app_base_path.joinpath('rivers_catchments.pbf')
 rivers_reach_gbuf_path = assets_path.joinpath('rivers_reaches.blt')
 # rivers_loads_path = assets_path.joinpath('rivers_reaches_loads.h5')
 rivers_flows_path = assets_path.joinpath('rivers_flows_rec.blt')
-rivers_lc_clean_path = assets_path.joinpath('rivers_catch_lc_clean.blt')
+rivers_lc_clean_path = assets_path.joinpath('rivers_catch_lc.blt')
 rivers_catch_path = assets_path.joinpath('rivers_catchments_minor.blt')
 rivers_reach_mapping_path = assets_path.joinpath('rivers_reaches_mapping.blt')
 
