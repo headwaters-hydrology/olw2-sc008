@@ -60,6 +60,7 @@ rivers_flows_path = assets_path.joinpath('rivers_flows_rec.blt')
 rivers_lc_clean_path = assets_path.joinpath('rivers_catch_lc.blt')
 rivers_catch_path = assets_path.joinpath('rivers_catchments_minor.blt')
 rivers_reach_mapping_path = assets_path.joinpath('rivers_reaches_mapping.blt')
+rivers_sites_path = assets_path.joinpath('rivers_sites_catchments.blt')
 
 map_height = 700
 
@@ -114,6 +115,10 @@ reach_style_handle = assign("""function style2(feature, context){
     }
     return style;
 }""", name='rivers_reach_style_handle')
+
+sites_points_handle = assign("""function style_sites(feature, latlng, context){
+                             const {circleOptions} = context.props.hideout;
+                             return L.circleMarker(latlng, circleOptions);}""")
 
 freq_mapping = {12: 'once a month', 26: 'once a fortnight', 52: 'once a week', 104: 'twice a week', 364: 'once a day'}
 time_periods = [5, 10, 20, 30]
@@ -304,9 +309,12 @@ def calc_river_reach_reductions(catch_id, plan_file, reduction_col='reduction'):
         prop_area = t_area.copy()
 
         for i, b in enumerate(branch):
-            t_area1, prop_area1 = c5[b]
-            t_area[i] = t_area1
-            prop_area[i] = prop_area1
+            if b in c5:
+                t_area1, prop_area1 = c5[b]
+                t_area[i] = t_area1
+                prop_area[i] = prop_area1
+            else:
+                prop_area[i] = 0
 
         p1 = (np.sum(prop_area)/np.sum(t_area))
         if p1 < 0:
@@ -435,6 +443,7 @@ def layout():
             # dl.GeoJSON(url='', format="geobuf", id='base_reach_map', options=dict(style=base_reaches_style_handle)),
             dl.GeoJSON(data='', format="geobuf", id='reach_map', options={}, hideout={}, hoverStyle=arrow_function(dict(weight=10, color='black', dashArray=''))),
             dl.GeoJSON(data='', format="geobuf", id='reductions_poly'),
+            dl.GeoJSON(data='', format="geobuf", id='sites_points', options=dict(pointToLayer=sites_points_handle), hideout={'circleOptions': dict(fillOpacity=1, stroke=False, radius=5, color='black')}),
             colorbar,
             info
                             ], style={'width': '100%', 'height': 780, 'margin': "auto", "display": "block"}, id="map2")
@@ -490,6 +499,23 @@ def update_catch_id(feature):
 def update_reaches(catch_id, map_checkboxes):
     if (catch_id is not None) and ('reach_map' in map_checkboxes):
         with booklet.open(rivers_reach_gbuf_path, 'r') as f:
+            data = base64.b64encode(f[int(catch_id)]).decode()
+
+    else:
+        data = ''
+
+    return data
+
+
+@callback(
+        Output('sites_points', 'data'),
+        Input('catch_id', 'value'),
+        # Input('map_checkboxes', 'value'),
+        )
+# @cache.memoize()
+def update_monitor_sites(catch_id):
+    if (catch_id is not None):
+        with booklet.open(rivers_sites_path, 'r') as f:
             data = base64.b64encode(f[int(catch_id)]).decode()
 
     else:

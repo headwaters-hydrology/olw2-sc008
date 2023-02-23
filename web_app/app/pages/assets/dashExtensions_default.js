@@ -1,6 +1,22 @@
 window.dashExtensions = Object.assign({}, window.dashExtensions, {
     default: {
-        lakes_lake_style_handle: function style4(feature, context) {
+        rivers_catch_style_handle: function style(feature) {
+            return {
+                fillColor: 'grey',
+                weight: 2,
+                opacity: 1,
+                color: 'black',
+                fillOpacity: 0.1
+            };
+        },
+        rivers_base_reach_style_handle: function style3(feature) {
+            return {
+                weight: 2,
+                opacity: 0.75,
+                color: 'grey',
+            };
+        },
+        rivers_reach_style_handle: function style2(feature, context) {
             const {
                 classes,
                 colorscale,
@@ -10,11 +26,16 @@ window.dashExtensions = Object.assign({}, window.dashExtensions, {
             const value = feature.properties[colorProp]; // get value the determines the color
             for (let i = 0; i < classes.length; ++i) {
                 if (value == classes[i]) {
-                    style.color = colorscale[i]; // set the color according to the class
+                    style.color = colorscale[i]; // set the fill color according to the class
                 }
             }
-
             return style;
+        },
+        function3: function style_sites(feature, latlng, context) {
+            const {
+                circleOptions
+            } = context.props.hideout;
+            return L.circleMarker(latlng, circleOptions);
         }
     }
 });

@@ -31,6 +31,12 @@ window.dashExtensions = Object.assign({}, window.dashExtensions, {
             }
             return style;
         },
+        function3: function style_sites(feature, latlng, context) {
+            const {
+                circleOptions
+            } = context.props.hideout;
+            return L.circleMarker(latlng, circleOptions);
+        },
         lakes_lake_style_handle: function style4(feature, context) {
             const {
                 classes,

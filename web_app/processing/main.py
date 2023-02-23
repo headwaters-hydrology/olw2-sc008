@@ -16,6 +16,7 @@ from rivers_land_cover_extraction import rivers_land_cover
 from rivers_assign_errors import process_errors
 from rivers_assign_flow import process_flows_rec
 # from rivers_assign_loads import process_loads_rec
+from rivers_monitoring_sites import rivers_monitoring_sites_processing
 
 from lakes_geo_processing import lakes_geo_process
 from lakes_delineation import lakes_catch_delin
@@ -25,6 +26,9 @@ from lakes_conc_error import lakes_conc_error_processing
 
 #####################################################
 ### Rivers
+
+## Monitoring sites
+rivers_monitoring_sites_processing()
 
 ## REC delineate all catchments that start at the sea and have a greater than 2 stream order
 rec_delin()

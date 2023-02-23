@@ -111,7 +111,7 @@ if __name__ == '__main__':
     #     combo_list.append(output)
 
 
-    with concurrent.futures.ProcessPoolExecutor(max_workers=4, mp_context=mp.get_context("spawn")) as executor:
+    with concurrent.futures.ProcessPoolExecutor(max_workers=3, mp_context=mp.get_context("spawn")) as executor:
         futures = []
         for catch_id, lc in land_cover.items():
             f = executor.submit(land_cover_process, catch_id, lc, red1, lc_red_dict)

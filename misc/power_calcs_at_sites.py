@@ -22,7 +22,7 @@ base_path = pathlib.Path('/media/nvme1/data/OLW')
 
 rivers_reach_error_path = '/media/nvme1/git/olw/olw2-sc008/web_app/app/assets/rivers_reaches_error.h5'
 
-sites_csv = 'olw_river_sites.csv'
+sites_csv = 'olw_river_sites_rec.csv'
 
 output_csv = 'power_calcs_at_river_sites_v03.csv'
 
