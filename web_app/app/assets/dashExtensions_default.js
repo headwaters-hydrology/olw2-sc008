@@ -31,7 +31,7 @@ window.dashExtensions = Object.assign({}, window.dashExtensions, {
             }
             return style;
         },
-        function3: function style_sites(feature, latlng, context) {
+        sites_points_handle: function style_sites(feature, latlng, context) {
             const {
                 circleOptions
             } = context.props.hideout;

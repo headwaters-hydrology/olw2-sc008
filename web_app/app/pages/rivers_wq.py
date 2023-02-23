@@ -118,7 +118,7 @@ reach_style_handle = assign("""function style2(feature, context){
 
 sites_points_handle = assign("""function style_sites(feature, latlng, context){
                              const {circleOptions} = context.props.hideout;
-                             return L.circleMarker(latlng, circleOptions);}""")
+                             return L.circleMarker(latlng, circleOptions);}""", name='sites_points_handle')
 
 freq_mapping = {12: 'once a month', 26: 'once a fortnight', 52: 'once a week', 104: 'twice a week', 364: 'once a day'}
 time_periods = [5, 10, 20, 30]
@@ -734,19 +734,3 @@ def update_map_info(props_obj, reductions_obj, map_checkboxes, feature):
 #     for k, v in f.items():
 #         if v < 0:
 #             count += 1
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
