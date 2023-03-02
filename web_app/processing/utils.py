@@ -68,7 +68,9 @@ river_sims_path = output_path.joinpath('rivers_sims')
 river_sims_path.mkdir(parents=True, exist_ok=True)
 
 river_sims_h5_path = river_sims_path.joinpath('rivers_sims.h5')
+river_sims_gam_path = river_sims_path.joinpath('rivers_sims_gam.h5')
 river_reach_error_path = assets_path.joinpath('rivers_reaches_error.h5')
+river_reach_error_gam_path = output_path.joinpath('rivers_reaches_error_gam.h5')
 river_reach_loads_path = assets_path.joinpath('rivers_reaches_loads.h5')
 river_reach_loads_area_path = assets_path.joinpath('rivers_reaches_loads_area.h5')
 
