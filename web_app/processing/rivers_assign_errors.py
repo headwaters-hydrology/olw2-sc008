@@ -93,6 +93,7 @@ def process_errors():
         river_sims1['error'] = river_sims1['nzsegment']
         river_sims1['nzsegment'] = segs
         river_sims1 = river_sims1.assign_coords(indicator=ind).expand_dims('indicator')
+        river_sims1 = river_sims1.drop('error')
 
         error_list.append(river_sims1)
 

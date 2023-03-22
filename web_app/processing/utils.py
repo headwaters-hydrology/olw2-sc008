@@ -25,8 +25,8 @@ from scipy import stats
 ##############################################
 ### Parameters
 
-# base_path = '/media/nvme1/data/OLW/web_app'
-base_path = '/home/mike/data/OLW/web_app'
+base_path = '/media/nvme1/data/OLW/web_app'
+# base_path = '/home/mike/data/OLW/web_app'
 # %cd '/home/mike/data/OLW/web_app'
 
 base_path = pathlib.Path(base_path)
@@ -138,7 +138,7 @@ gw_sims_path.mkdir(parents=True, exist_ok=True)
 
 gw_points_error_path = assets_path.joinpath('gw_points_error.h5')
 
-gw_sims_h5_path = lakes_sims_path.joinpath('gw_sims.h5')
+gw_sims_h5_path = gw_sims_path.joinpath('gw_sims.h5')
 
 
 

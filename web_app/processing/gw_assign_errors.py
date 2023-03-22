@@ -35,15 +35,9 @@ def gw_process_errors_points():
     median1 = grp1['error'].median().round(3)
 
     ## Assign init conc and errors to each location
-    indicators = errors1.indicator.unique()
-    refs = errors1.ref.unique()
+    # indicators = errors1.indicator.unique()
 
-    errors1.loc[errors1.error <= list1[0], 'error'] = list1[0]*1.05
-    errors1.loc[errors1.error > list1[-1], 'error'] = list1[-1]
-
-    errors1['error'] = pd.cut(errors1.error, list1, labels=list1[:-1])
-
-    error_dict = {ind: {} for ind in indicators}
+    error_dict = {}
     for ind, errors in grp1:
         miss_error = median1.loc[ind]
 
@@ -55,7 +49,7 @@ def gw_process_errors_points():
 
         errors2 = pd.cut(errors.error, list1, labels=list1[:-1])
 
-        error_dict[ind].update(errors2)
+        error_dict[ind] = errors2
 
     gw_sims = xr.open_dataset(utils.gw_sims_h5_path, engine='h5netcdf')
     gw_sims['n_samples'] = gw_sims.n_samples.astype('int16')
@@ -78,6 +72,7 @@ def gw_process_errors_points():
         gw_sims1['error'] = gw_sims1['ref']
         gw_sims1['ref'] = refs
         gw_sims1 = gw_sims1.assign_coords(indicator=ind).expand_dims('indicator')
+        gw_sims1 = gw_sims1.drop('error')
 
         error_list.append(gw_sims1)
 

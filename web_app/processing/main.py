@@ -44,7 +44,7 @@ rivers_land_cover()
 process_flows_rec()
 # process_loads_rec()
 
-## River error/conc sims
+## River error/power sims
 
 # rivers_sims.py should be run via the terminal
 
@@ -63,7 +63,7 @@ lakes_catch_delin()
 ## Lakes land cover processing
 lakes_lc_process()
 
-## Lakes error/conc sims
+## Lakes error/power sims
 
 # lakes_sims.py should be run via the terminal
 
@@ -76,7 +76,7 @@ lakes_conc_error_processing()
 ## GW locations
 gw_geo_process()
 
-## GW error sims
+## GW error/power sims
 
 # gw_sims.py should be run via the terminal
 
