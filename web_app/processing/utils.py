@@ -25,8 +25,8 @@ from scipy import stats
 ##############################################
 ### Parameters
 
-base_path = '/media/nvme1/data/OLW/web_app'
-# base_path = '/home/mike/data/OLW/web_app'
+# base_path = '/media/nvme1/data/OLW/web_app'
+base_path = '/home/mike/data/OLW/web_app'
 # %cd '/home/mike/data/OLW/web_app'
 
 base_path = pathlib.Path(base_path)
@@ -121,6 +121,29 @@ lakes_data_path = base_path.joinpath('lakes_wq_data.csv')
 lakes_data_clean_path = base_path.joinpath('lakes_wq_data_clean.feather')
 lakes_class_csv = base_path.joinpath('fenz_lakes_classification.csv')
 lakes_stdev_path = output_path.joinpath('lakes_stdev.h5')
+
+
+### GW
+
+## Model data
+gw_data_path = base_path.joinpath('gw_points_data.hdf')
+
+## Spatial data
+gw_points_gbuf_path = assets_path.joinpath('gw_points.pbf')
+gw_points_path = output_path.joinpath('gw_points.feather')
+
+## Power calcs
+gw_sims_path = output_path.joinpath('gw_sims')
+gw_sims_path.mkdir(parents=True, exist_ok=True)
+
+gw_points_error_path = assets_path.joinpath('gw_points_error.h5')
+
+gw_sims_h5_path = lakes_sims_path.joinpath('gw_sims.h5')
+
+
+
+
+
 
 #############################################
 ### Functions

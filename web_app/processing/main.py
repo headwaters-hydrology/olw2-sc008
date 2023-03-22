@@ -23,6 +23,8 @@ from lakes_delineation import lakes_catch_delin
 from lakes_land_cover_extraction import lakes_lc_process
 from lakes_conc_error import lakes_conc_error_processing
 
+from gw_geo_processing import gw_geo_process
+from gw_assign_errors import gw_process_errors_points
 
 #####################################################
 ### Rivers
@@ -52,7 +54,7 @@ process_errors()
 ###################################################
 ### Lakes
 
-## Lakes location
+## Lakes locations
 lakes_geo_process()
 
 ## Lakes catch delineation
@@ -71,9 +73,14 @@ lakes_conc_error_processing()
 ###################################################
 ### GW
 
+## GW locations
+gw_geo_process()
 
+## GW error sims
 
+# gw_sims.py should be run via the terminal
 
+gw_process_errors_points()
 
 
 
