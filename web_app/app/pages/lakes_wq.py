@@ -308,7 +308,7 @@ indicators = [{'value': k, 'label': v} for k, v in indicator_dict.items()]
 
 def layout():
     layout = html.Div(children=[
-        html.Div([html.H1('Lake/Lagoon Water Quality')]),
+        # html.Div([html.H1('Lake/Lagoon Water Quality')]),
         html.Div([
             html.H3('(1) Reductions routing'),
 
@@ -376,7 +376,7 @@ def layout():
                id='map_checkboxes_lakes',
                style={'padding': 5, 'margin-bottom': 330}
             ),
-        dcc.Link(html.Img(src=str(app_base_path.joinpath('our-land-and-water-logo.svg'))), href='https://ourlandandwater.nz/')
+        # dcc.Link(html.Img(src=str(app_base_path.joinpath('our-land-and-water-logo.svg'))), href='https://ourlandandwater.nz/')
         ], className='two columns', style={'margin': 10}),
 
     html.Div([

@@ -11,7 +11,6 @@ from dash import html, dcc
 dash.register_page(__name__, path='/')
 
 intro_text = """
-# Mitigation Effectiveness Monitoring Design
 #### Introduction
 This webpage contains various dashboards that help provide freshwater stewards and
 kaitiaki with new tools to decide on what to measure, where and when, and
