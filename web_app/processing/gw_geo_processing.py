@@ -35,6 +35,7 @@ def gw_geo_process():
 
     gw_pts1 = vector.xy_to_gpd('ref', 'nztm_x', 'nztm_y', gw_pts0, 2193).to_crs(4326)
     gw_pts1['geometry'] = gw_pts1['geometry'].simplify(0.00001)
+    gw_pts1['tooltip'] = gw_pts1['ref']
 
     sites_geo = gw_pts1.set_index('ref').__geo_interface__
 

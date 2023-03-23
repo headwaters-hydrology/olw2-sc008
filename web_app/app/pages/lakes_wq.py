@@ -660,7 +660,7 @@ def update_map_info_lakes(props_obj, reductions_obj, map_checkboxes, feature):
     """
 
     """
-    info = """###### Likelihood of significant reduction (%)"""
+    info = """###### Likelihood of observing a reduction (%)"""
 
     if (reductions_obj != '') and (reductions_obj is not None) and ('reductions_poly' in map_checkboxes):
         info = info + """\n\nHover over the polygons to see reduction %"""
@@ -669,12 +669,12 @@ def update_map_info_lakes(props_obj, reductions_obj, map_checkboxes, feature):
         if feature is not None:
             props = decode_obj(props_obj)
 
-            info_str = """\n\nReduction: {red}%\n\nLikelihood of significant reduction (power): {t_stat}%""".format(red=int(props['reduction']), t_stat=int(props['power']))
+            info_str = """\n\nReduction: {red}%\n\nLikelihood of observing a reduction (power): {t_stat}%""".format(red=int(props['reduction']), t_stat=int(props['power']))
 
             info = info + info_str
 
         else:
-            info = info + """\n\nClick on a reach to see info"""
+            info = info + """\n\nClick on a lake to see info"""
 
     return info
 

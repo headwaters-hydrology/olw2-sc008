@@ -52,6 +52,22 @@ window.dashExtensions = Object.assign({}, window.dashExtensions, {
             }
 
             return style;
+        },
+        gw_points_style_handle: function gw_points_style_handle(feature, latlng, context) {
+            const {
+                classes,
+                colorscale,
+                circleOptions,
+                colorProp
+            } = context.props.hideout; // get props from hideout
+            const value = feature.properties[colorProp]; // get value the determines the fillColor
+            for (let i = 0; i < classes.length; ++i) {
+                if (value == classes[i]) {
+                    circleOptions.fillColor = colorscale[i]; // set the color according to the class
+                }
+            }
+
+            return L.circleMarker(latlng, circleOptions);
         }
     }
 });

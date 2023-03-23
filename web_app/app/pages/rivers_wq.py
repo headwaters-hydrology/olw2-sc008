@@ -661,7 +661,7 @@ def update_props_data(reaches_obj, indicator, n_years, n_samples_year, catch_id)
             power.append(int(power_data1.sel(conc_perc=p, nzsegment=reach).power.values))
 
         props = props.assign(power=(('reach'), np.array(power, dtype='int8')))
-        props['power'] = xr.where((props.reduction >= 5), props['power'], 0)
+        # props['power'] = xr.where((props.reduction >= 5), props['power'], 0)
 
         data = encode_obj(props.drop('conc_perc'))
     else:
@@ -702,7 +702,7 @@ def update_map_info(props_obj, reductions_obj, map_checkboxes, feature):
     """
 
     """
-    info = """###### Likelihood of reduction (%)"""
+    info = """###### Likelihood of observing a reduction (%)"""
 
     if (reductions_obj != '') and (reductions_obj is not None) and ('reductions_poly' in map_checkboxes):
         info = info + """\n\nHover over the polygons to see reduction %"""
@@ -716,7 +716,7 @@ def update_map_info(props_obj, reductions_obj, map_checkboxes, feature):
 
                 reach_data = props.sel(reach=int(feature['id']))
 
-                info_str = """\n\nReduction: {red}%\n\nLikelihood of reduction (power): {t_stat}%""".format(red=int(reach_data.reduction), t_stat=int(reach_data.power))
+                info_str = """\n\nReduction: {red}%\n\nLikelihood of observing a reduction (power): {t_stat}%""".format(red=int(reach_data.reduction), t_stat=int(reach_data.power))
 
                 info = info + info_str
 
