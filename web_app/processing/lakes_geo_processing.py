@@ -79,9 +79,16 @@ def lakes_geo_process():
     lakes_poly0['geometry'] = lakes_poly0.simplify(20)
     lakes_poly0.loc[lakes_poly0.Name == 'Lake Ototoa', 'LID'] = 50270
 
-    lakes_poly0 = lakes_poly0.rename(columns={'LID': 'LFENZID', 'Name': 'name'})
+    lakes_poly0 = lakes_poly0.rename(columns={'LID': 'LFENZID', 'Name': 'name', 'ResidenceTime': 'residence_time', 'MaxDepth': 'max_depth'})
     lakes_poly0 = lakes_poly0.dropna(subset=['LFENZID', 'name']).copy()
     lakes_poly0['LFENZID'] = lakes_poly0['LFENZID'].astype('int32')
+    lakes_poly0.loc[lakes_poly0['residence_time'].isnull(), 'residence_time'] = lakes_poly0['residence_time'].median()
+    lakes_poly0.loc[lakes_poly0['residence_time'] < 1, 'residence_time'] = 1
+    lakes_poly0['residence_time'] = lakes_poly0['residence_time'].round().astype('int32')
+    lakes_poly0.loc[lakes_poly0['max_depth'].isnull(), 'max_depth'] = lakes_poly0['max_depth'].median()
+    lakes_poly0.loc[lakes_poly0['max_depth'] < 1, 'max_depth'] = 1
+    lakes_poly0['max_depth'] = lakes_poly0['max_depth'].round().astype('int32')
+
     lakes_poly0 = lakes_poly0.drop_duplicates(subset=['LFENZID'])
 
     lakes_poly1 = lakes_poly0[lakes_poly0.LFENZID.isin(fenz_catch2.LFENZID.values)].copy()
@@ -91,7 +98,7 @@ def lakes_geo_process():
     # lakes_poly1 = lakes_poly1.loc[lakes_poly1.name != '', ['LFENZID', 'name', 'geometry']].copy()
     # lakes_poly1 = lakes_poly1.drop_duplicates(subset=['LFENZID'])
 
-    lakes_poly2 = lakes_poly1[['LFENZID', 'name', 'geometry']].reset_index(drop=True).copy()
+    lakes_poly2 = lakes_poly1[['LFENZID', 'name', 'residence_time', 'max_depth', 'geometry']].reset_index(drop=True).copy()
 
     utils.gpd_to_feather(lakes_poly2, utils.lakes_poly_path)
 

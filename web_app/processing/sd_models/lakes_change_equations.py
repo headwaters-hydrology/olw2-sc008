@@ -20,6 +20,7 @@ from sklearn.compose import make_column_transformer
 from sklearn.compose import make_column_selector
 import scipy
 import hdf5tools
+import math
 
 
 if '..' not in sys.path:
@@ -39,7 +40,8 @@ chla_conc = 23.7
 residence_time = 10
 max_depth = 20
 
-reductions = np.arange(1, 50)
+conc_perc0 = np.arange(1, 100)
+conc = 0.5
 
 ################################################
 ### Change ratios
@@ -50,9 +52,9 @@ res_base = 10**(np.log10(tp_conc)/b)
 
 results_list = []
 
-for red in reductions:
+for conc in conc_perc0:
     b = (1 + (0.44*(residence_time**0.13)))
-    res_red = 10**(np.log10(tp_conc*(1 - red*0.01))/b)
+    res_red = 10**(np.log10(tp_conc*(conc*0.01))/b)
     ratio = res_red/res_base
     results_list.append(ratio)
 
@@ -61,7 +63,7 @@ for red in reductions:
 b = 39.8/(max_depth**0.41)
 res_base = b*(tn_conc**0.54)
 
-res_red = b*((tn_conc*(1 - red*0.01))**0.54)
+res_red = b*((tn_conc*(conc*0.01))**0.54)
 
 ratio = res_red/res_base
 
@@ -73,16 +75,30 @@ res_red = 10**(-1.8 + (0.7*np.log10((tn_conc/tp_conc) * tp_conc * 0.5)) + 0.55*n
 ratio = res_red/res_base
 
 ## Secchi
-res_base = 10**(3.46 - 1.53*np.log10(chla_conc))
+# Deep
+res_base = (3.46 - 1.53*np.log10(chla_conc))**2
 
-res_red = 10**(3.46 - 1.53*np.log10(chla_conc*0.5))
+res_red = (3.46 - 1.53*np.log10(chla_conc*0.9))**2
 
 ratio = res_red/res_base
 
+results_dict = {}
+
+for conc in conc_perc0:
+    res_red = (3.46 - 1.53*np.log10(chla_conc*conc*0.01))**2
+    ratio = 1/(res_red/res_base)
+    results_dict[conc] = math.log(ratio, conc*0.01)
 
 
+# Shallow
+res_base = (3.46 - 0.74*np.log10(chla_conc) - 0.35*np.log10(200/10))**2
 
+results_dict = {}
 
+for conc in conc_perc0:
+    res_red = (3.46 - 0.74*np.log10(chla_conc*conc*0.01) - 0.35*np.log10(200/10))**2
+    ratio = 1/(res_red/res_base)
+    results_dict[conc] = math.log(ratio, conc*0.01)
 
 
 

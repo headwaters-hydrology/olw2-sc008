@@ -2,7 +2,7 @@ version: '3'
 
 services:
   olw-app:
-    image: mullenkamp/olw-monitoring-app:1.16
+    image: mullenkamp/olw-monitoring-app:1.17
     # extra_hosts:
     #   - "host.docker.internal:host-gateway"
     ports:

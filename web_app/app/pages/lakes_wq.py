@@ -143,7 +143,7 @@ base_reach_style = dict(weight=4, opacity=1, color='white')
 info = dcc.Markdown(id="info_lakes", className="info", style={"position": "absolute", "top": "10px", "right": "10px", "z-index": "1000"})
 # info = html.Div(id="info", className="info", style={"position": "absolute", "top": "10px", "right": "10px", "z-index": "1000"})
 
-indicator_dict = {'CHLA': 'Chlorophyll a', 'CYANOTOT': 'Total Cyanobacteria', 'ECOLI': 'E.coli', 'NH4N': 'Ammoniacal nitrogen', 'Secchi': 'Secchi depth', 'TN': 'Total nitrogen', 'TP': 'Total phosphorus', 'pH': 'pH'}
+indicator_dict = {'CHLA': 'Chlorophyll a', 'CYANOTOT': 'Total Cyanobacteria', 'ECOLI': 'E.coli', 'NH4N': 'Ammoniacal Nitrogen', 'Secchi': 'Secchi Depth', 'TN': 'Total Nitrogen', 'TP': 'Total Phosphorus', 'pH': 'pH'}
 
 ###############################################
 ### Helper Functions
@@ -288,7 +288,10 @@ def calc_lake_reach_reductions(lake_id, plan_file, reduction_col='reduction'):
 with open(assets_path.joinpath('lakes_points.pbf'), 'rb') as f:
     geodict = geobuf.decode(f.read())
 
-lakes = [{'value': f['id'], 'label': ' '.join(f['properties']['name'].split())} for f in geodict['features']]
+lakes_options = [{'value': int(f['id']), 'label': ' '.join(f['properties']['name'].split())} for f in geodict['features']]
+
+lakes_data = {int(f['id']): f['properties'] for f in geodict['features']}
+
 # freqs = sel1['frequency'].values
 # x1 = xr.open_dataset(lakes_error_path, engine='h5netcdf')
 # indicators = x1.indicator.values
@@ -313,7 +316,7 @@ def layout():
             html.H3('(1) Reductions routing'),
 
             html.Label('Select a lake/lagoon on the map:'),
-            dcc.Dropdown(options=lakes, id='lake_id', optionHeight=40, clearable=False),
+            dcc.Dropdown(options=lakes_options, id='lake_id', optionHeight=40, clearable=False),
 
             dcc.Upload(
                 id='upload_data_lakes',
@@ -582,11 +585,36 @@ def update_props_data_lakes(reaches_obj, indicator, n_years, n_samples_year, lak
         props = decode_obj(reaches_obj)
         # print(props)
 
+        conc_perc = 100 - props
+
+        lake_data = lakes_data[int(lake_id)]
+
+        ## Lake residence time calcs
+        if indicator in ['TP', 'CHLA', 'Secchi']:
+            if lake_data['max_depth'] > 7.5:
+                b = 1 + (0.44*(lake_data['residence_time']**0.13))
+                conc_perc = int(round(((conc_perc*0.01)**(1/b)) * 100))
+        elif indicator == 'TN':
+            conc_perc = int(round(((conc_perc*0.01)**0.54) * 100))
+        if indicator in ['CHLA', 'Secchi']:
+            conc_perc = int(round(((conc_perc*0.01)**1.25) * 100))
+        if indicator == 'Secchi':
+            if lake_data['max_depth'] > 20:
+                conc_perc = int(round(((conc_perc*0.01)**(0.9)) * 100))
+            else:
+                conc_perc = int(round(((conc_perc*0.01)**(0.9)) * 100))
+
+        if conc_perc < 1:
+            conc_perc = 1
+        elif conc_perc > 100:
+            conc_perc = 100
+
+        ## Lookup power
         n_samples = n_samples_year*n_years
 
         power_data = xr.open_dataset(lakes_error_path, engine='h5netcdf')
         try:
-            power_data1 = int(power_data.sel(indicator=indicator, LFENZID=int(lake_id), n_samples=n_samples, conc_perc=100-props).power.values)
+            power_data1 = int(power_data.sel(indicator=indicator, LFENZID=int(lake_id), n_samples=n_samples, conc_perc=conc_perc).power.values)
         except:
             power_data1 = 0
         power_data.close()
