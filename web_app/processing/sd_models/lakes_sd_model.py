@@ -74,7 +74,6 @@ for i, v in grp1:
     new_data = np.log(v)
     data0.loc[data0.indicator == i, 'value'] = new_data
 
-
 grp2 = data0.groupby(['LawaSiteID', 'indicator'])[['date', 'value']]
 
 stdev_list = []
