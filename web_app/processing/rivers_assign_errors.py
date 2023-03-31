@@ -24,13 +24,12 @@ pd.options.display.max_columns = 10
 # indicators = ['BD', 'DR', 'EC', 'NH', 'NO', 'TN', 'TP', 'TU']
 
 error_name = 'lm_se'
-error_name = 'gam_se'
 
 
 def process_errors():
     # list1 = utils.log_error_cats(0.01, 2.72, 0.1)
     # list1 = utils.log_error_cats(0.01, 3.43, 0.1)
-    list1 = utils.log_error_cats(0.01, 2.55, 0.05)
+    list1 = utils.log_error_cats(0.01, 3.05, 0.05)
     list1 = [0.001] + list1
 
     # conc0 = pd.read_csv(utils.conc_csv_path, usecols=['Indicator', 'nzsegment', 'lm1seRes']).dropna()

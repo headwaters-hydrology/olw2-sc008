@@ -21,16 +21,25 @@ pd.options.display.max_columns = 10
 #######################################
 ### Assign conc
 
+error_name = 'gam_se'
+
+
 def process_errors():
     # list1 = utils.log_error_cats(0.01, 3.43, 0.1)
     list1 = utils.log_error_cats(0.01, 3.05, 0.05)
     list1 = [0.001] + list1
 
-    conc0 = pd.read_csv(utils.conc_csv_path, usecols=['Indicator', 'nzsegment', 'gam1seRes']).dropna()
+    # conc0 = pd.read_csv(utils.conc_csv_path, usecols=['Indicator', 'nzsegment', 'gam1seRes']).dropna()
+    # conc0.rename(columns={'gam1seRes': 'error', 'Indicator': 'indicator'}, inplace=True)
 
-    conc0.rename(columns={'gam1seRes': 'error', 'Indicator': 'indicator'}, inplace=True)
+    conc0 = pd.read_csv(utils.conc_csv_path)
+    conc0a = conc0.set_index('nzsegment').loc[:, [col for col in conc0.columns if error_name in col]].stack()
+    conc0a.name = 'error'
+    conc0b = conc0a.reset_index()
+    conc0b['indicator'] = conc0b['level_1'].str[:2]
+    conc0b = conc0b.drop('level_1', axis=1)
 
-    conc1 = conc0.groupby(['indicator', 'nzsegment']).mean().reset_index()
+    conc1 = conc0b.groupby(['indicator', 'nzsegment']).mean().reset_index()
     # conc1.loc[(conc1.indicator == 'EC') & (conc1.init_conc > 1000)] = np.nan
     # conc1.loc[(conc1.indicator == 'NO') & (conc1.init_conc > 20)] = np.nan
 
@@ -73,7 +82,7 @@ def process_errors():
                 raise ValueError('What the heck!')
             error_dict[ind].update(r_errors1.to_dict())
 
-    river_sims = xr.open_dataset(utils.river_sims_gam_path, engine='h5netcdf')
+    river_sims = xr.open_dataset(utils.river_sims_path, engine='h5netcdf')
     river_sims['n_samples'] = river_sims.n_samples.astype('int16')
     river_sims.n_samples.encoding = {}
     river_sims['conc_perc'] = river_sims.conc_perc.astype('int8')
