@@ -45,7 +45,8 @@ assets_path = output_path.joinpath('assets')
 assets_path.mkdir(parents=True, exist_ok=True)
 
 ### Rivers
-conc_csv_path = base_path.joinpath('StBD3.csv')
+# conc_csv_path = base_path.joinpath('StBD3.csv')
+conc_csv_path = base_path.joinpath('Stream_Order3_Estimates_2023-03-31.csv')
 river_sites_path = base_path.joinpath('olw_river_sites.feather')
 
 river_flows_rec_path = assets_path.joinpath('rivers_flows_rec.blt')
@@ -82,9 +83,6 @@ land_cover_path = base_path.joinpath('lcdb-v50-land-cover-database-version-50-ma
 conc_perc = np.arange(1, 101, 1, dtype='int8')
 n_samples_year = [12, 26, 52, 104, 364]
 n_years = [5, 10, 20, 30]
-start = 0.01
-end = 2.72
-change = 0.1
 
 catch_lc_path = output_path.joinpath('rivers_catch_lc.blt')
 

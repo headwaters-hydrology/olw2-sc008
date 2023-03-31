@@ -22,7 +22,9 @@ pd.options.display.max_columns = 10
 ### Assign conc
 
 def process_errors():
-    list1 = utils.log_error_cats(0.01, 3.43, 0.1)
+    # list1 = utils.log_error_cats(0.01, 3.43, 0.1)
+    list1 = utils.log_error_cats(0.01, 3.05, 0.05)
+    list1 = [0.001] + list1
 
     conc0 = pd.read_csv(utils.conc_csv_path, usecols=['Indicator', 'nzsegment', 'gam1seRes']).dropna()
 
