@@ -24,7 +24,7 @@ rivers_reach_error_path = '/media/nvme1/data/OLW/web_app/output/rivers_reaches_e
 
 sites_csv = 'olw_river_sites_rec.csv'
 
-output_csv = 'power_calcs_at_river_sites_gam_v03.csv'
+output_csv = 'power_calcs_at_river_sites_gam_v04.csv'
 
 reductions = [10, 20, 30]
 

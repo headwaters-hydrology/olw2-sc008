@@ -82,7 +82,7 @@ def process_errors():
                 raise ValueError('What the heck!')
             error_dict[ind].update(r_errors1.to_dict())
 
-    river_sims = xr.open_dataset(utils.river_sims_path, engine='h5netcdf')
+    river_sims = xr.open_dataset(utils.river_sims_h5_path, engine='h5netcdf')
     river_sims['n_samples'] = river_sims.n_samples.astype('int16')
     river_sims.n_samples.encoding = {}
     river_sims['conc_perc'] = river_sims.conc_perc.astype('int8')
