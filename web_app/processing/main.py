@@ -8,6 +8,9 @@ Created on Wed Nov 23 09:18:20 2022
 import os
 import pathlib
 import utils
+
+from land_cover_processing import land_cover_processing
+
 from rivers_delineate import rec_delin
 # from rivers_reach_mappings import reach_mapping
 # from rivers_catch import catch_agg
@@ -27,6 +30,14 @@ from gw_geo_processing import gw_geo_process
 from gw_assign_errors import gw_process_errors_points
 
 #####################################################
+### Land use/cover
+
+## process and clean up geo layers
+land_cover_processing()
+
+## Assign reductions
+# TODO
+
 ### Rivers
 
 ## Monitoring sites

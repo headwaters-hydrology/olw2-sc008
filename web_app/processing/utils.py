@@ -44,6 +44,19 @@ output_path.mkdir(parents=True, exist_ok=True)
 assets_path = output_path.joinpath('assets')
 assets_path.mkdir(parents=True, exist_ok=True)
 
+### Land use/cover
+lc_base_path = base_path.joinpath('land_use')
+
+land_cover_path = lc_base_path.joinpath('lcdb-v50-land-cover-database-version-50-mainland-new-zealand.gpkg')
+
+snb_geo_path = lc_base_path.joinpath('SnB_Typologies.shp')
+dairy_geo_path = lc_base_path.joinpath('Dairy_Typologies.shp')
+
+snb_typo_path = lc_base_path.joinpath('typologies to reductions - snb.csv')
+dairy_typo_path = lc_base_path.joinpath('typologies to reductions - dairy.csv')
+
+lc_clean_path = base_path.joinpath('land_cover_clean.feather')
+
 ### Rivers
 # conc_csv_path = base_path.joinpath('StBD3.csv')
 conc_csv_path = base_path.joinpath('Stream_Order3_Estimates_2023-03-31.csv')
@@ -75,7 +88,6 @@ river_reach_error_gam_path = output_path.joinpath('rivers_reaches_error_gam.h5')
 river_reach_loads_path = assets_path.joinpath('rivers_reaches_loads.h5')
 river_reach_loads_area_path = assets_path.joinpath('rivers_reaches_loads_area.h5')
 
-land_cover_path = base_path.joinpath('lcdb-v50-land-cover-database-version-50-mainland-new-zealand.gpkg')
 # parcels_path = base_path.joinpath('nz-primary-land-parcels.gpkg')
 
 ## Sims params
@@ -85,8 +97,6 @@ n_samples_year = [12, 26, 52, 104, 364]
 n_years = [5, 10, 20, 30]
 
 catch_lc_path = output_path.joinpath('rivers_catch_lc.blt')
-
-land_cover_reductions = {'Exotic Forest': 0, 'High Producing Exotic Grassland': 30, 'Low Producing Grassland': 10, 'Forest - Harvested': 0, 'Orchard, Vineyard or Other Perennial Crop': 10, 'Short-rotation Cropland': 30, 'Other': 0}
 
 catch_lc_clean_path = assets_path.joinpath('rivers_catch_lc.blt')
 

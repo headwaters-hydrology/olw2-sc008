@@ -25,7 +25,7 @@ rivers_reach_error_path = '/media/nvme1/data/OLW/web_app/output/rivers_reaches_e
 
 sites_csv = 'olw_river_sites_rec.csv'
 
-output_csv = 'power_calcs_above_3rd_order_gam_v02.csv'
+output_csv = 'power_calcs_above_3rd_order_gam_v03.csv'
 
 reductions = [20, 30]
 
@@ -45,10 +45,13 @@ w0 = nzrec.Water('/media/nvme1/git/nzrec/data')
 
 stream_orders = {way_id: v['Strahler stream order'] for way_id, v in w0._way_tag.items()}
 
-ways_4th_up = set([i for i, v in stream_orders.items() if v > 3])
+ways_4th_up = [i for i, v in stream_orders.items() if v > 3]
 
 conc0 = pd.read_csv('/media/nvme1/data/OLW/web_app/StBD3.csv', usecols=['Indicator', 'nzsegment', 'lm1seRes']).dropna()
 nzsegments = conc0.nzsegment.unique().astype('int32')
+
+sites = pd.read_csv(base_path.joinpath(sites_csv)).dropna()
+sites['nzsegment'] = sites['nzsegment'].astype('int32')
 
 power_data = xr.open_dataset(rivers_reach_error_path, engine='h5netcdf')
 
@@ -57,7 +60,7 @@ power_data['n_samples'] = power_data['n_samples'].astype('int16')
 power_data['conc_perc'] = power_data['conc_perc'].astype('int8')
 
 segs = power_data.nzsegment.values[np.in1d(power_data.nzsegment.values, nzsegments)]
-segs = segs[np.in1d(segs, np.asarray(list(ways_4th_up), dtype='int32'))]
+segs = segs[np.in1d(segs, np.asarray(ways_4th_up, dtype='int32')) | np.in1d(segs, sites.nzsegment.unique())]
 
 power_data = power_data.sel(conc_perc=[100 - red for red in reductions], n_samples=n_samples, nzsegment=segs).load()
 power_data['conc_perc'] = reductions
@@ -69,6 +72,13 @@ power_data['power'] = power_data['power'].astype('int8')
 pd_df1 = power_data.to_dataframe().reset_index()
 pd_df1 = pd.merge(n_samples_df, pd_df1, on='n_samples').drop('n_samples', axis=1)
 
-pd_df1[['nzsegment', 'indicator', 'reduction', 'n_years', 'n_samples_year', 'power']].sort_values(['nzsegment', 'indicator', 'reduction', 'n_years', 'n_samples_year']).to_csv(base_path.joinpath(output_csv), index=False)
+s_orders_df = pd.DataFrame.from_dict(stream_orders, orient='index', columns=['stream_order'])
+s_orders_df.index.name = 'nzsegment'
+s_orders_df = s_orders_df.reset_index()
+
+pd_df1 = pd.merge(pd_df1, s_orders_df, on='nzsegment', how='left')
+pd_df1 = pd.merge(pd_df1, sites, on='nzsegment', how='left')
+
+pd_df1[['nzsegment', 'indicator', 'reduction', 'n_years', 'n_samples_year', 'power', 'stream_order', 'site_id']].sort_values(['nzsegment', 'indicator', 'reduction', 'n_years', 'n_samples_year']).to_csv(base_path.joinpath(output_csv), index=False)
 
 
