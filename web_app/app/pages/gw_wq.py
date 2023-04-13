@@ -116,7 +116,8 @@ gw_points_style_handle = assign("""function gw_points_style_handle(feature, latl
     return L.circleMarker(latlng, circleOptions);
 }""", name='gw_points_style_handle')
 
-freq_mapping = {12: 'once a month', 26: 'once a fortnight', 52: 'once a week', 104: 'twice a week', 364: 'once a day'}
+# freq_mapping = {12: 'once a month', 26: 'once a fortnight', 52: 'once a week', 104: 'twice a week', 364: 'once a day'}
+freq_mapping = {1: 'once a year', 4: 'once a quarter', 12: 'once a month', 26: 'once a fortnight', 52: 'once a week'}
 time_periods = [5, 10, 20, 30]
 
 # catch_style = {'fillColor': 'grey', 'weight': 2, 'opacity': 1, 'color': 'black', 'fillOpacity': 0.1}

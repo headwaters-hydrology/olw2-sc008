@@ -33,9 +33,9 @@ pd.options.display.max_columns = 10
 ### Sims
 
 # catch_id = 14295077
-n_samples_year = utils.n_samples_year
+n_samples_year = [1, 4, 12, 26, 52]
 n_years = utils.n_years
-n_sims = 1000
+n_sims = 10000
 # output_path = '/media/nvme1/data/OLW/web_app/output/river_sims'
 
 # conc_dict0 = utils.read_pkl_zstd(utils.conc_pkl_path, True)
@@ -57,7 +57,7 @@ n_sims = 1000
 
 
 list1 = utils.error_cats(0.01, 15.31, 0.1)
-
+list1.insert(0, 0.001)
 
 if __name__ == '__main__':
     with concurrent.futures.ProcessPoolExecutor(max_workers=16, mp_context=mp.get_context("spawn")) as executor:
