@@ -9,7 +9,7 @@ networks:
 
 services:
   dash:
-    image: mullenkamp/olw-monitoring-app:1.18
+    image: mullenkamp/olw-monitoring-app:1.19
     networks:
       # - net
       - traefik-public

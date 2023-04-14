@@ -659,6 +659,7 @@ def update_map_info_lakes(props_obj, reductions, feature):
 
     """
     info = """###### Likelihood of observing a reduction (%)"""
+    info_str = """\n\nReduction: {red}%\n\nLikelihood of observing a reduction (power): {t_stat}%\n\nWell Depth (m): {depth:.1f}"""
 
     # if (reductions_obj != '') and (reductions_obj is not None) and ('reductions_poly' in map_checkboxes):
     #     info = info + """\n\nHover over the polygons to see reduction %"""
@@ -669,9 +670,9 @@ def update_map_info_lakes(props_obj, reductions, feature):
             if feature['id'] in gw_refs:
                 props = decode_obj(props_obj)
 
-                info_str = """\n\nReduction: {red}%\n\nLikelihood of observing a reduction (power): {t_stat}%""".format(red=int(reductions), t_stat=int(props[props.ref==feature['id']].iloc[0]['power']))
+                info2 = info_str.format(red=int(reductions), t_stat=int(props[props.ref==feature['id']].iloc[0]['power']), depth=feature['properties']['bore_depth'])
 
-                info = info + info_str
+                info = info + info2
 
         else:
             info = info + """\n\nClick on a well to see info"""
