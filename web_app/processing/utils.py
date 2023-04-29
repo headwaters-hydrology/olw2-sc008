@@ -51,12 +51,17 @@ land_cover_path = lc_base_path.joinpath('lcdb-v50-land-cover-database-version-50
 
 snb_geo_path = lc_base_path.joinpath('SnB_Typologies.shp')
 dairy_geo_path = lc_base_path.joinpath('Dairy_Typologies.shp')
+dairy_geo_clean_path = lc_base_path.joinpath('dairy_typologies_clean.feather')
+snb_geo_clean_path = lc_base_path.joinpath('snb_typologies_clean.feather')
 
 snb_typo_path = lc_base_path.joinpath('typologies to reductions - snb.csv')
 dairy_typo_path = lc_base_path.joinpath('typologies to reductions - dairy.csv')
+dairy_model_typo_path = lc_base_path.joinpath('dairy_modelled_typologies.csv')
 
 lc_clean_path = base_path.joinpath('land_cover_clean.feather')
-
+lc_clean_diss_path = base_path.joinpath('land_cover_clean_dissolved.feather')
+lc_clean_gpkg_path = base_path.joinpath('land_cover_clean.gpkg')
+lc_red_gpkg_path = base_path.joinpath('land_cover_reductions.gpkg')
 
 ### Rivers
 # conc_csv_path = base_path.joinpath('StBD3.csv')
