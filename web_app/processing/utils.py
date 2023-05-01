@@ -62,6 +62,7 @@ lc_clean_path = base_path.joinpath('land_cover_clean.feather')
 lc_clean_diss_path = base_path.joinpath('land_cover_clean_dissolved.feather')
 lc_clean_gpkg_path = base_path.joinpath('land_cover_clean.gpkg')
 lc_red_gpkg_path = base_path.joinpath('land_cover_reductions.gpkg')
+lc_red_feather_path = base_path.joinpath('land_cover_reductions.feather')
 
 ### Rivers
 # conc_csv_path = base_path.joinpath('StBD3.csv')
@@ -102,9 +103,9 @@ conc_perc = np.arange(1, 101, 1, dtype='int8')
 n_samples_year = [12, 26, 52, 104, 364]
 n_years = [5, 10, 20, 30]
 
-catch_lc_path = output_path.joinpath('rivers_catch_lc.blt')
+catch_lc_path = assets_path.joinpath('rivers_catch_lc.blt')
 
-catch_lc_clean_path = assets_path.joinpath('rivers_catch_lc.blt')
+# catch_lc_clean_path = assets_path.joinpath('rivers_catch_lc.blt')
 
 
 ### Lakes

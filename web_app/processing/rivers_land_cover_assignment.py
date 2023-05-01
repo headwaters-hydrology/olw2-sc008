@@ -33,9 +33,7 @@ def rivers_land_cover():
     catches = booklet.open(utils.river_catch_major_path)
 
     ## land cover
-    land_cover = gpd.read_file(utils.land_cover_path)
-    land_cover = land_cover[['Name_2018', 'geometry']].copy()
-    land_cover['geometry'] = land_cover.buffer(0)
+    land_cover = gpd.read_feather(utils.lc_red_feather_path)
 
     lc_dict = {}
     for way_id, catch in catches.items():
@@ -47,7 +45,7 @@ def rivers_land_cover():
         lc2 = land_cover.loc[land_cover.sindex.query(c1, predicate="intersects")].copy()
         lc2b = intersection(lc2.geometry.tolist(), c1)
         lc2['geometry'] = lc2b
-        lc2['geometry'] = lc2['geometry'].simplify(30)
+        # lc2['geometry'] = lc2['geometry'].simplify(30)
         lc_dict[way_id] = lc2
 
     catches.close()

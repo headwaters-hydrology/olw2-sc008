@@ -10,12 +10,13 @@ import pathlib
 import utils
 
 from land_cover_processing import land_cover_processing
+from land_cover_reductions import land_cover_reductions
 
 from rivers_delineate import rec_delin
 # from rivers_reach_mappings import reach_mapping
 # from rivers_catch import catch_agg
 # from rivers_make_app_assets import process_assets
-from rivers_land_cover_extraction import rivers_land_cover
+from rivers_land_cover_assignment import rivers_land_cover
 from rivers_assign_errors import process_errors
 from rivers_assign_flow import process_flows_rec
 # from rivers_assign_loads import process_loads_rec
@@ -36,7 +37,7 @@ from gw_assign_errors import gw_process_errors_points
 land_cover_processing()
 
 ## Assign reductions
-# TODO
+land_cover_reductions()
 
 ### Rivers
 
@@ -48,8 +49,6 @@ rec_delin()
 
 ## Land cover
 rivers_land_cover()
-
-# rivers_land_cover_clean.py should be run via the terminal
 
 ## River flows
 process_flows_rec()

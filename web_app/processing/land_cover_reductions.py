@@ -149,6 +149,12 @@ def land_cover_reductions():
 
     combo3.to_file(utils.lc_red_gpkg_path)
 
+    ## Simplify for app
+    combo4 = combo3[combo3.default_reductions > 0].copy()
+    combo4['geometry'] = combo4['geometry'].buffer(1).simplify(1)
+    combo4 = combo4.dissolve('typology')
+
+    utils.gpd_to_feather(combo4.reset_index(), utils.lc_red_feather_path)
 
 
 
