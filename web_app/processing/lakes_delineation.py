@@ -144,6 +144,14 @@ def lakes_catch_delin():
         for name in segs_dict:
             mapping[name] = segs_dict[name]
 
+    with booklet.open(utils.lakes_catches_major_path, 'n', value_serializer='zstd', key_serializer='uint2', n_buckets=400) as s:
+        for name in catches_minor_dict:
+            geo = catches_minor_dict[name].unary_union
+            geo1 = gpd.GeoDataFrame([name], columns=['LFENZID'], geometry=[geo], crs=2193)
+            geo1['geometry'] = geo1.buffer(1).simplify(20)
+            gbuf = geobuf.encode(geo1.to_crs(4326).set_index('LFENZID', drop=False).__geo_interface__)
+            s[name] = gbuf
+
     with booklet.open(utils.lakes_catches_minor_path, 'n', value_serializer='gpd_zstd', key_serializer='uint2', n_buckets=400) as mapping:
         for name in catches_minor_dict:
             mapping[name] = catches_minor_dict[name]

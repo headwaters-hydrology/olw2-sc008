@@ -59,6 +59,7 @@ lakes_reach_gbuf_path = assets_path.joinpath('lakes_reaches.blt')
 lakes_lc_path = assets_path.joinpath('lakes_catch_lc.blt')
 lakes_reaches_mapping_path = assets_path.joinpath('lakes_reaches_mapping.blt')
 lakes_catches_minor_path = assets_path.joinpath('lakes_catchments_minor.blt')
+rivers_flows_path = assets_path.joinpath('rivers_flows_rec.blt')
 
 map_height = 700
 
@@ -239,37 +240,59 @@ def parse_gis_file(contents, filename):
     return output
 
 
-def calc_lake_reach_reductions(lake_id, plan_file, reduction_col='reduction'):
+def calc_lake_reach_reductions(lake_id, plan_file, reduction_col='default_reductions'):
     """
     This assumes that the concentration is the same throughout the entire greater catchment. If it's meant to be different, then each small catchment must be set and multiplied by the area to weight the contribution downstream.
     """
     with booklet.open(lakes_catches_minor_path, 'r') as f:
         c1 = f[str(lake_id)]
 
-    # with shelflet.open(lakes_reaches_mapping_path, 'r') as f:
-    #     branches = f[str(lake_id)]
+    with booklet.open(lakes_reaches_mapping_path) as f:
+        branches = f[int(lake_id)]
+
+    # TODO: Package the flow up by catch_id so that there is less work here
+    flows = {}
+    with booklet.open(rivers_flows_path) as f:
+        for way_id in branches:
+            try:
+                flows[int(way_id)] = f[int(way_id)]
+            except:
+                pass
+
+    flows_df = pd.DataFrame.from_dict(flows, orient='index', columns=['flow'])
+    flows_df.index.name = 'nzsegment'
+    flows_df = flows_df.reset_index()
+
+    c1 = c1[c1.nzsegment.isin(flows_df.nzsegment)].copy()
 
     plan1 = plan_file[[reduction_col, 'geometry']].to_crs(2193)
-    # c1 = read_pkl_zstd(os.path.join(base_path, 'catchments', '{}.pkl.zst'.format(catch_id)), True)
 
+    ## Calc reductions per nzsegment given sparse geometry input
     c2 = plan1.overlay(c1)
-    c2.loc[c2[reduction_col].isnull(), reduction_col] = 0
-    c2['s_area'] = c2.area
+    c2['sub_area'] = c2.area
 
-    c2['combo_area'] = c2.groupby('nzsegment')['s_area'].transform('sum')
+    c2['combo_area'] = c2.groupby('nzsegment')['sub_area'].transform('sum')
+    c2['prop_reductions'] = c2[reduction_col]*(c2['sub_area']/c2['combo_area'])
+    c3 = c2.groupby('nzsegment')[['prop_reductions', 'sub_area']].sum()
 
-    c2['prop'] = c2[reduction_col]*(c2['s_area']/c2['combo_area'])
+    ## Add in missing areas and assume that they are 0 reductions
+    c1['tot_area'] = c1.area
 
-    c3 = c2.groupby('nzsegment')['prop'].sum()
-    c4 = c1.merge(c3.reset_index(), on='nzsegment')
-    area = c4.area
-    c4['base_area'] = area * 100
-    c4['prop_area'] = area * c4['prop']
+    c4 = pd.merge(c1.drop('geometry', axis=1), c3, on='nzsegment', how='left')
+    c4.loc[c4['prop_reductions'].isnull(), ['prop_reductions', 'sub_area']] = 0
 
-    c5 = c4[['nzsegment', 'base_area', 'prop_area']].set_index('nzsegment').copy()
+    c4['reduction'] = (c4['prop_reductions'] * c4['sub_area'])/c4['tot_area']
+
+    ## Scale the reductions to the flows
+    c4 = c4.merge(flows_df, on='nzsegment')
+
+    c4['base_flow'] = c4.flow * 100
+    c4['prop_flow'] = c4.flow * c4['reduction']
+
+    c5 = c4[['nzsegment', 'base_flow', 'prop_flow']].set_index('nzsegment').copy()
 
     c6 = c5.sum()
-    props = (np.round((c6.prop_area/c6.base_area)*100*0.5)*2).astype('int8')
+    props = (np.round((c6.prop_flow/c6.base_flow)*100*0.5)*2).astype('int8')
 
     return props
 
@@ -347,9 +370,12 @@ def layout():
             type="default",
             children=html.Div([html.Button('Process reductions', id='process_lakes', n_clicks=0),
                                html.Div(id='process_text_lakes')],
-                              style={'margin-top': 20, 'margin-bottom': 100}
+                              style={'margin-top': 20, 'margin-bottom': 10}
                               )
         ),
+            dcc.Markdown('', style={
+                'textAlign': 'left',
+                            }, id='red_disclaimer_lakes')
 
             # html.Label('Select Indicator:'),
             # dcc.Dropdown(options=[{'label': d, 'value': d} for d in indicators], id='indicator', optionHeight=40, clearable=False, value='NH4'),
@@ -491,7 +517,6 @@ def update_lake(lake_id):
         State('upload_data_lakes', 'filename'),
         prevent_initial_call=True
         )
-# @cache.memoize()
 def update_reductions_obj_lakes(contents, n_clicks, lake_id, filename):
     if n_clicks is None:
         if contents is not None:
@@ -505,9 +530,25 @@ def update_reductions_obj_lakes(contents, n_clicks, lake_id, filename):
         with booklet.open(lakes_lc_path, 'r') as f:
             data = encode_obj(f[int(lake_id)])
 
-        return data, 'reduction'
+        return data, 'default_reductions'
     else:
         return '', None
+
+
+@callback(
+        Output('red_disclaimer_lakes', 'children'),
+        Input('upload_data_lakes', 'contents'),
+        Input('demo_data_lakes', 'n_clicks'),
+        Input('map_checkboxes_lakes', 'value'),
+        prevent_initial_call=True
+        )
+def update_reductions_diclaimer(contents, n_clicks, map_checkboxes):
+    if (n_clicks is None) or (contents is not None):
+        return ''
+    elif 'reductions_poly' in map_checkboxes:
+        return '''* Areas on the map without polygon reductions are considered to have 0% reductions.'''
+    else:
+        return ''
 
 
 @callback(
@@ -516,7 +557,6 @@ def update_reductions_obj_lakes(contents, n_clicks, lake_id, filename):
         Input('map_checkboxes_lakes', 'value'),
         Input('col_name_lakes', 'value'),
         )
-# @cache.memoize()
 def update_reductions_poly_lakes(reductions_obj, map_checkboxes, col_name):
     # print(reductions_obj)
     # print(col_name)
@@ -539,12 +579,11 @@ def update_reductions_poly_lakes(reductions_obj, map_checkboxes, col_name):
         Output('col_name_lakes', 'options'),
         Input('reductions_obj_lakes', 'data')
         )
-# @cache.memoize()
 def update_column_options_lakes(reductions_obj):
     # print(reductions_obj)
     if (reductions_obj != '') and (reductions_obj is not None):
         data = decode_obj(reductions_obj)
-        cols = [{'label': col, 'value': col} for col in data.columns if col not in ['geometry', 'id']]
+        cols = [{'label': col, 'value': col} for col in data.columns if (col not in ['geometry', 'id', 'fid', 'OBJECTID']) and np.issubdtype(data[col].dtype, np.number)]
 
         return cols
     else:

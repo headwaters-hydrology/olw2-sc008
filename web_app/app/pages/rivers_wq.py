@@ -239,7 +239,7 @@ def parse_gis_file(contents, filename):
     return output
 
 
-def calc_river_reach_reductions(catch_id, plan_file, reduction_col='reduction'):
+def calc_river_reach_reductions(catch_id, plan_file, reduction_col='default_reductions'):
     """
     This assumes that the concentration is the same throughout the entire greater catchment. If it's meant to be different, then each small catchment must be set and multiplied by the area to weight the contribution downstream.
     """
@@ -260,26 +260,28 @@ def calc_river_reach_reductions(catch_id, plan_file, reduction_col='reduction'):
     flows_df = flows_df.reset_index()
 
     plan1 = plan_file[[reduction_col, 'geometry']].to_crs(2193)
-    # c1 = read_pkl_zstd(os.path.join(base_path, 'catchments', '{}.pkl.zst'.format(catch_id)), True)
 
+    ## Calc reductions per nzsegment given sparse geometry input
     c2 = plan1.overlay(c1)
-    c2.loc[c2[reduction_col].isnull(), reduction_col] = 0
+    c2['sub_area'] = c2.area
 
-    c2['s_area'] = c2.area
+    c2['combo_area'] = c2.groupby('nzsegment')['sub_area'].transform('sum')
+    c2['prop_reductions'] = c2[reduction_col]*(c2['sub_area']/c2['combo_area'])
+    c3 = c2.groupby('nzsegment')[['prop_reductions', 'sub_area']].sum()
 
-    c2['combo_area'] = c2.groupby('nzsegment')['s_area'].transform('sum')
+    ## Add in missing areas and assume that they are 0 reductions
+    c1['tot_area'] = c1.area
 
-    c2['prop'] = c2[reduction_col]*(c2['s_area']/c2['combo_area'])
+    c4 = pd.merge(c1.drop('geometry', axis=1), c3, on='nzsegment', how='left')
+    c4.loc[c4['prop_reductions'].isnull(), ['prop_reductions', 'sub_area']] = 0
 
-    c3 = c2.groupby('nzsegment')['prop'].sum()
-    c4 = c1.merge(c3.reset_index(), on='nzsegment')
+    c4['reduction'] = (c4['prop_reductions'] * c4['sub_area'])/c4['tot_area']
+
+    ## Scale the reductions to the flows
     c4 = c4.merge(flows_df, on='nzsegment')
-    # area = c4.area
-    # c4['base_area'] = area * 100
-    # c4['prop_area'] = area * c4['prop']
 
     c4['base_flow'] = c4.flow * 100
-    c4['prop_flow'] = c4.flow * c4['prop']
+    c4['prop_flow'] = c4.flow * c4['reduction']
 
     c5 = c4[['nzsegment', 'base_flow', 'prop_flow']].set_index('nzsegment').copy()
     c5 = {r: list(v.values()) for r, v in c5.to_dict('index').items()}
@@ -326,10 +328,6 @@ def calc_river_reach_reductions(catch_id, plan_file, reduction_col='reduction'):
                                   },
                         coords={'reach': props_index}
                         )
-    # props = xr.Dataset(data_vars={'reduction': (('reach'), props_val) # Round to nearest even number
-    #                               },
-    #                    coords={'reach': props_index}
-    #                    )
 
     ## Filter out lower stream orders
     # so3 = c1.loc[c1.stream_order > 2, 'nzsegment'].to_numpy()
@@ -373,7 +371,7 @@ def layout():
             dcc.Dropdown(options=[{'label': d, 'value': d} for d in catches], id='catch_id', optionHeight=40, clearable=False),
 
             dcc.Upload(
-                id='upload-data',
+                id='upload_data_rivers',
                 children=html.Button('Upload reductions polygons gpkg'),
                 style={
                     'width': '100%',
@@ -386,7 +384,7 @@ def layout():
             dcc.Markdown('''##### **Or**''', style={
                 'textAlign': 'center',
                             }),
-            html.Button('Use land cover for reductions', id='demo-data',
+            html.Button('Use land cover for reductions', id='demo_data_rivers',
                         style={
                             'width': '100%',
                             'height': '50%',
@@ -401,9 +399,12 @@ def layout():
             type="default",
             children=html.Div([html.Button('Process reductions', id='process', n_clicks=0),
                                html.Div(id='process_text')],
-                              style={'margin-top': 20, 'margin-bottom': 100}
+                              style={'margin-top': 20, 'margin-bottom': 10}
                               )
         ),
+            dcc.Markdown('', style={
+                'textAlign': 'left',
+                            }, id='red_disclaimer_rivers')
 
             # html.Label('Select Indicator:'),
             # dcc.Dropdown(options=[{'label': d, 'value': d} for d in indicators], id='indicator', optionHeight=40, clearable=False, value='NH4'),
@@ -430,7 +431,7 @@ def layout():
                    {'label': 'River reaches', 'value': 'reach_map'}
                ],
                value=['reductions_poly', 'reach_map'],
-               id='map_checkboxes',
+               id='map_checkboxes_rivers',
                style={'padding': 5, 'margin-bottom': 330}
             ),
         # dcc.Link(html.Img(src=str(app_base_path.joinpath('our-land-and-water-logo.svg'))), href='https://ourlandandwater.nz/')
@@ -493,7 +494,7 @@ def update_catch_id(feature):
 @callback(
         Output('reach_map', 'data'),
         Input('catch_id', 'value'),
-        Input('map_checkboxes', 'value'),
+        Input('map_checkboxes_rivers', 'value'),
         )
 # @cache.memoize()
 def update_reaches(catch_id, map_checkboxes):
@@ -543,10 +544,10 @@ def update_reaches_option(hideout, catch_id):
 
 @callback(
         Output('reductions_obj', 'data'), Output('col_name', 'value'),
-        Input('upload-data', 'contents'),
-        Input('demo-data', 'n_clicks'),
+        Input('upload_data_rivers', 'contents'),
+        Input('demo_data_rivers', 'n_clicks'),
         Input('catch_id', 'value'),
-        State('upload-data', 'filename'),
+        State('upload_data_rivers', 'filename'),
         prevent_initial_call=True
         )
 # @cache.memoize()
@@ -563,15 +564,31 @@ def update_reductions_obj(contents, n_clicks, catch_id, filename):
         with booklet.open(rivers_lc_clean_path, 'r') as f:
             data = encode_obj(f[int(catch_id)])
 
-        return data, 'reduction'
+        return data, 'default_reductions'
     else:
         return '', None
 
 
 @callback(
+        Output('red_disclaimer_rivers', 'children'),
+        Input('upload_data_rivers', 'contents'),
+        Input('demo_data_rivers', 'n_clicks'),
+        Input('map_checkboxes_rivers', 'value'),
+        prevent_initial_call=True
+        )
+def update_reductions_diclaimer(contents, n_clicks, map_checkboxes):
+    if (n_clicks is None) or (contents is not None):
+        return ''
+    elif 'reductions_poly' in map_checkboxes:
+        return '''* Areas on the map without polygon reductions are considered to have 0% reductions.'''
+    else:
+        return ''
+
+
+@callback(
         Output('reductions_poly', 'data'),
         Input('reductions_obj', 'data'),
-        Input('map_checkboxes', 'value'),
+        Input('map_checkboxes_rivers', 'value'),
         Input('col_name', 'value'),
         )
 # @cache.memoize()
@@ -602,7 +619,7 @@ def update_column_options(reductions_obj):
     # print(reductions_obj)
     if (reductions_obj != '') and (reductions_obj is not None):
         data = decode_obj(reductions_obj)
-        cols = [{'label': col, 'value': col} for col in data.columns if col not in ['geometry', 'id']]
+        cols = [{'label': col, 'value': col} for col in data.columns if (col not in ['geometry', 'id', 'fid', 'OBJECTID']) and np.issubdtype(data[col].dtype, np.number)]
 
         return cols
     else:
@@ -695,7 +712,7 @@ def update_hideout(props_obj):
     Output("info", "children"),
     [Input('props_obj', 'data'),
       Input('reductions_obj', 'data'),
-      Input('map_checkboxes', 'value'),
+      Input('map_checkboxes_rivers', 'value'),
       Input("reach_map", "click_feature")],
     )
 def update_map_info(props_obj, reductions_obj, map_checkboxes, feature):

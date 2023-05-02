@@ -24,7 +24,7 @@ from rivers_monitoring_sites import rivers_monitoring_sites_processing
 
 from lakes_geo_processing import lakes_geo_process
 from lakes_delineation import lakes_catch_delin
-from lakes_land_cover_extraction import lakes_lc_process
+from lakes_land_cover_assignment import lakes_land_cover
 from lakes_conc_error import lakes_conc_error_processing
 
 from gw_geo_processing import gw_geo_process
@@ -71,7 +71,7 @@ lakes_geo_process()
 lakes_catch_delin()
 
 ## Lakes land cover processing
-lakes_lc_process()
+lakes_land_cover()
 
 ## Lakes error/power sims
 

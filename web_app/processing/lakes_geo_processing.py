@@ -66,13 +66,13 @@ def lakes_geo_process():
 
     utils.gpd_to_feather(fenz_catch2, utils.lakes_catch_path)
 
-    fenz_catch2['geometry'] = fenz_catch2.simplify(30)
+    # fenz_catch2['geometry'] = fenz_catch2.simplify(30)
 
-    with booklet.open(utils.lakes_catches_major_path, 'n', value_serializer='zstd', key_serializer='uint2', n_buckets=400) as s:
-        for LFENZID in fenz_catch2.LFENZID:
-            geo = fenz_catch2[fenz_catch2.LFENZID == LFENZID].to_crs(4326).set_index('LFENZID', drop=False).__geo_interface__
-            gbuf = geobuf.encode(geo)
-            s[LFENZID] = gbuf
+    # with booklet.open(utils.lakes_catches_major_path, 'n', value_serializer='zstd', key_serializer='uint2', n_buckets=400) as s:
+    #     for LFENZID in fenz_catch2.LFENZID:
+    #         geo = fenz_catch2[fenz_catch2.LFENZID == LFENZID].to_crs(4326).set_index('LFENZID', drop=False).__geo_interface__
+    #         gbuf = geobuf.encode(geo)
+    #         s[LFENZID] = gbuf
 
     ## Lakes polygons
     lakes_poly0 = gpd.read_file(utils.lakes_fenz_poly_path)
