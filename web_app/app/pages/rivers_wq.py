@@ -374,29 +374,33 @@ def layout():
             html.Label('Select a catchment on the map:'),
             dcc.Dropdown(options=[{'label': d, 'value': d} for d in catches], id='catch_id', optionHeight=40, clearable=False),
 
-            dcc.Upload(
-                id='upload_data_rivers',
-                children=html.Button('Upload reductions polygons gpkg', style={
-                    'width': '100%',
-                }),
-                style={
-                    'width': '100%',
-                    'height': '50%',
-                    'textAlign': 'left',
-                    'margin-top': 20
-                },
-                multiple=False
-            ),
-            dcc.Markdown('''###### **Or**''', style={
-                'textAlign': 'center',
-                            }),
-            html.Button('Use land cover for reductions', id='demo_data_rivers',
+            dcc.Loading(
+                children=[
+                    dcc.Upload(
+                        id='upload_data_rivers',
+                        children=html.Button('Upload reductions polygons gpkg', style={
+                            'width': '100%',
+                        }),
                         style={
                             'width': '100%',
                             'height': '50%',
                             'textAlign': 'left',
                             'margin-top': 20
-                        }),
+                        },
+                        multiple=False
+                    ),
+                    dcc.Markdown('''###### **Or**''', style={
+                        'textAlign': 'center',
+                                    }),
+                    html.Button('Use land cover for reductions', id='demo_data_rivers',
+                                style={
+                                    'width': '100%',
+                                    'height': '50%',
+                                    'textAlign': 'left',
+                                    'margin-top': 20
+                                }),
+                    ]
+                ),
 
             html.Label('Select a reductions column in the GIS file:', style={'margin-top': 20}),
             dcc.Dropdown(options=[], id='col_name', optionHeight=40, clearable=False),
