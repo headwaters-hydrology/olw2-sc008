@@ -61,8 +61,8 @@ lakes_reaches_mapping_path = assets_path.joinpath('lakes_reaches_mapping.blt')
 lakes_catches_minor_path = assets_path.joinpath('lakes_catchments_minor.blt')
 rivers_flows_path = assets_path.joinpath('rivers_flows_rec.blt')
 
-# catch_lc_gpkg_path = assets_path.joinpath('land_cover_gpkg')
-# catch_lc_gpkg_str = '{}_land_cover_reductions.gpkg'
+lakes_catch_lc_dir = assets_path.joinpath('lakes_land_cover_gpkg')
+lakes_catch_lc_gpkg_str = '{}_lakes_land_cover_reductions.gpkg'
 
 map_height = 700
 
@@ -371,13 +371,11 @@ def layout():
             html.Label('Select a reductions column in the GIS file:', style={'margin-top': 20}),
             dcc.Dropdown(options=[], id='col_name_lakes', optionHeight=40, clearable=False),
             dcc.Loading(
-            id="loading-2",
             type="default",
-            children=[html.Div(html.Button("Download reductions polygons", id='dl_btn'), style={'margin-top': 10}),
-    dcc.Download(id="dl_poly")],
+            children=[html.Div(html.Button("Download reductions polygons", id='dl_btn_lakes'), style={'margin-top': 10}),
+    dcc.Download(id="dl_poly_lakes")],
             ),
             dcc.Loading(
-            id="loading-1",
             type="default",
             children=html.Div([html.Button('Process reductions', id='process_lakes', n_clicks=0),
                                html.Div(id='process_text_lakes')],
@@ -757,23 +755,23 @@ def update_map_info_lakes(props_obj, reductions_obj, map_checkboxes, feature):
     return info
 
 
-# @callback(
-#     Output("dl_poly", "data"),
-#     Input("dl_btn", "n_clicks"),
-#     State('lake_id', 'value'),
-#     State('reductions_obj_lakes', 'data'),
-#     prevent_initial_call=True,
-#     )
-# def download_lc(n_clicks, lake_id, reductions_obj):
-#     # data = decode_obj(reductions_obj)
-#     # io1 = io.BytesIO()
-#     # data.to_file(io1, driver='GPKG')
-#     # io1.seek(0)
+@callback(
+    Output("dl_poly_lakes", "data"),
+    Input("dl_btn_lakes", "n_clicks"),
+    State('lake_id', 'value'),
+    State('reductions_obj_lakes', 'data'),
+    prevent_initial_call=True,
+    )
+def download_lc(n_clicks, lake_id, reductions_obj):
+    # data = decode_obj(reductions_obj)
+    # io1 = io.BytesIO()
+    # data.to_file(io1, driver='GPKG')
+    # io1.seek(0)
 
-#     if isinstance(lake_id, str) and (reductions_obj != '') and (reductions_obj is not None):
-#         path = catch_lc_gpkg_path.joinpath(catch_lc_gpkg_str.format(lake_id))
+    if isinstance(lake_id, str) and (reductions_obj != '') and (reductions_obj is not None):
+        path = lakes_catch_lc_dir.joinpath(lakes_catch_lc_gpkg_str.format(lake_id))
 
-#         return dcc.send_file(path)
+        return dcc.send_file(path)
 
 
 

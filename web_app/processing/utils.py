@@ -137,6 +137,11 @@ lakes_catches_major_path = assets_path.joinpath('lakes_catchments_major.blt')
 lakes_catches_minor_path = assets_path.joinpath('lakes_catchments_minor.blt')
 lakes_reaches_path = assets_path.joinpath('lakes_reaches.blt')
 
+lakes_catch_lc_dir = assets_path.joinpath('lakes_land_cover_gpkg')
+lakes_catch_lc_dir.mkdir(parents=True, exist_ok=True)
+
+lakes_catch_lc_gpkg_str = '{}_lakes_land_cover_reductions.gpkg'
+
 lakes_sims_path = output_path.joinpath('lakes_sims')
 lakes_sims_path.mkdir(parents=True, exist_ok=True)
 
