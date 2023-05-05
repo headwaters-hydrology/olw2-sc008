@@ -46,8 +46,11 @@ assets_path.mkdir(parents=True, exist_ok=True)
 
 ### Land use/cover
 lc_base_path = base_path.joinpath('land_use')
+lc_base_path.mkdir(parents=True, exist_ok=True)
 
-land_cover_path = lc_base_path.joinpath('lcdb-v50-land-cover-database-version-50-mainland-new-zealand.gpkg')
+lcdb_path = lc_base_path.joinpath('lcdb-v50-land-cover-database-version-50-mainland-new-zealand.gpkg')
+lcdb_clean_path = lc_base_path.joinpath('lcdb_cleaned.feather')
+lcdb_red_path = lc_base_path.joinpath('lcdb_reductions.feather')
 
 snb_geo_path = lc_base_path.joinpath('SnB_Typologies.shp')
 dairy_geo_path = lc_base_path.joinpath('Dairy_Typologies.shp')
@@ -58,11 +61,15 @@ snb_typo_path = lc_base_path.joinpath('typologies to reductions - snb.csv')
 dairy_typo_path = lc_base_path.joinpath('typologies to reductions - dairy.csv')
 dairy_model_typo_path = lc_base_path.joinpath('dairy_modelled_typologies.csv')
 
+snb_dairy_red_path = lc_base_path.joinpath('snb_dairy_reductions.feather')
+
 lc_clean_path = base_path.joinpath('land_cover_clean.feather')
 lc_clean_diss_path = base_path.joinpath('land_cover_clean_dissolved.feather')
 lc_clean_gpkg_path = base_path.joinpath('land_cover_clean.gpkg')
 lc_red_gpkg_path = base_path.joinpath('land_cover_reductions.gpkg')
 lc_red_feather_path = base_path.joinpath('land_cover_reductions.feather')
+
+
 
 ### Rivers
 # conc_csv_path = base_path.joinpath('StBD3.csv')
@@ -78,6 +85,12 @@ river_loads_area_path = assets_path.joinpath('rivers_loads_area.blt')
 # rec_delin_file = output_path.joinpath('rivers_reach_delineation.feather')
 # major_catch_file = output_path.joinpath('rivers_major_catch.feather')
 # catch_file = output_path.joinpath('rivers_catch.feather')
+
+# Individual catchment land covers
+rivers_catch_lc_dir = assets_path.joinpath('rivers_land_cover_gpkg')
+rivers_catch_lc_dir.mkdir(parents=True, exist_ok=True)
+
+rivers_catch_lc_gpkg_str = '{}_rivers_land_cover_reductions.gpkg'
 
 river_sites_catch_path = assets_path.joinpath('rivers_sites_catchments.blt')
 river_reach_mapping_path = assets_path.joinpath('rivers_reaches_mapping.blt')

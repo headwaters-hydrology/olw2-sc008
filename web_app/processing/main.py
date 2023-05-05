@@ -9,7 +9,8 @@ import os
 import pathlib
 import utils
 
-from land_cover_processing import land_cover_processing
+from lcdb_processing import lcdb_processing
+from land_cover_combine import land_cover_combine
 from land_cover_reductions import land_cover_reductions
 
 from rivers_delineate import rec_delin
@@ -33,8 +34,11 @@ from gw_assign_errors import gw_process_errors_points
 #####################################################
 ### Land use/cover
 
-## process and clean up geo layers
-land_cover_processing()
+## Process and clean LCDB
+lcdb_processing()
+
+## Combine LCDB with other layers
+land_cover_combine()
 
 ## Assign reductions
 land_cover_reductions()

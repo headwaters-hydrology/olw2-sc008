@@ -30,15 +30,12 @@ pd.options.display.max_columns = 10
 ##########################################
 ### land use/cover
 
-lcdb_reductions = {'Exotic Forest': 0, 'Forest - Harvested': 0, 'Orchard, Vineyard or Other Perennial Crop': 10, 'Short-rotation Cropland': 30}
+lcdb_reductions = {'Exotic Forest': 0, 'Forest - Harvested': 0, 'Orchard, Vineyard or Other Perennial Crop': 10, 'Short-rotation Cropland': 30, 'Built-up Area (settlement)': 0, 'High Producing Exotic Grassland': 30, 'Low Producing Grassland': 10, 'Mixed Exotic Shrubland': 0}
 
 features_cols = ['Climate', 'Slope', 'Drainage', 'Wetness']
 
 
 def land_cover_reductions():
-    ### land cover
-    lc0 = gpd.read_feather(utils.lc_clean_diss_path)
-
     ### Apply the default reductions
     ## SnB
     snb1 = pd.read_csv(utils.snb_typo_path, header=[0, 1])
@@ -67,6 +64,8 @@ def land_cover_reductions():
         miss_snb1 = pd.merge(miss_snb, extra_snb.reset_index(), on='base').drop('base', axis=1)
 
         snb2 = pd.concat([snb2, miss_snb1])
+
+    snb3 = snb_geo.merge(snb2, on='typology')
 
     ## dairy
     dairy1 = pd.read_csv(utils.dairy_typo_path, header=[0, 1])
@@ -131,30 +130,48 @@ def land_cover_reductions():
     typo3.to_csv(utils.dairy_model_typo_path, index=False)
 
     # Combine with original data
-    combo1 = pd.concat([dairy2, typo3])
-    combo1['typology'] = combo1['Climate'] + '/' + combo1['Slope'] + '/' + combo1['Drainage'] + '/' + combo1['Wetness']
+    dairy3 = pd.concat([dairy2, typo3])
+    dairy3['typology'] = dairy3['Climate'] + '/' + dairy3['Slope'] + '/' + dairy3['Drainage'] + '/' + dairy3['Wetness']
+
+    dairy4 = dairy_geo.merge(dairy3.drop(features_cols, axis=1), on='typology')
+
+    combo1 = pd.concat([snb3, dairy4])
+    combo1['default_reductions'] = combo1[['phosphorus', 'nitrogen']].mean(axis=1).round().astype('int8')
+
+    utils.gpd_to_feather(combo1.reset_index(drop=True), utils.snb_dairy_red_path)
+
+    ### LCDB
+    lcdb0 = gpd.read_feather(utils.lcdb_clean_path)
 
     lcdb_red_list = []
-    for param in ['phosphorus', 'nitrogen']:
+    for param in ['phosphorus', 'nitrogen', 'default_reductions']:
         t1 = pd.DataFrame.from_dict(lcdb_reductions, orient='index')
         t1.index.name = 'typology'
         t1.columns = [param]
         lcdb_red_list.append(t1)
 
     lcdb_red = pd.concat(lcdb_red_list, axis=1).reset_index()
-    combo2 = pd.concat([snb2, combo1.drop(features_cols, axis=1), lcdb_red])
 
-    combo3 = lc0.merge(combo2, on='typology', how='left')
-    combo3['default_reductions'] = combo3[['phosphorus', 'nitrogen']].mean(axis=1).round().astype('int8')
+    lcdb1 = lcdb0.merge(lcdb_red, on='typology')
 
-    combo3.to_file(utils.lc_red_gpkg_path)
+    utils.gpd_to_feather(lcdb1, utils.lcdb_red_path)
 
-    ## Simplify for app
-    combo4 = combo3[combo3.default_reductions > 0].copy()
-    combo4['geometry'] = combo4['geometry'].buffer(1).simplify(1)
-    combo4 = combo4.dissolve('typology')
 
-    utils.gpd_to_feather(combo4.reset_index(), utils.lc_red_feather_path)
+
+
+    # combo2 = pd.concat([snb2, combo1.drop(features_cols, axis=1), lcdb_red])
+
+    # combo3 = lc0.merge(combo2, on='typology', how='left')
+    # combo3['default_reductions'] = combo3[['phosphorus', 'nitrogen']].mean(axis=1).round().astype('int8')
+
+    # combo3.to_file(utils.lc_red_gpkg_path)
+
+    # ## Simplify for app
+    # combo4 = combo3[combo3.default_reductions > 0].copy()
+    # combo4['geometry'] = combo4['geometry'].buffer(1).simplify(1)
+    # combo4 = combo4.dissolve('typology')
+
+    # utils.gpd_to_feather(combo4.reset_index(), utils.lc_red_feather_path)
 
 
 

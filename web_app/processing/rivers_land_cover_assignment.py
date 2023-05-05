@@ -10,7 +10,7 @@ from gistools import vector, rec
 import geopandas as gpd
 import pandas as pd
 import numpy as np
-from shapely import intersection
+from shapely import intersection, difference, intersects
 import hdf5tools
 import xarray as xr
 import dbm
@@ -33,7 +33,9 @@ def rivers_land_cover():
     catches = booklet.open(utils.river_catch_major_path)
 
     ## land cover
-    land_cover = gpd.read_feather(utils.lc_red_feather_path)
+    # land_cover = gpd.read_feather(utils.lc_red_feather_path)
+    lcdb0 = gpd.read_feather(utils.lcdb_red_path)
+    snb_dairy0 = gpd.read_feather(utils.snb_dairy_red_path)
 
     lc_dict = {}
     for way_id, catch in catches.items():
@@ -42,11 +44,43 @@ def rivers_land_cover():
         c1 = gpd.GeoSeries([catch], crs=4326).to_crs(2193).iloc[0]
 
         # Land cover
-        lc2 = land_cover.loc[land_cover.sindex.query(c1, predicate="intersects")].copy()
-        lc2b = intersection(lc2.geometry.tolist(), c1)
-        lc2['geometry'] = lc2b
+        lcdb1 = lcdb0.loc[lcdb0.sindex.query(c1, predicate="intersects")].copy()
+        if not lcdb1.empty:
+            lcdb1b = intersection(lcdb1.geometry.tolist(), c1)
+            lcdb1['geometry'] = lcdb1b
+            lcdb1 = lcdb1[~lcdb1.geometry.is_empty].copy()
+            lcdb1 = lcdb1.dissolve('typology').reset_index()
+            lcdb1['geometry'] = lcdb1.buffer(0.1).simplify(10).make_valid()
+
+            # lc3['geometry'] = lc3.buffer(0.5).simplify(10)
+
+        ## SnB and Dairy
+        snb_dairy1 = snb_dairy0.loc[snb_dairy0.sindex.query(c1, predicate="intersects")].copy()
+        if not snb_dairy1.empty:
+            snb_dairy1b = intersection(snb_dairy1.geometry.tolist(), c1)
+            snb_dairy1['geometry'] = snb_dairy1b
+            snb_dairy1 = snb_dairy1[~snb_dairy1.geometry.is_empty].copy()
+            snb_dairy1 = snb_dairy1.dissolve('typology').reset_index()
+            snb_dairy1['geometry'] = snb_dairy1['geometry'].buffer(0.1).simplify(10).make_valid()
+
+        if (not snb_dairy1.empty) and (not lcdb1.empty):
+            # diff_list = []
+            # for geo1 in lcdb1.geometry:
+            #     for geo2 in snb_dairy1.geometry:
+            #         if intersects(geo1, geo2):
+            #             geo3 = difference(geo1, geo2)
+            #             diff_list.append(geo3)
+            #         else:
+            #             diff_list.append(geo1)
+            lcdb1 = lcdb1.overlay(snb_dairy1, how='difference', keep_geom_type=True)
+            combo2 = pd.concat([snb_dairy1, lcdb1])
+        elif snb_dairy1.empty:
+            combo2 = lcdb1
+        else:
+            combo2 = snb_dairy1
+
         # lc2['geometry'] = lc2['geometry'].simplify(30)
-        lc_dict[way_id] = lc2
+        lc_dict[way_id] = combo2
 
     catches.close()
 
@@ -55,8 +89,12 @@ def rivers_land_cover():
         for i, lc2 in lc_dict.items():
             land_cover_dict[i] = lc2
 
-    # close/delete objects
-    del land_cover
+    with booklet.open(utils.catch_lc_path) as lc:
+        for i, data in lc.items():
+            path = utils.rivers_catch_lc_dir.joinpath(utils.rivers_catch_lc_gpkg_str.format(i))
+            data.to_file(path)
+
+
 
 
 ##############################################

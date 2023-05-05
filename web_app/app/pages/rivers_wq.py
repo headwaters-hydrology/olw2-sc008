@@ -62,6 +62,9 @@ rivers_catch_path = assets_path.joinpath('rivers_catchments_minor.blt')
 rivers_reach_mapping_path = assets_path.joinpath('rivers_reaches_mapping.blt')
 rivers_sites_path = assets_path.joinpath('rivers_sites_catchments.blt')
 
+rivers_catch_lc_dir = assets_path.joinpath('rivers_land_cover_gpkg')
+rivers_catch_lc_gpkg_str = '{}_rivers_land_cover_reductions.gpkg'
+
 map_height = 700
 
 center = [-41.1157, 172.4759]
@@ -259,7 +262,8 @@ def calc_river_reach_reductions(catch_id, plan_file, reduction_col='default_redu
     flows_df.index.name = 'nzsegment'
     flows_df = flows_df.reset_index()
 
-    plan1 = plan_file[[reduction_col, 'geometry']].to_crs(2193)
+    plan0 = plan_file[[reduction_col, 'geometry']]
+    plan1 = plan0[plan0[reduction_col] > 0].to_crs(2193)
 
     ## Calc reductions per nzsegment given sparse geometry input
     c2 = plan1.overlay(c1)
@@ -372,28 +376,36 @@ def layout():
 
             dcc.Upload(
                 id='upload_data_rivers',
-                children=html.Button('Upload reductions polygons gpkg'),
+                children=html.Button('Upload reductions polygons gpkg', style={
+                    'width': '100%',
+                }),
                 style={
                     'width': '100%',
-                    'height': '60px',
-                    'textAlign': 'center',
-                    'margin-top': 40
+                    'height': '50%',
+                    'textAlign': 'left',
+                    'margin-top': 20
                 },
                 multiple=False
             ),
-            dcc.Markdown('''##### **Or**''', style={
+            dcc.Markdown('''###### **Or**''', style={
                 'textAlign': 'center',
                             }),
             html.Button('Use land cover for reductions', id='demo_data_rivers',
                         style={
                             'width': '100%',
                             'height': '50%',
-                            'textAlign': 'center',
+                            'textAlign': 'left',
                             'margin-top': 20
                         }),
 
             html.Label('Select a reductions column in the GIS file:', style={'margin-top': 20}),
             dcc.Dropdown(options=[], id='col_name', optionHeight=40, clearable=False),
+            dcc.Loading(
+            id="loading-2",
+            type="default",
+            children=[html.Div(html.Button("Download reductions polygons", id='dl_btn'), style={'margin-top': 10}),
+    dcc.Download(id="dl_poly")],
+            ),
             dcc.Loading(
             id="loading-1",
             type="default",
@@ -402,9 +414,6 @@ def layout():
                               style={'margin-top': 20, 'margin-bottom': 10}
                               )
         ),
-            dcc.Markdown('', style={
-                'textAlign': 'left',
-                            }, id='red_disclaimer_rivers')
 
             # html.Label('Select Indicator:'),
             # dcc.Dropdown(options=[{'label': d, 'value': d} for d in indicators], id='indicator', optionHeight=40, clearable=False, value='NH4'),
@@ -432,8 +441,11 @@ def layout():
                ],
                value=['reductions_poly', 'reach_map'],
                id='map_checkboxes_rivers',
-               style={'padding': 5, 'margin-bottom': 330}
+               style={'padding': 5, 'margin-bottom': 20}
             ),
+        dcc.Markdown('', style={
+            'textAlign': 'left',
+                        }, id='red_disclaimer_rivers')
         # dcc.Link(html.Img(src=str(app_base_path.joinpath('our-land-and-water-logo.svg'))), href='https://ourlandandwater.nz/')
         ], className='two columns', style={'margin': 10}),
 
@@ -600,6 +612,7 @@ def update_reductions_poly(reductions_obj, map_checkboxes, col_name):
         data = decode_obj(reductions_obj).to_crs(4326)
 
         if isinstance(col_name, str):
+            data = data[data[col_name] > 0]
             data[col_name] = data[col_name].astype(str).str[:] + '% reduction'
             data.rename(columns={col_name: 'tooltip'}, inplace=True)
 
@@ -746,8 +759,43 @@ def update_map_info(props_obj, reductions_obj, map_checkboxes, feature):
     return info
 
 
-# count = 0
-# with booklet.open(rivers_flows_path) as f:
-#     for k, v in f.items():
-#         if v < 0:
-#             count += 1
+# @callback(
+#     Output('dl_btn_div', 'children'),
+#     Input('reductions_obj', 'data'),
+#     prevent_initial_call=True,
+#     )
+# def make_download_visible(reductions_obj):
+#     """
+
+#     """
+#     if (reductions_obj != '') and (reductions_obj is not None):
+#         return html.Button("Download reductions polygons", id='dl_btn')
+#     else:
+#         return []
+
+
+@callback(
+    Output("dl_poly", "data"),
+    Input("dl_btn", "n_clicks"),
+    State('catch_id', 'value'),
+    State('reductions_obj', 'data'),
+    prevent_initial_call=True,
+    )
+def download_lc(n_clicks, catch_id, reductions_obj):
+    # data = decode_obj(reductions_obj)
+    # io1 = io.BytesIO()
+    # data.to_file(io1, driver='GPKG')
+    # io1.seek(0)
+
+    if isinstance(catch_id, str) and (reductions_obj != '') and (reductions_obj is not None):
+        path = rivers_catch_lc_dir.joinpath(rivers_catch_lc_gpkg_str.format(catch_id))
+
+        return dcc.send_file(path)
+
+    # return dict(content="Hello world!", filename="hello.txt")
+
+    # return {'base64': True, 'content': codecs.encode(io1.read(), encoding='base64').decode(), 'filename': 'test1.gpkg'}
+
+
+
+

@@ -25,22 +25,9 @@ pd.options.display.max_columns = 10
 ##########################################
 ### land use/cover
 
-# parcels = gpd.read_file(utils.parcels_path)
-# parcels = parcels[['id', 'geometry']].copy()
-
-lcdb_classes = ['Exotic Forest', 'Forest - Harvested', 'Orchard, Vineyard or Other Perennial Crop', 'Short-rotation Cropland']
-
-lcdb_where_sql = 'Name_2018 IN ({})'.format(str(lcdb_classes)[1:-1])
 
 
-def land_cover_processing():
-    ## land cover
-    lcdb0 = gpd.read_file(utils.land_cover_path, include_fields=['Name_2018'], where=lcdb_where_sql)
-    lcdb0['geometry'] = lcdb0.buffer(0).simplify(1)
-    lcdb0 = lcdb0.rename(columns={'Name_2018': 'land_cover'})
-    lcdb0['farm_type'] = 'NA'
-    lcdb0['typology'] = lcdb0['land_cover']
-
+def process_extra_geo_layers():
     ## SnB and dairy
     snb0 = gpd.read_file(utils.snb_geo_path, include_fields=['FARM_TYPE', 'Typology'])
     snb0['geometry'] = snb0.buffer(0).simplify(1)
@@ -52,6 +39,15 @@ def land_cover_processing():
 
     utils.gpd_to_feather(snb0, utils.snb_geo_clean_path)
 
+    ## Iteratively remove the lcdb layers
+    # lcdb_list = []
+    # for lc, grp in lcdb0.groupby('land_cover'):
+    #     print(lc)
+    #     new1 = grp.overlay(snb0, how='difference', keep_geom_type=True)
+    #     lcdb_list.append(new1)
+
+    # combo1 = pd.concat(lcdb_list)
+
     dairy0 = gpd.read_file(utils.dairy_geo_path, include_fields=['Farmtype_3', 'Typology'])
     dairy0['geometry'] = dairy0.buffer(0).simplify(1)
     dairy0 = dairy0.rename(columns={'Farmtype_3': 'farm_type', 'Typology': 'typology'})
@@ -61,18 +57,16 @@ def land_cover_processing():
 
     utils.gpd_to_feather(dairy0, utils.dairy_geo_clean_path)
 
-    combo1 = pd.concat([snb0, dairy0])
-
     ## Symmetric difference to the lcdb
-    lcdb1 = lcdb0.overlay(combo1, how='difference')
+    # lcdb1 = lcdb0.overlay(combo1, how='difference')
 
-    ## combine all and dissolve
-    combo2 = pd.concat([combo1, lcdb1])
-    # combo3 = combo2.dissolve('typology')
+    # ## combine all
+    # combo2 = pd.concat([snb0, dairy0])
+    # # combo3 = combo2.dissolve('typology')
 
-    ## Save
-    # utils.gpd_to_feather(combo3.reset_index(), utils.lc_clean_path)
-    utils.gpd_to_feather(combo2, utils.lc_clean_diss_path)
+    # ## Save
+    # # utils.gpd_to_feather(combo3.reset_index(), utils.lc_clean_path)
+    # utils.gpd_to_feather(combo2, utils.snb_dairy_clean_path)
     # combo2.to_file(utils.lc_clean_gpkg_path)
 
 

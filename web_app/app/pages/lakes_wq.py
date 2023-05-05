@@ -61,6 +61,9 @@ lakes_reaches_mapping_path = assets_path.joinpath('lakes_reaches_mapping.blt')
 lakes_catches_minor_path = assets_path.joinpath('lakes_catchments_minor.blt')
 rivers_flows_path = assets_path.joinpath('rivers_flows_rec.blt')
 
+# catch_lc_gpkg_path = assets_path.joinpath('land_cover_gpkg')
+# catch_lc_gpkg_str = '{}_land_cover_reductions.gpkg'
+
 map_height = 700
 
 center = [-41.1157, 172.4759]
@@ -343,23 +346,25 @@ def layout():
 
             dcc.Upload(
                 id='upload_data_lakes',
-                children=html.Button('Upload reductions polygons gpkg'),
+                children=html.Button('Upload reductions polygons gpkg', style={
+                    'width': '100%',
+                }),
                 style={
                     'width': '100%',
-                    'height': '60px',
-                    'textAlign': 'center',
-                    'margin-top': 40
+                    'height': '50%',
+                    'textAlign': 'left',
+                    'margin-top': 20
                 },
                 multiple=False
             ),
-            dcc.Markdown('''##### **Or**''', style={
+            dcc.Markdown('''###### **Or**''', style={
                 'textAlign': 'center',
                             }),
             html.Button('Use land cover for reductions', id='demo_data_lakes',
                         style={
                             'width': '100%',
                             'height': '50%',
-                            'textAlign': 'center',
+                            'textAlign': 'left',
                             'margin-top': 20
                         }),
 
@@ -368,14 +373,17 @@ def layout():
             dcc.Loading(
             id="loading-2",
             type="default",
+            children=[html.Div(html.Button("Download reductions polygons", id='dl_btn'), style={'margin-top': 10}),
+    dcc.Download(id="dl_poly")],
+            ),
+            dcc.Loading(
+            id="loading-1",
+            type="default",
             children=html.Div([html.Button('Process reductions', id='process_lakes', n_clicks=0),
                                html.Div(id='process_text_lakes')],
                               style={'margin-top': 20, 'margin-bottom': 10}
                               )
         ),
-            dcc.Markdown('', style={
-                'textAlign': 'left',
-                            }, id='red_disclaimer_lakes')
 
             # html.Label('Select Indicator:'),
             # dcc.Dropdown(options=[{'label': d, 'value': d} for d in indicators], id='indicator', optionHeight=40, clearable=False, value='NH4'),
@@ -403,8 +411,11 @@ def layout():
                ],
                value=['reductions_poly', 'reach_map'],
                id='map_checkboxes_lakes',
-               style={'padding': 5, 'margin-bottom': 330}
+               style={'padding': 5, 'margin-bottom': 20}
             ),
+        dcc.Markdown('', style={
+            'textAlign': 'left',
+                        }, id='red_disclaimer_lakes')
         # dcc.Link(html.Img(src=str(app_base_path.joinpath('our-land-and-water-logo.svg'))), href='https://ourlandandwater.nz/')
         ], className='two columns', style={'margin': 10}),
 
@@ -746,7 +757,23 @@ def update_map_info_lakes(props_obj, reductions_obj, map_checkboxes, feature):
     return info
 
 
+# @callback(
+#     Output("dl_poly", "data"),
+#     Input("dl_btn", "n_clicks"),
+#     State('lake_id', 'value'),
+#     State('reductions_obj_lakes', 'data'),
+#     prevent_initial_call=True,
+#     )
+# def download_lc(n_clicks, lake_id, reductions_obj):
+#     # data = decode_obj(reductions_obj)
+#     # io1 = io.BytesIO()
+#     # data.to_file(io1, driver='GPKG')
+#     # io1.seek(0)
 
+#     if isinstance(lake_id, str) and (reductions_obj != '') and (reductions_obj is not None):
+#         path = catch_lc_gpkg_path.joinpath(catch_lc_gpkg_str.format(lake_id))
+
+#         return dcc.send_file(path)
 
 
 
