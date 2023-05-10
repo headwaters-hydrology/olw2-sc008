@@ -1,18 +1,40 @@
 version: '3.3'
 
 networks:
-  # net:
-  #   driver: overlay
-  #   attachable: true
+  net:
+    driver: overlay
+    attachable: true
   traefik-public:
     external: true
 
+volumes:
+  olw-assets:
+
 services:
+  assets:
+    image: mullenkamp/olw-monitoring-app-assets:1.0
+    volumes:
+      - olw-assets:/app/assets
+    networks:
+      - net
+      # - traefik-public
+    deploy:
+      restart_policy:
+        condition: none
+      placement:
+        constraints:
+          - node.labels.function == web_server
+          - node.hostname == uswest3.tethys-ts.xyz
+
   dash:
-    image: mullenkamp/olw-monitoring-app:1.21
+    image: mullenkamp/olw-monitoring-app:1.22
+    volumes:
+      - olw-assets:/app/assets
     networks:
       # - net
       - traefik-public
+    depends_on:
+      - assets
     deploy:
       replicas: 4
       placement:

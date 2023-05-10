@@ -14,14 +14,14 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # Apply cron job
 # RUN crontab /etc/cron.d/tethys-cron
-COPY ./app/assets/*.blt /app/assets/
-COPY ./app/assets/lakes_land_cover_gpkg/ /app/assets/lakes_land_cover_gpkg/
-COPY ./app/assets/rivers_land_cover_gpkg/ /app/assets/rivers_land_cover_gpkg/
-COPY ./app/assets/*.h5 /app/assets/
-COPY ./app/assets/*.pbf /app/assets/
-COPY ./app/assets/*.svg /app/assets/
-COPY ./app/assets/*.css /app/assets/
-COPY ./app/assets/*.js /app/assets/
+# COPY ./app/assets/*.blt /app/assets/
+# COPY ./app/assets/lakes_land_cover_gpkg/ /app/assets/lakes_land_cover_gpkg/
+# COPY ./app/assets/rivers_land_cover_gpkg/ /app/assets/rivers_land_cover_gpkg/
+# COPY ./app/assets/*.h5 /app/assets/
+# COPY ./app/assets/*.pbf /app/assets/
+# COPY ./app/assets/*.svg /app/assets/
+# COPY ./app/assets/*.css /app/assets/
+# COPY ./app/assets/*.js /app/assets/
 COPY ./app/pages /app/pages
 COPY ./app/*.ini /app/
 COPY ./app/*.py /app/
