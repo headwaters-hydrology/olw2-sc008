@@ -10,7 +10,7 @@ volumes:
 
 services:
   assets:
-    image: mullenkamp/olw-monitoring-app-assets:1.0
+    image: mullenkamp/olw-monitoring-app-assets:1.1
     volumes:
       - olw-assets:/app/assets
     networks:

@@ -11,6 +11,7 @@ import pathlib
 import geopandas as gpd
 import booklet
 import geobuf
+from gistools import vector
 
 import utils
 
@@ -24,10 +25,15 @@ pd.options.display.max_columns = 10
 
 
 def rivers_monitoring_sites_processing():
-    catches0 = booklet.open(utils.river_catch_major_path)
+    sites0 = pd.read_csv(utils.sites_names_csv)
 
-    sites0 = gpd.read_feather(utils.river_sites_path)
-    sites1 = sites0.to_crs(4326)
+    sites1 = vector.xy_to_gpd(['site_id', 'lawa_id'], 'lon', 'lat', sites0, 4326)
+
+    sites1.to_file(utils.river_sites_path)
+
+    ## Organise by catchment
+    catches0 = booklet.open(utils.river_catch_major_path)
+    # sites1 = sites0.to_crs(4326)
 
     with booklet.open(utils.river_sites_catch_path, 'n', key_serializer='uint4', value_serializer='zstd', n_buckets=1600) as f:
         for k, v in catches0.items():

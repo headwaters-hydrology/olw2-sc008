@@ -70,11 +70,14 @@ lc_red_gpkg_path = base_path.joinpath('land_cover_reductions.gpkg')
 lc_red_feather_path = base_path.joinpath('land_cover_reductions.feather')
 
 
-
 ### Rivers
+sites_loc_csv = base_path.joinpath('olw_river_sites_locations.csv')
+sites_rec_csv = base_path.joinpath('olw_river_sites_rec.csv')
+sites_names_csv = base_path.joinpath('LAWARiverSiteswithRCIDs.csv')
+
 # conc_csv_path = base_path.joinpath('StBD3.csv')
 conc_csv_path = base_path.joinpath('Stream_Order3_Estimates_2023-03-31.csv')
-river_sites_path = base_path.joinpath('olw_river_sites.feather')
+river_sites_path = base_path.joinpath('olw_river_sites.gpkg')
 
 river_flows_rec_path = assets_path.joinpath('rivers_flows_rec.blt')
 river_flows_area_path = assets_path.joinpath('rivers_flows_area.blt')

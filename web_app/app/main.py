@@ -11,10 +11,11 @@ from dash.dependencies import Input, Output, State
 import dash_mantine_components as dmc
 # from dash_iconify import DashIconify
 import pathlib
+from time import sleep
 
 ##############################################
 ### The app
-
+# sleep(10)
 app = dash.Dash(__name__, use_pages=True)
 server = app.server
 
