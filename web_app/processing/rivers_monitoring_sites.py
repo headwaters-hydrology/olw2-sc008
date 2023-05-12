@@ -26,6 +26,10 @@ pd.options.display.max_columns = 10
 
 def rivers_monitoring_sites_processing():
     sites0 = pd.read_csv(utils.sites_names_csv)
+    sites0['lawa_id'] = sites0['lawa_id'].str.upper()
+    # sites0b = pd.read_csv(utils.sites_rec_csv)
+    # sites0b['lawa_id'] = sites0b['lawa_id'].str.upper()
+    # sites1 = pd.merge(sites0b, sites0a, on='lawa_id')
 
     sites1 = vector.xy_to_gpd(['site_id', 'lawa_id'], 'lon', 'lat', sites0, 4326)
 
