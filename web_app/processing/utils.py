@@ -331,9 +331,12 @@ def power_test(x, Y, min_p_value=0.05):
 
 def power_sims(error, n_years, n_samples_year, n_sims, output_path):
     """
-
+    Power simulation function.
+    Given an error (float), a number of sampling years (list of int), a number of samples per year (list of int), and the conc percentages (list of int), run n simulations (int) on all possible combinations.
     """
     print(error)
+
+    conc_perc = np.arange(1, 101, 1, dtype='int8')
 
     n_samples = np.prod(hdf5tools.utils.cartesian([n_samples_year, n_years]), axis=1)
     n_samples = list(set(n_samples))
@@ -350,39 +353,10 @@ def power_sims(error, n_years, n_samples_year, n_sims, output_path):
             red1 = np.log(np.interp(np.arange(n), [0, n-1], [1, perc*0.01]))
 
             rand_shape = (n_sims, n)
-
-            # red1 = np.empty((len(conc_perc), n), dtype='int16')
-            # for i, v in enumerate(conc_perc):
-            #     l1 = np.interp(np.arange(n), [0, n-1], [10000, v*100 ]).round().astype('int16')
-            #     red1[i] = l1
-
-            # red2 = np.tile(red1, n_sims).reshape((len(conc_perc), n_sims, n))
             red2 = np.tile(red1, n_sims).reshape(rand_shape)
-
-            # r1 = np.log(rng.lognormal(0, error, rand_shape))
-            # r1 = rng.normal(0, error, rand_shape)
-            # r1[r1 < -1] = -1
-            # r1 = (r1*10000).astype('int16')
-            # r1 = np.tile(r1a, len(conc_perc)).reshape((len(conc_perc), n_sims, n))
-            # r2 = np.log(rng.lognormal(0, error, rand_shape))
             r2 = rng.normal(0, error, rand_shape)
-            # r2[r2 < -1] = -1
-            # r2 = (r2*red2).astype('int16')
-            # r2 = r2.astype('uint16')
-            # r2 = np.tile(r2a, len(conc_perc)).reshape((len(conc_perc), n_sims, n))
-
-            # ones = np.ones(red2.shape)*10
-
-            # o1 = stats.ttest_ind(r1, red2 + r2, axis=1)
 
             p2 = power_test(np.arange(n), red2 + r2, min_p_value=0.05)
-
-            # p1 = np.empty(dep1.shape[:2], dtype='int16')
-            # for i, v in enumerate(ind1):
-            #     o1 = stats.ttest_ind(v, dep1[i])
-            #     p1[i] = o1.pvalue*10000
-
-            # p2 = (((o1.pvalue < 0.05).sum()/n_sims) *100).round().astype('int8')
 
             filler[0][ni][pi] = p2
 
@@ -424,19 +398,6 @@ def xr_concat(datasets):
         xr3 = xr.combine_by_coords(coords_list, compat='override', data_vars='minimal', coords='all', combine_attrs='override')
     except:
         xr3 = xr.merge(coords_list, compat='override', combine_attrs='override')
-
-    # Run checks - requires psutil which I don't want to make it a dep yet...
-    # available_memory = getattr(psutil.virtual_memory(), 'available')
-    # dims_dict = dict(xr3.coords.dims)
-    # size = 0
-    # for var, var_dict in chunk_dict.items():
-    #     dims = var_dict['dims']
-    #     dtype_size = var_dict['dtype'].itemsize
-    #     n_dims = np.prod([dims_dict[dim] for dim in dims])
-    #     size = size + (n_dims*dtype_size)
-
-    # if size >= available_memory:
-    #     raise MemoryError('Trying to create a dataset of size {}MB, while there is only {}MB available.'.format(int(size*10**-6), int(available_memory*10**-6)))
 
     # Create the blank dataset
     for var, var_dict in chunk_dict.items():
