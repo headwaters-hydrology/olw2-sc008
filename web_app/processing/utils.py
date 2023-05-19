@@ -34,6 +34,8 @@ base_path = pathlib.Path(base_path)
 rec_rivers_feather = '/media/nvme1/data/NIWA/REC25_rivers/rec25_rivers_clean.feather'
 rec_catch_feather = '/media/nvme1/data/NIWA/REC25_watersheds/rec25_watersheds_clean.feather'
 
+rc_bounds_gpkg = '/media/nvme1/data/statsnz/regional-council-2023-clipped-generalised.gpkg'
+
 nzrec_data_path = '/media/nvme1/git/nzrec/data'
 
 segment_id_col = 'nzsegment'
@@ -43,6 +45,9 @@ output_path.mkdir(parents=True, exist_ok=True)
 
 assets_path = output_path.joinpath('assets')
 assets_path.mkdir(parents=True, exist_ok=True)
+
+### RC boundaries
+rc_bounds_gbuf = assets_path.joinpath('rc_bounds.pbf')
 
 ### Land use/cover
 lc_base_path = base_path.joinpath('land_use')
@@ -165,8 +170,9 @@ lakes_stdev_path = output_path.joinpath('lakes_stdev.h5')
 gw_data_path = base_path.joinpath('gw_points_data.hdf')
 
 ## Spatial data
-gw_points_gbuf_path = assets_path.joinpath('gw_points.pbf')
+# gw_points_gbuf_path = assets_path.joinpath('gw_points.pbf')
 gw_points_path = output_path.joinpath('gw_points.feather')
+gw_points_rc_blt = assets_path.joinpath('gw_points_rc.blt')
 
 ## Power calcs
 gw_sims_path = output_path.joinpath('gw_sims')

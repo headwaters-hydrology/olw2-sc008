@@ -52,7 +52,10 @@ app_base_path = pathlib.Path('/assets')
 
 gw_error_path = assets_path.joinpath('gw_points_error.h5')
 
-gw_pbf_path = app_base_path.joinpath('gw_points.pbf')
+# gw_pbf_path = app_base_path.joinpath('gw_points.pbf')
+gw_points_rc_blt = assets_path.joinpath('gw_points_rc.blt')
+rc_bounds_gbuf = app_base_path.joinpath('rc_bounds.pbf')
+
 # gw_poly_gbuf_path = assets_path.joinpath('gw_poly.blt')
 # gw_catches_major_path = assets_path.joinpath('gw_catchments_major.blt')
 # gw_reach_gbuf_path = assets_path.joinpath('gw_reaches.blt')
@@ -85,24 +88,23 @@ tab_selected_style = {
 
 attribution = 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 
-# gw_style_handle = assign("""function gw_style_handle(feature, context){
-#     const {classes, colorscale, style, colorProp} = context.props.hideout;  // get props from hideout
-#     const value = feature.properties[colorProp];  // get value the determines the color
-#     for (let i = 0; i < classes.length; ++i) {
-#         if (value == classes[i]) {
-#             style.color = colorscale[i];  // set the color according to the class
-#         }
-#     }
+# base_rc_style_handle = assign("""function style3(feature) {
+#     return {
+#         weight: 2,
+#         opacity: 0.75,
+#         color: 'grey',
+#     };
+# }""", name='gw_base_rc_style_handle')
 
-#     return style;
-# }""", name='gw_style_handle')
-
-# assign("""function(feature, latlng, context){
-#     const {min, max, colorscale, circleOptions, colorProp} = context.props.hideout;
-#     const csc = chroma.scale(colorscale).domain([min, max]);  // chroma lib to construct colorscale
-#     circleOptions.fillColor = csc(feature.properties[colorProp]);  // set color based on color prop.
-#     return L.circleMarker(latlng, circleOptions);  // sender a simple circle marker.
-# }""")
+rc_style_handle = assign("""function style(feature) {
+    return {
+        fillColor: 'grey',
+        weight: 2,
+        opacity: 1,
+        color: 'black',
+        fillOpacity: 0.1
+    };
+}""", name='gw_rc_style_handle')
 
 gw_points_style_handle = assign("""function gw_points_style_handle(feature, latlng, context){
     const {classes, colorscale, circleOptions, colorProp} = context.props.hideout;  // get props from hideout
@@ -115,6 +117,10 @@ gw_points_style_handle = assign("""function gw_points_style_handle(feature, latl
 
     return L.circleMarker(latlng, circleOptions);
 }""", name='gw_points_style_handle')
+
+point_radius = 6
+
+gw_points_hideout = {'classes': [], 'colorscale': ['#808080'], 'circleOptions': dict(fillOpacity=1, stroke=False, radius=point_radius), 'colorProp': 'tooltip'}
 
 # freq_mapping = {12: 'once a month', 26: 'once a fortnight', 52: 'once a week', 104: 'twice a week', 364: 'once a day'}
 freq_mapping = {1: 'once a year', 4: 'once a quarter', 12: 'once a month', 26: 'once a fortnight', 52: 'once a week'}
@@ -151,7 +157,7 @@ reductions_values = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
 
 reductions_options = [{'value': v, 'label': str(v)+'%'} for v in reductions_values]
 
-point_radius = 6
+
 
 ###############################################
 ### Helper Functions
@@ -289,12 +295,17 @@ def parse_gis_file(contents, filename):
 
 # lakes.sort()
 
-with open(assets_path.joinpath('gw_points.pbf'), 'rb') as f:
-    geodict = geobuf.decode(f.read())
+with booklet.open(gw_points_rc_blt, 'r') as f:
+    rcs = list(f.keys())
+
+rcs.sort()
+
+# with open(assets_path.joinpath('gw_points.pbf'), 'rb') as f:
+#     geodict = geobuf.decode(f.read())
 
 # lakes = [{'value': f['id'], 'label': ' '.join(f['properties']['name'].split())} for f in geodict['features']]
 # lakes = [{'value': f['id'], 'label': f['id']} for f in geodict['features']]
-gw_refs = [f['id'] for f in geodict['features']]
+# gw_refs = [f['id'] for f in geodict['features']]
 # freqs = sel1['frequency'].values
 # x1 = xr.open_dataset(gw_error_path, engine='h5netcdf')
 # indicators = x1.indicator.values
@@ -318,8 +329,8 @@ def layout():
         html.Div([
             html.H3('(1) Reductions'),
 
-            # html.Label('Select a groundwater well on the map:'),
-            # dcc.Dropdown(options=lakes, id='gw_id', optionHeight=40, clearable=False),
+            html.Label('Select a Regional Council on the map:'),
+            dcc.Dropdown(options=[{'label': d, 'value': d} for d in rcs], id='rc_id', optionHeight=40, clearable=False, style={'margin-bottom': 20}),
 
             # dcc.Upload(
             #     id='upload_data_gw',
@@ -391,7 +402,8 @@ def layout():
     html.Div([
         dl.Map(center=center, zoom=7, children=[
             dl.TileLayer(id='gw_tile_layer', attribution=attribution),
-            dl.GeoJSON(url=str(gw_pbf_path), format="geobuf", id='gw_points', zoomToBounds=True, zoomToBoundsOnClick=True, cluster=True, options=dict(pointToLayer=gw_points_style_handle), hideout={'classes': [''], 'colorscale': ['#808080'], 'circleOptions': dict(fillOpacity=1, stroke=False, radius=point_radius), 'colorProp': 'tooltip'}),
+            dl.GeoJSON(url=str(rc_bounds_gbuf), format="geobuf", id='rc_map', zoomToBoundsOnClick=True, zoomToBounds=True, options=dict(style=rc_style_handle),  hideout={}),
+            dl.GeoJSON(data='', format="geobuf", id='gw_points', zoomToBounds=True, zoomToBoundsOnClick=True, cluster=False, options=dict(pointToLayer=gw_points_style_handle), hideout=gw_points_hideout),
             # dl.GeoJSON(data='', format="geobuf", id='catch_map_lakes', zoomToBoundsOnClick=True, options=dict(style=catch_style)),
             # dl.GeoJSON(url='', format="geobuf", id='base_reach_map', options=dict(style=base_reaches_style_handle)),
             # dl.GeoJSON(data='', format="geobuf", id='reach_map_lakes', options=dict(style=reach_style), hideout={}),
@@ -417,7 +429,8 @@ def layout():
 
     # ], className='three columns', style={'margin': 10}),
 
-    dcc.Store(id='gw_props_obj', data=''),
+    dcc.Store(id='gw_props_obj', data=None),
+    dcc.Store(id='gw_points_ids', data=None),
     # dcc.Store(id='reaches_obj_lakes', data=''),
     # dcc.Store(id='reductions_obj_lakes', data=''),
 ], style={'margin':0})
@@ -427,32 +440,57 @@ def layout():
 ###############################################
 ### Callbacks
 
+
+@callback(
+    Output('rc_id', 'value'),
+    [Input('rc_map', 'click_feature')]
+    )
+def update_catch_id(feature):
+    """
+
+    """
+    # print(ds_id)
+
+    if feature is not None:
+        rc_id = feature['id']
+    else:
+        rc_id = None
+
+    return rc_id
+
+
+@callback(
+        Output('gw_points', 'data'),
+        Output('gw_points_ids', 'data'),
+        Input('rc_id', 'value'),
+        )
+# @cache.memoize()
+def update_reaches(rc_id):
+    if (rc_id is not None):
+        with booklet.open(gw_points_rc_blt, 'r') as f:
+            data0 = f[rc_id]
+            geo1 = geobuf.decode(data0)
+            gw_points = [s['id'] for s in geo1['features']]
+            gw_points_encode = encode_obj(gw_points)
+            data = base64.b64encode(data0).decode()
+    else:
+        data = None
+        gw_points_encode = None
+
+    return data, gw_points_encode
+
+
 # @callback(
-#     Output('gw_id', 'value'),
-#     [Input('gw_points', 'click_feature')]
-#     )
-# def update_gw_id(feature):
-#     """
-
-#     """
-#     # print(ds_id)
-#     gw_id = None
-#     if feature is not None:
-#         gw_id = feature['id']
-
-#     return gw_id
-
-
-# @callback(
-#         Output('reach_map_lakes', 'data'),
-#         Input('gw_id', 'value'),
-#         Input('map_checkboxes_lakes', 'value'),
+#         Output('sites_points', 'data'),
+#         Input('catch_id', 'value'),
+#         # Input('map_checkboxes', 'value'),
 #         )
 # # @cache.memoize()
-# def update_reaches_lakes(gw_id, map_checkboxes):
-#     if isinstance(gw_id, str) and ('reach_map' in map_checkboxes):
-#         with booklet.open(gw_reach_gbuf_path, 'r') as f:
-#             data = base64.b64encode(f[int(gw_id)]).decode()
+# def update_monitor_sites(catch_id):
+#     if (catch_id is not None):
+#         with booklet.open(rivers_sites_path, 'r') as f:
+#             data = base64.b64encode(f[int(catch_id)]).decode()
+
 #     else:
 #         data = ''
 
@@ -460,122 +498,20 @@ def layout():
 
 
 # @callback(
-#         Output('catch_map_lakes', 'data'),
-#         Input('gw_id', 'value'),
+#         Output('rc_map', 'options'),
+#         Input('rc_map', 'hideout'),
+#         Input('rc_id', 'value')
 #         )
 # # @cache.memoize()
-# def update_catch_lakes(gw_id):
-#     if isinstance(gw_id, str):
-#         with booklet.open(gw_catches_major_path, 'r') as f:
-#             data = base64.b64encode(f[int(gw_id)]).decode()
+# def update_rcs_option(hideout, rc_id):
+#     trig = ctx.triggered_id
+
+#     if (len(hideout) == 0) or (trig == 'rc_id'):
+#         options = dict(style=base_rc_style_handle)
 #     else:
-#         data = ''
+#         options = dict(style=rc_style_handle)
 
-#     return data
-
-
-# @callback(
-#         Output('gw_poly', 'data'),
-#         Input('gw_id', 'value'),
-#         )
-# # @cache.memoize()
-# def update_lake(gw_id):
-#     if isinstance(gw_id, str):
-#         with booklet.open(gw_poly_gbuf_path, 'r') as f:
-#             data = base64.b64encode(f[int(gw_id)]).decode()
-#     else:
-#         data = ''
-
-#     return data
-
-
-# @callback(
-#         Output('reductions_obj_lakes', 'data'), Output('col_name_lakes', 'value'),
-#         Input('upload_data_lakes', 'contents'),
-#         Input('demo_data_lakes', 'n_clicks'),
-#         Input('gw_id', 'value'),
-#         State('upload_data_lakes', 'filename'),
-#         prevent_initial_call=True
-#         )
-# # @cache.memoize()
-# def update_reductions_obj_lakes(contents, n_clicks, gw_id, filename):
-#     if n_clicks is None:
-#         if contents is not None:
-#             data = parse_gis_file(contents, filename)
-
-#             if isinstance(data, str):
-#                 return data, None
-#         else:
-#             return '', None
-#     elif isinstance(gw_id, str):
-#         with booklet.open(gw_lc_path, 'r') as f:
-#             data = encode_obj(f[int(gw_id)])
-
-#         return data, 'reduction'
-#     else:
-#         return '', None
-
-
-# @callback(
-#         Output('reductions_poly_lakes', 'data'),
-#         Input('reductions_obj_lakes', 'data'),
-#         Input('map_checkboxes_lakes', 'value'),
-#         Input('col_name_lakes', 'value'),
-#         )
-# # @cache.memoize()
-# def update_reductions_poly_lakes(reductions_obj, map_checkboxes, col_name):
-#     # print(reductions_obj)
-#     # print(col_name)
-#     if (reductions_obj != '') and (reductions_obj is not None) and ('reductions_poly' in map_checkboxes):
-
-#         data = decode_obj(reductions_obj).to_crs(4326)
-
-#         if isinstance(col_name, str):
-#             data[col_name] = data[col_name].astype(str).str[:] + '% reduction'
-#             data.rename(columns={col_name: 'tooltip'}, inplace=True)
-
-#         gbuf = dlx.geojson_to_geobuf(data.__geo_interface__)
-
-#         return gbuf
-#     else:
-#         return ''
-
-
-# @callback(
-#         Output('gw_col_name', 'options'),
-#         Input('gw_reductions_obj', 'data')
-#         )
-# # @cache.memoize()
-# def update_column_options_gw(reductions_obj):
-#     # print(reductions_obj)
-#     if (reductions_obj != '') and (reductions_obj is not None):
-#         data = decode_obj(reductions_obj)
-#         cols = [{'label': col, 'value': col} for col in data.columns if col not in ['geometry', 'id']]
-
-#         return cols
-#     else:
-#         return []
-
-
-# @callback(
-#     Output('reaches_obj_lakes', 'data'), Output('process_text_lakes', 'children'),
-#     Input('process_lakes', 'n_clicks'),
-#     [State('gw_id', 'value'), State('reductions_obj_lakes', 'data'), State('col_name_lakes', 'value')],
-#     prevent_initial_call=True)
-# def update_reach_data_lakes(click, gw_id, reductions_obj, col_name):
-#     """
-
-#     """
-#     if isinstance(gw_id, str) and (reductions_obj != '') and (reductions_obj is not None) and isinstance(col_name, str):
-#         plan_file = decode_obj(reductions_obj)
-#         props = calc_gw_reach_reductions(gw_id, plan_file, reduction_col=col_name)
-#         data = encode_obj(props)
-#         text_out = 'Routing complete'
-#     else:
-#         data = ''
-#         text_out = 'Not all inputs have been selected'
-
-#     return data, text_out
+#     return options
 
 
 @callback(
@@ -623,14 +559,15 @@ def update_props_data_lakes(reductions, indicator, n_years, n_samples_year):
 @callback(
     Output('gw_points', 'hideout'),
     Input('gw_props_obj', 'data'),
-    # Input('gw_id', 'value'),
+    Input('gw_points_ids', 'data'),
     prevent_initial_call=True
     )
-def update_hideout_lakes(props_obj):
+def update_hideout_lakes(props_obj, gw_points_encode):
     """
 
     """
     if (props_obj != '') and (props_obj is not None):
+
         # print('trigger')
         props = decode_obj(props_obj)
         # print(props)
@@ -642,8 +579,13 @@ def update_hideout_lakes(props_obj):
         # print(props['gw_id'])
 
         hideout = {'classes': props['ref'].values, 'colorscale': color_arr, 'circleOptions': dict(fillOpacity=1, stroke=False, radius=point_radius), 'colorProp': 'tooltip'}
+    elif (gw_points_encode is not None):
+        # print('trigger')
+        gw_refs = decode_obj(gw_points_encode)
+
+        hideout = {'classes': gw_refs, 'colorscale': ['#808080'] * len(gw_refs), 'circleOptions': dict(fillOpacity=1, stroke=False, radius=point_radius), 'colorProp': 'tooltip'}
     else:
-        hideout = {'classes': gw_refs, 'colorscale': ['#808080'], 'circleOptions': dict(fillOpacity=1, stroke=False, radius=point_radius), 'colorProp': 'tooltip'}
+        hideout = gw_points_hideout
 
     return hideout
 
@@ -653,8 +595,9 @@ def update_hideout_lakes(props_obj):
     [Input('gw_props_obj', 'data'),
       Input('gw_reductions', 'value'),
       Input("gw_points", "click_feature")],
+    State('gw_points_ids', 'data')
     )
-def update_map_info_lakes(props_obj, reductions, feature):
+def update_map_info_lakes(props_obj, reductions, feature, gw_points_encode):
     """
 
     """
@@ -667,6 +610,7 @@ def update_map_info_lakes(props_obj, reductions, feature):
     if isinstance(reductions, int) and (props_obj != '') and (props_obj is not None):
         if feature is not None:
             # print(feature)
+            gw_refs = decode_obj(gw_points_encode)
             if feature['id'] in gw_refs:
                 props = decode_obj(props_obj)
 

@@ -53,6 +53,15 @@ window.dashExtensions = Object.assign({}, window.dashExtensions, {
 
             return style;
         },
+        gw_rc_style_handle: function style(feature) {
+            return {
+                fillColor: 'grey',
+                weight: 2,
+                opacity: 1,
+                color: 'black',
+                fillOpacity: 0.1
+            };
+        },
         gw_points_style_handle: function gw_points_style_handle(feature, latlng, context) {
             const {
                 classes,
