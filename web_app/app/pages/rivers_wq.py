@@ -463,7 +463,7 @@ def layout():
             dl.GeoJSON(data='', format="geobuf", id='sites_points', options=dict(pointToLayer=sites_points_handle), hideout={'circleOptions': dict(fillOpacity=1, stroke=False, radius=5, color='black')}),
             colorbar,
             info
-                            ], style={'width': '100%', 'height': 780, 'margin': "auto", "display": "block"}, id="map2")
+                            ], style={'width': '100%', 'height': 700, 'margin': "auto", "display": "block"}, id="map2")
     ], className='five columns', style={'margin': 10}),
 
     # html.Div([

@@ -50,7 +50,8 @@ dash.register_page(
 
 app_base_path = pathlib.Path('/assets')
 
-lakes_error_path = assets_path.joinpath('lakes_error.h5')
+lakes_power_combo_path = assets_path.joinpath('lakes_power_combo.h5')
+# lakes_power_moni_path = assets_path.joinpath('lakes_power_monitored.h5')
 
 lakes_pbf_path = app_base_path.joinpath('lakes_points.pbf')
 lakes_poly_gbuf_path = assets_path.joinpath('lakes_poly.blt')
@@ -409,12 +410,17 @@ def layout():
                ],
                value=['reductions_poly', 'reach_map'],
                id='map_checkboxes_lakes',
-               style={'padding': 5, 'margin-bottom': 20}
+               style={'padding': 5, 'margin-bottom': 50}
             ),
+        dcc.Loading(
+        type="default",
+        children=[html.Div(html.Button("Download power results csv", id='dl_btn_power_lakes'), style={'margin-bottom': 20}),
+dcc.Download(id="dl_power_lakes")],
+        ),
         dcc.Markdown('', style={
             'textAlign': 'left',
-                        }, id='red_disclaimer_lakes')
-        # dcc.Link(html.Img(src=str(app_base_path.joinpath('our-land-and-water-logo.svg'))), href='https://ourlandandwater.nz/')
+                        }, id='red_disclaimer_lakes'),
+
         ], className='two columns', style={'margin': 10}),
 
     html.Div([
@@ -428,7 +434,7 @@ def layout():
             dl.GeoJSON(data='', format="geobuf", id='reductions_poly_lakes'),
             colorbar,
             info
-                            ], style={'width': '100%', 'height': 780, 'margin': "auto", "display": "block"})
+                            ], style={'width': '100%', 'height': 700, 'margin': "auto", "display": "block"})
     ], className='five columns', style={'margin': 10}),
 
     # html.Div([
@@ -660,15 +666,17 @@ def update_props_data_lakes(reaches_obj, indicator, n_years, n_samples_year, lak
         ## Lookup power
         n_samples = n_samples_year*n_years
 
-        power_data = xr.open_dataset(lakes_error_path, engine='h5netcdf')
+        power_data = xr.open_dataset(lakes_power_combo_path, engine='h5netcdf')
         try:
-            power_data1 = int(power_data.sel(indicator=indicator, LFENZID=int(lake_id), n_samples=n_samples, conc_perc=conc_perc).power.values)
+            power_data1 = power_data.sel(indicator=indicator, LFENZID=int(lake_id), n_samples=n_samples, conc_perc=conc_perc)
+
+            power_data2 = [int(power_data1.power_modelled.values), float(power_data1.power_monitored.values)]
         except:
-            power_data1 = 0
+            power_data2 = [0, np.nan]
         power_data.close()
         del power_data
 
-        data = encode_obj({'reduction': props, 'power': power_data1, 'lake_id': lake_id})
+        data = encode_obj({'reduction': props, 'power': power_data2, 'lake_id': lake_id})
     else:
         data = ''
 
@@ -712,7 +720,7 @@ def update_hideout_lakes(props_obj, lake_id):
 
         if props['lake_id'] == lake_id:
 
-            color_arr = pd.cut([props['power']], bins, labels=colorscale, right=False).tolist()
+            color_arr = pd.cut([props['power'][0]], bins, labels=colorscale, right=False).tolist()
             # print(color_arr)
             # print(props['lake_id'])
 
@@ -745,7 +753,12 @@ def update_map_info_lakes(props_obj, reductions_obj, map_checkboxes, feature):
         if feature is not None:
             props = decode_obj(props_obj)
 
-            info_str = """\n\nReduction: {red}%\n\nLikelihood of observing a reduction (power): {t_stat}%""".format(red=int(props['reduction']), t_stat=int(props['power']))
+            if np.isnan(props['power'][1]):
+                moni1 = 'NA'
+            else:
+                moni1 = str(int(props['power'][1])) + '%'
+
+            info_str = """\n\nReduction: {red}%\n\nLikelihood of observing a reduction (power):\n\n&nbsp;&nbsp;&nbsp;&nbsp;**Modelled: {t_stat1}%**\n\n&nbsp;&nbsp;&nbsp;&nbsp;**Monitored: {t_stat2}**""".format(red=int(props['reduction']), t_stat1=int(props['power'][0]), t_stat2=moni1)
 
             info = info + info_str
 
@@ -774,6 +787,35 @@ def download_lc(n_clicks, lake_id, reductions_obj):
         return dcc.send_file(path)
 
 
+@callback(
+    Output("dl_power_lakes", "data"),
+    Input("dl_btn_power_lakes", "n_clicks"),
+    State('lake_id', 'value'),
+    State('reaches_obj_lakes', 'data'),
+    State('indicator_lakes', 'value'),
+    State('time_period_lakes', 'value'),
+    State('freq_lakes', 'value'),
+    prevent_initial_call=True,
+    )
+def download_power(n_clicks, lake_id, props_obj, indicator, n_years, n_samples_year):
+    # data = decode_obj(reductions_obj)
+    # io1 = io.BytesIO()
+    # data.to_file(io1, driver='GPKG')
+    # io1.seek(0)
+
+    if isinstance(lake_id, str) and (props_obj != '') and (props_obj is not None):
+        props = decode_obj(props_obj)
+        conc_perc = 100 - props
+
+        power_data = xr.open_dataset(lakes_power_combo_path, engine='h5netcdf')
+        power_data1 = power_data.sel(LFENZID=int(lake_id), conc_perc=conc_perc, drop=True)
+        power_data1['n_samples'] = power_data1['n_samples'].astype('int16')
+        # power_data1 = power_data1.assign_coords(indicator=indicator).expand_dims('indicator')
+        power_data1 = power_data1.assign_coords(lake_id=int(lake_id)).expand_dims('lake_id')
+
+        df = power_data1.to_dataframe().reset_index().set_index(['lake_id', 'indicator', 'n_samples']).sort_index()
+
+        return dcc.send_data_frame(df.to_csv, f"lake_power_{lake_id}.csv")
 
 
 

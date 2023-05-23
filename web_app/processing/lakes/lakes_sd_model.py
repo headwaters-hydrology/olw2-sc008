@@ -266,7 +266,7 @@ for indicator in indicators:
         results['stdev'].loc[{'model': model_name, 'indicator': indicator}] = predictions.round(3)
 
 
-hdf5tools.xr_to_hdf5(results, utils.lakes_stdev_all_path)
+hdf5tools.xr_to_hdf5(results, utils.lakes_stdev_model_path)
 
 
 
