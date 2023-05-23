@@ -101,7 +101,13 @@ stdev_df2 = stdev_df1.groupby(['LFENZID', 'indicator'])['stdev'].mean().reset_in
 ind_count = stdev_df2.groupby('indicator')['LFENZID'].count()
 indicators = ind_count[ind_count > 10].index.values
 
-stdev_df3 = stdev_df2[stdev_df2.indicator.isin(indicators)].copy()
+stdev_df3 = stdev_df2[stdev_df2.indicator.isin(indicators) & (stdev_df2.LFENZID > 0)].copy()
+
+stdev3 = stdev_df3.set_index(['LFENZID', 'indicator']).to_xarray()
+stdev3['stdev'].encoding = encodings['stdev']
+
+hdf5tools.xr_to_hdf5(stdev3, utils.lakes_stdev_moni_path)
+
 
 ###########################################
 ### Global model
@@ -260,7 +266,7 @@ for indicator in indicators:
         results['stdev'].loc[{'model': model_name, 'indicator': indicator}] = predictions.round(3)
 
 
-hdf5tools.xr_to_hdf5(results, utils.lakes_stdev_path)
+hdf5tools.xr_to_hdf5(results, utils.lakes_stdev_all_path)
 
 
 

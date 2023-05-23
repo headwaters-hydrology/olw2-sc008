@@ -5,6 +5,7 @@ Created on Wed Dec 21 16:17:00 2022
 
 @author: mike
 """
+import sys
 import os
 from gistools import vector, rec
 import geopandas as gpd
@@ -20,6 +21,9 @@ import multiprocessing as mp
 import concurrent.futures
 import geobuf
 
+if '..' not in sys.path:
+    sys.path.append('..')
+
 import utils
 
 pd.options.display.max_columns = 10
@@ -34,7 +38,7 @@ def lakes_conc_error_processing():
 
     list1 = utils.log_error_cats(start, end, 0.1)
 
-    lakes0 = xr.open_dataset(utils.lakes_stdev_path, engine='h5netcdf')
+    lakes0 = xr.open_dataset(utils.lakes_stdev_all_path, engine='h5netcdf')
     lakes1 = lakes0.sel(model='BoostingRegressor', drop=True)
 
     lakes_poly = gpd.read_feather(utils.lakes_poly_path)
@@ -69,7 +73,7 @@ def lakes_conc_error_processing():
 
     h5 = hdf5tools.H5(error_list)
 
-    h5.to_hdf5(utils.lakes_error_path)
+    h5.to_hdf5(utils.lakes_power_all_path)
 
 
 

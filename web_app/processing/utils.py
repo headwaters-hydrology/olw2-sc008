@@ -154,20 +154,24 @@ lakes_sims_path = output_path.joinpath('lakes_sims')
 lakes_sims_path.mkdir(parents=True, exist_ok=True)
 
 lakes_sims_h5_path = lakes_sims_path.joinpath('lakes_sims.h5')
-lakes_error_path = assets_path.joinpath('lakes_error.h5')
+lakes_power_all_path = assets_path.joinpath('lakes_power_all.h5')
+lakes_power_moni_path = assets_path.joinpath('lakes_power_monitored.h5')
+
 lakes_lc_path = assets_path.joinpath('lakes_catch_lc.blt')
 
 ## Model data
 lakes_data_path = base_path.joinpath('lakes_wq_data.csv')
 lakes_data_clean_path = base_path.joinpath('lakes_wq_data_clean.feather')
 lakes_class_csv = base_path.joinpath('fenz_lakes_classification.csv')
-lakes_stdev_path = output_path.joinpath('lakes_stdev.h5')
+lakes_stdev_all_path = output_path.joinpath('lakes_stdev_all.h5')
+lakes_stdev_moni_path = output_path.joinpath('lakes_stdev_monitored.h5')
 
 
 ### GW
 
 ## Model data
 gw_data_path = base_path.joinpath('gw_points_data.hdf')
+gw_monitoring_data_path = base_path.joinpath('gw_monitoring_data_v01.nc')
 
 ## Spatial data
 # gw_points_gbuf_path = assets_path.joinpath('gw_points.pbf')

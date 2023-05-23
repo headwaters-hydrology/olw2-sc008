@@ -25,6 +25,17 @@ def gw_process_errors_points():
     list1 = utils.error_cats(0.01, 15.31, 0.1)
     list1.insert(0, 0.001)
 
+    # errors0 = xr.open_dataset(utils.gw_monitoring_data_path)
+    # for param in errors0:
+    #     attrs = errors0[param].attrs
+    #     val = errors0[param]
+    #     if 'scale' in attrs:
+    #         val = val * attrs['scale']
+    #     if 'offset' in attrs:
+    #         val = val + attrs['offset']
+    #     errors0[param] = val
+    #     errors0[param].attrs = attrs
+
     errors0 = pd.read_hdf(utils.gw_data_path, key='data')[['use_std']].rename(columns={'use_std': 'error'})
     errors0['indicator'] = 'Nitrate'
 

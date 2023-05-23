@@ -9,27 +9,27 @@ import os
 import pathlib
 import utils
 
-from lcdb_processing import lcdb_processing
-from land_cover_combine import land_cover_combine
-from land_cover_reductions import land_cover_reductions
+from land_cover.lcdb_processing import lcdb_processing
+from land_cover.land_cover_combine import process_extra_geo_layers
+from land_cover.land_cover_reductions import land_cover_reductions
 
-from rivers_delineate import rec_delin
+from rivers.rivers_delineate import rec_delin
 # from rivers_reach_mappings import reach_mapping
 # from rivers_catch import catch_agg
 # from rivers_make_app_assets import process_assets
-from rivers_land_cover_assignment import rivers_land_cover
-from rivers_assign_errors import process_errors
-from rivers_assign_flow import process_flows_rec
+from rivers.rivers_land_cover_assignment import rivers_land_cover
+from rivers.rivers_assign_errors import process_errors
+from rivers.rivers_assign_flow import process_flows_rec
 # from rivers_assign_loads import process_loads_rec
-from rivers_monitoring_sites import rivers_monitoring_sites_processing
+from rivers.rivers_monitoring_sites import rivers_monitoring_sites_processing
 
-from lakes_geo_processing import lakes_geo_process
-from lakes_delineation import lakes_catch_delin
-from lakes_land_cover_assignment import lakes_land_cover
-from lakes_conc_error import lakes_conc_error_processing
+from lakes.lakes_geo_processing import lakes_geo_process
+from lakes.lakes_delineation import lakes_catch_delin
+from lakes.lakes_land_cover_assignment import lakes_land_cover
+from lakes.lakes_conc_error import lakes_conc_error_processing
 
-from gw_geo_processing import gw_geo_process
-from gw_assign_errors import gw_process_errors_points
+from gw.gw_geo_processing import gw_geo_process
+from gw.gw_assign_errors import gw_process_errors_points
 
 #####################################################
 ### Land use/cover
@@ -38,7 +38,7 @@ from gw_assign_errors import gw_process_errors_points
 lcdb_processing()
 
 ## Combine LCDB with other layers
-land_cover_combine()
+process_extra_geo_layers()
 
 ## Assign reductions
 land_cover_reductions()
