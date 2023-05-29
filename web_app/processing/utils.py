@@ -81,7 +81,8 @@ sites_rec_csv = base_path.joinpath('olw_river_sites_rec.csv')
 sites_names_csv = base_path.joinpath('LAWARiverSiteswithRCIDs.csv')
 
 # conc_csv_path = base_path.joinpath('StBD3.csv')
-conc_csv_path = base_path.joinpath('Stream_Order3_Estimates_2023-03-31.csv')
+river_errors_model_path = base_path.joinpath('rivers_errors_modelled.csv')
+river_errors_moni_path = base_path.joinpath('rivers_errors_monitored.csv')
 river_sites_path = base_path.joinpath('olw_river_sites.gpkg')
 
 river_flows_rec_path = assets_path.joinpath('rivers_flows_rec.blt')
@@ -111,10 +112,10 @@ river_sims_path.mkdir(parents=True, exist_ok=True)
 
 river_sims_h5_path = river_sims_path.joinpath('rivers_sims_all.h5')
 # river_sims_gam_path = river_sims_path.joinpath('rivers_sims_gam.h5')
-river_reach_error_path = assets_path.joinpath('rivers_reaches_error.h5')
-river_reach_error_gam_path = output_path.joinpath('rivers_reaches_error_gam.h5')
-river_reach_loads_path = assets_path.joinpath('rivers_reaches_loads.h5')
-river_reach_loads_area_path = assets_path.joinpath('rivers_reaches_loads_area.h5')
+river_power_moni_path = assets_path.joinpath('rivers_reaches_power_monitored.h5')
+river_power_model_path = assets_path.joinpath('rivers_reaches_power_modelled.h5')
+# river_reach_loads_path = assets_path.joinpath('rivers_reaches_loads.h5')
+# river_reach_loads_area_path = assets_path.joinpath('rivers_reaches_loads_area.h5')
 
 # parcels_path = base_path.joinpath('nz-primary-land-parcels.gpkg')
 
@@ -170,9 +171,9 @@ lakes_stdev_moni_path = output_path.joinpath('lakes_stdev_monitored.h5')
 
 ### GW
 
-## Model data
-gw_data_path = base_path.joinpath('gw_points_data.hdf')
-gw_monitoring_data_path = base_path.joinpath('gw_monitoring_data_v01.nc')
+## Source data
+# gw_data_path = base_path.joinpath('gw_points_data.hdf')
+gw_monitoring_data_path = base_path.joinpath('gw_monitoring_data_v03.nc')
 
 ## Spatial data
 # gw_points_gbuf_path = assets_path.joinpath('gw_points.pbf')
@@ -183,7 +184,7 @@ gw_points_rc_blt = assets_path.joinpath('gw_points_rc.blt')
 gw_sims_path = output_path.joinpath('gw_sims')
 gw_sims_path.mkdir(parents=True, exist_ok=True)
 
-gw_points_error_path = assets_path.joinpath('gw_points_error.h5')
+gw_power_moni_path = assets_path.joinpath('gw_power_monitored.h5')
 
 gw_sims_h5_path = gw_sims_path.joinpath('gw_sims.h5')
 

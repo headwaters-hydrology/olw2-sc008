@@ -289,6 +289,60 @@ def calc_lake_reach_reductions(lake_id, plan_file, reduction_col='reduction'):
 
     return props
 
+
+def xr_concat(datasets):
+    """
+    A much more efficient concat/combine of xarray datasets. It's also much safer on memory.
+    """
+    # Get variables for the creation of blank dataset
+    coords_list = []
+    chunk_dict = {}
+
+    for chunk in datasets:
+        coords_list.append(chunk.coords.to_dataset())
+        for var in chunk.data_vars:
+            if var not in chunk_dict:
+                dims = tuple(chunk[var].dims)
+                enc = chunk[var].encoding.copy()
+                dtype = chunk[var].dtype
+                _ = [enc.pop(d) for d in ['original_shape', 'source'] if d in enc]
+                var_dict = {'dims': dims, 'enc': enc, 'dtype': dtype, 'attrs': chunk[var].attrs}
+                chunk_dict[var] = var_dict
+
+    try:
+        xr3 = xr.combine_by_coords(coords_list, compat='override', data_vars='minimal', coords='all', combine_attrs='override')
+    except:
+        xr3 = xr.merge(coords_list, compat='override', combine_attrs='override')
+
+    # Create the blank dataset
+    for var, var_dict in chunk_dict.items():
+        dims = var_dict['dims']
+        shape = tuple(xr3[c].shape[0] for c in dims)
+        xr3[var] = (dims, np.full(shape, np.nan, var_dict['dtype']))
+        xr3[var].attrs = var_dict['attrs']
+        xr3[var].encoding = var_dict['enc']
+
+    # Update the attributes in the coords from the first ds
+    for coord in xr3.coords:
+        xr3[coord].encoding = datasets[0][coord].encoding
+        xr3[coord].attrs = datasets[0][coord].attrs
+
+    # Fill the dataset with data
+    for chunk in datasets:
+        for var in chunk.data_vars:
+            if isinstance(chunk[var].variable._data, np.ndarray):
+                xr3[var].loc[chunk[var].transpose(*chunk_dict[var]['dims']).coords.indexes] = chunk[var].transpose(*chunk_dict[var]['dims']).values
+            elif isinstance(chunk[var].variable._data, xr.core.indexing.MemoryCachedArray):
+                c1 = chunk[var].copy().load().transpose(*chunk_dict[var]['dims'])
+                xr3[var].loc[c1.coords.indexes] = c1.values
+                c1.close()
+                del c1
+            else:
+                raise TypeError('Dataset data should be either an ndarray or a MemoryCachedArray.')
+
+    return xr3
+
+
 # def t_test(props, n_samples_year, n_years):
 #     """
 

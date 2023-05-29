@@ -445,7 +445,7 @@ def layout():
     Output('rc_id', 'value'),
     [Input('rc_map', 'click_feature')]
     )
-def update_catch_id(feature):
+def update_rc_id(feature):
     """
 
     """
@@ -465,7 +465,7 @@ def update_catch_id(feature):
         Input('rc_id', 'value'),
         )
 # @cache.memoize()
-def update_reaches(rc_id):
+def update_gw_points(rc_id):
     if (rc_id is not None):
         with booklet.open(gw_points_rc_blt, 'r') as f:
             data0 = f[rc_id]
@@ -519,7 +519,7 @@ def update_reaches(rc_id):
     [Input('gw_reductions', 'value'), Input('gw_indicator', 'value'), Input('gw_time_period', 'value'), Input('gw_freq', 'value')],
     # [State('gw_id', 'value')]
     )
-def update_props_data_lakes(reductions, indicator, n_years, n_samples_year):
+def update_props_data_gw(reductions, indicator, n_years, n_samples_year):
     """
 
     """
@@ -562,7 +562,7 @@ def update_props_data_lakes(reductions, indicator, n_years, n_samples_year):
     Input('gw_points_ids', 'data'),
     prevent_initial_call=True
     )
-def update_hideout_lakes(props_obj, gw_points_encode):
+def update_hideout_gw_points(props_obj, gw_points_encode):
     """
 
     """
@@ -572,7 +572,6 @@ def update_hideout_lakes(props_obj, gw_points_encode):
         props = decode_obj(props_obj)
         # print(props)
         # print(type(gw_id))
-
 
         color_arr = pd.cut(props.power.values, bins, labels=colorscale, right=False).tolist()
         # print(color_arr)
@@ -597,7 +596,7 @@ def update_hideout_lakes(props_obj, gw_points_encode):
       Input("gw_points", "click_feature")],
     State('gw_points_ids', 'data')
     )
-def update_map_info_lakes(props_obj, reductions, feature, gw_points_encode):
+def update_map_info_gw(props_obj, reductions, feature, gw_points_encode):
     """
 
     """

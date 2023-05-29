@@ -5,6 +5,7 @@ Created on Wed Feb 22 15:52:39 2023
 
 @author: mike
 """
+import sys
 import os
 import pandas as pd
 import pathlib
@@ -12,6 +13,9 @@ import geopandas as gpd
 import booklet
 import geobuf
 from gistools import vector
+
+if '..' not in sys.path:
+    sys.path.append('..')
 
 import utils
 

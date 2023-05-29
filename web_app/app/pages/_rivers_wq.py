@@ -34,24 +34,24 @@ import booklet
 # from . import utils
 
 # from app import app
-# import utils
+import utils
 
 ##########################################
 ### Parameters
 
 assets_path = pathlib.Path(os.path.split(os.path.realpath(os.path.dirname(__file__)))[0]).joinpath('assets')
 
-dash.register_page(
-    __name__,
-    path='/rivers-wq',
-    title='River Water Quality',
-    name='River Water Quality'
-)
+# dash.register_page(
+#     __name__,
+#     path='/rivers-wq',
+#     title='River Water Quality',
+#     name='River Water Quality'
+# )
 
 app_base_path = pathlib.Path('/assets')
 
 river_power_model_path = assets_path.joinpath('rivers_reaches_power_modelled.h5')
-# river_power_moni_path = assets_path.joinpath('rivers_reaches_power_monitored.h5')
+river_power_moni_path = assets_path.joinpath('rivers_reaches_power_monitored.h5')
 
 rivers_catch_pbf_path = app_base_path.joinpath('rivers_catchments.pbf')
 
@@ -120,9 +120,21 @@ reach_style_handle = assign("""function style2(feature, context){
     return style;
 }""", name='rivers_reach_style_handle')
 
-sites_points_handle = assign("""function style_sites(feature, latlng, context){
-                             const {circleOptions} = context.props.hideout;
-                             return L.circleMarker(latlng, circleOptions);}""", name='sites_points_handle')
+# sites_points_handle = assign("""function style_sites(feature, latlng, context){
+#                              const {circleOptions} = context.props.hideout;
+#                              return L.circleMarker(latlng, circleOptions);}""", name='sites_points_handle')
+
+sites_points_handle = assign("""function rivers_sites_points_handle(feature, latlng, context){
+    const {classes, colorscale, circleOptions, colorProp} = context.props.hideout;  // get props from hideout
+    const value = feature.properties[colorProp];  // get value the determines the fillColor
+    for (let i = 0; i < classes.length; ++i) {
+        if (value == classes[i]) {
+            circleOptions.fillColor = colorscale[i];  // set the color according to the class
+        }
+    }
+
+    return L.circleMarker(latlng, circleOptions);
+}""", name='rivers_sites_points_handle')
 
 freq_mapping = {12: 'once a month', 26: 'once a fortnight', 52: 'once a week', 104: 'twice a week', 364: 'once a day'}
 time_periods = [5, 10, 20, 30]
@@ -131,7 +143,7 @@ style = dict(weight=4, opacity=1, color='white')
 classes = [0, 20, 40, 60, 80]
 bins = classes.copy()
 bins.append(101)
-# colorscale = ['#808080', '#FED976', '#FEB24C', '#FC4E2A', '#BD0026', '#800026']
+# colorscale = ['#232323', '#FED976', '#FEB24C', '#FC4E2A', '#BD0026', '#800026']
 colorscale = ['#808080', '#FED976', '#FD8D3C', '#E31A1C', '#800026']
 # ctg = ["{}%+".format(cls, classes[i + 1]) for i, cls in enumerate(classes[1:-1])] + ["{}%+".format(classes[-1])]
 # ctg.insert(0, 'NA')
@@ -147,6 +159,10 @@ info = dcc.Markdown(id="info", className="info", style={"position": "absolute", 
 # info = html.Div(id="info", className="info", style={"position": "absolute", "top": "10px", "right": "10px", "z-index": "1000"})
 
 indicator_dict = {'BD': 'Black disk', 'EC': 'E.coli', 'DRP': 'Dissolved reactive phosporus', 'NH': 'Ammoniacal nitrogen', 'NO': 'Nitrate', 'TN': 'Total nitrogen', 'TP': 'Total phosphorus'}
+
+point_radius = 5
+
+rivers_points_hideout = {'classes': [], 'colorscale': ['#232323'], 'circleOptions': dict(fillOpacity=1, stroke=False, radius=point_radius), 'colorProp': 'nzsegment'}
 
 ###############################################
 ### Helper Functions
@@ -437,6 +453,15 @@ def layout():
         html.Label('Select sampling frequency:'),
         dcc.Dropdown(options=[{'label': v, 'value': k} for k, v in freq_mapping.items()], id='freq', clearable=False, value=12),
 
+        html.H4(children='Type of results', style={'margin-top': 20}),
+        dcc.RadioItems(id='rivers_results_types',
+               options=[
+                   {'label': 'Modelled', 'value': 'modelled'},
+                   {'label': 'Monitored', 'value': 'monitored'},
+               ],
+               value='modelled'
+            ),
+
         html.H4(children='Map Layers', style={'margin-top': 20}),
         dcc.Checklist(
                options=[
@@ -461,7 +486,7 @@ def layout():
             # dl.GeoJSON(url='', format="geobuf", id='base_reach_map', options=dict(style=base_reaches_style_handle)),
             dl.GeoJSON(data='', format="geobuf", id='reach_map', options={}, hideout={}, hoverStyle=arrow_function(dict(weight=10, color='black', dashArray=''))),
             dl.GeoJSON(data='', format="geobuf", id='reductions_poly'),
-            dl.GeoJSON(data='', format="geobuf", id='sites_points', options=dict(pointToLayer=sites_points_handle), hideout={'circleOptions': dict(fillOpacity=1, stroke=False, radius=5, color='black')}),
+            dl.GeoJSON(data='', format="geobuf", id='sites_points', options=dict(pointToLayer=sites_points_handle), hideout=rivers_points_hideout),
             colorbar,
             info
                             ], style={'width': '100%', 'height': 700, 'margin': "auto", "display": "block"}, id="map2")
@@ -679,12 +704,13 @@ def update_props_data(reaches_obj, indicator, n_years, n_samples_year, catch_id)
 
         n_samples = n_samples_year*n_years
 
-        power_data = xr.open_dataset(river_power_model_path, engine='h5netcdf')
-
         with booklet.open(rivers_reach_mapping_path) as f:
             branches = f[int(catch_id)][int(catch_id)]
 
-        power_data1 = power_data.sel(indicator=indicator, nzsegment=branches, n_samples=n_samples).load().sortby('nzsegment').copy()
+        ## Modelled
+        power_data = xr.open_dataset(river_power_model_path, engine='h5netcdf')
+
+        power_data1 = power_data.sel(indicator=indicator, nzsegment=branches, n_samples=n_samples, drop=True).load().sortby('nzsegment').copy()
         power_data.close()
         del power_data
 
@@ -692,13 +718,22 @@ def update_props_data(reaches_obj, indicator, n_years, n_samples_year, catch_id)
 
         props = props.assign(power_modelled=(('nzsegment'), power_data1.sel(conc_perc=props.conc_perc, drop=True).power.values.astype('int8')))
 
-        # power = []
-        # for reach in props.nzsegment:
-        #     p = int(props.loc[{'nzsegment': reach}].conc_perc.values)
-        #     power.append(int(power_data1.sel(conc_perc=p, nzsegment=reach).power.values))
+        ## Monitored
+        power_data = xr.open_dataset(river_power_moni_path, engine='h5netcdf')
+        sites = power_data.nzsegment.values[power_data.nzsegment.isin(branches)].astype('int32')
+        sites.sort()
+        if len(sites) > 0:
+            conc_perc = props.sel(nzsegment=sites).conc_perc
+            power_data1 = power_data.sel(indicator=indicator, nzsegment=sites, n_samples=n_samples, drop=True).load().sortby('nzsegment').copy()
+            power_data1 = power_data1.rename({'power': 'power_monitored'})
+            power_data.close()
+            del power_data
 
-        # props = props.assign(power=(('nzsegment'), np.array(power, dtype='int8')))
-        # props['power'] = xr.where((props.reduction >= 5), props['power'], 0)
+            power_data2 = power_data1.sel(conc_perc=conc_perc, drop=True)
+
+            props = utils.xr_concat([props, power_data2])
+        else:
+            props = props.assign(power_monitored=(('nzsegment'), xr.full_like(props.reduction, np.nan, dtype='float32').values))
 
         data = encode_obj(props)
     else:
@@ -709,23 +744,46 @@ def update_props_data(reaches_obj, indicator, n_years, n_samples_year, catch_id)
 
 @callback(
     Output('reach_map', 'hideout'),
-    [Input('props_obj', 'data')],
+    Output('sites_points', 'hideout'),
+    [Input('props_obj', 'data'),
+     Input('rivers_results_types', 'value')],
     prevent_initial_call=True
     )
-def update_hideout(props_obj):
+def update_hideout(props_obj, rivers_results_type):
     """
 
     """
     if (props_obj != '') and (props_obj is not None):
         props = decode_obj(props_obj)
 
-        color_arr = pd.cut(props.power_modelled.values, bins, labels=colorscale, right=False).tolist()
+        if rivers_results_type == 'modelled':
 
-        hideout = {'colorscale': color_arr, 'classes': props.nzsegment.values.tolist(), 'style': style, 'colorProp': 'nzsegment'}
+            ## modelled
+            color_arr1 = pd.cut(props.power_modelled.values, bins, labels=colorscale, right=False).tolist()
+
+            hideout_model = {'colorscale': color_arr1, 'classes': props.nzsegment.values.astype(int).tolist(), 'style': style, 'colorProp': 'nzsegment'}
+            hideout_moni = rivers_points_hideout
+
+        else:
+            ## Monitored
+            props_moni = props.dropna('nzsegment')
+            if len(props_moni.nzsegment) > 0:
+                # print(props_moni)
+                color_arr2 = pd.cut(props_moni.power_monitored.values, bins, labels=colorscale, right=False).tolist()
+
+                hideout_moni = {'classes': props_moni.nzsegment.values.astype(int), 'colorscale': color_arr2, 'circleOptions': dict(fillOpacity=1, stroke=False, radius=point_radius), 'colorProp': 'nzsegment'}
+
+                # hideout_moni = {'colorscale': color_arr2, 'classes': props_moni.nzsegment.values.astype(int).tolist(), 'style': style, 'colorProp': 'nzsegment'}
+            else:
+                hideout_moni = rivers_points_hideout
+
+            model_segs = props.nzsegment.values.astype(int)
+            hideout_model = {'colorscale': ['#808080'] * len(model_segs), 'classes': model_segs, 'style': style, 'colorProp': 'nzsegment'}
     else:
-        hideout = {}
+        hideout_model = {}
+        hideout_moni = rivers_points_hideout
 
-    return hideout
+    return hideout_model, hideout_moni
 
 
 @callback(
@@ -733,9 +791,11 @@ def update_hideout(props_obj):
     [Input('props_obj', 'data'),
       Input('reductions_obj', 'data'),
       Input('map_checkboxes_rivers', 'value'),
-      Input("reach_map", "click_feature")],
+      Input("reach_map", "click_feature"),
+      Input("sites_points", "click_feature")],
+    State('rivers_results_types', 'value')
     )
-def update_map_info(props_obj, reductions_obj, map_checkboxes, feature):
+def update_map_info(props_obj, reductions_obj, map_checkboxes, feature, sites_points, rivers_results_type):
     """
 
     """
@@ -745,40 +805,46 @@ def update_map_info(props_obj, reductions_obj, map_checkboxes, feature):
         info = info + """\n\nHover over the polygons to see reduction %"""
 
     if (props_obj != '') and (props_obj is not None):
-        if feature is not None:
-            feature_id = int(feature['id'])
-            props = decode_obj(props_obj)
+        if rivers_results_type == 'modelled':
+            if feature is not None:
+                feature_id = int(feature['id'])
+                props = decode_obj(props_obj)
 
-            if feature_id in props.nzsegment:
+                if feature_id in props.nzsegment:
 
-                reach_data = props.sel(nzsegment=int(feature['id']))
+                    reach_data = props.sel(nzsegment=feature_id)
 
-                info_str = """\n\nReduction: {red}%\n\nLikelihood of observing a reduction (power): {t_stat}%""".format(red=int(reach_data.reduction), t_stat=int(reach_data.power_modelled))
+                    info_str = """\n\nReduction: {red}%\n\nLikelihood of observing a reduction (power): {t_stat}%""".format(red=int(reach_data.reduction), t_stat=int(reach_data.power_modelled))
 
-                info = info + info_str
+                    info = info + info_str
+
+                else:
+                    info = info + """\n\nClick on a reach to see info"""
 
             else:
                 info = info + """\n\nClick on a reach to see info"""
-
         else:
-            info = info + """\n\nClick on a reach to see info"""
+            if sites_points is not None:
+                # print(sites_points)
+                feature_id = int(sites_points['properties']['nzsegment'])
+                props = decode_obj(props_obj)
+
+                if feature_id in props.nzsegment:
+
+                    reach_data = props.sel(nzsegment=feature_id)
+
+                    info_str = """\n\nReduction: {red}%\n\nLikelihood of observing a reduction (power): {t_stat}%""".format(red=int(reach_data.reduction), t_stat=int(reach_data.power_monitored))
+
+                    info = info + info_str
+
+                else:
+                    info = info + """\n\nClick on a site to see info"""
+
+            else:
+                info = info + """\n\nClick on a site to see info"""
+
 
     return info
-
-
-# @callback(
-#     Output('dl_btn_div', 'children'),
-#     Input('reductions_obj', 'data'),
-#     prevent_initial_call=True,
-#     )
-# def make_download_visible(reductions_obj):
-#     """
-
-#     """
-#     if (reductions_obj != '') and (reductions_obj is not None):
-#         return html.Button("Download reductions polygons", id='dl_btn')
-#     else:
-#         return []
 
 
 @callback(
@@ -798,11 +864,3 @@ def download_lc(n_clicks, catch_id, reductions_obj):
         path = rivers_catch_lc_dir.joinpath(rivers_catch_lc_gpkg_str.format(catch_id))
 
         return dcc.send_file(path)
-
-    # return dict(content="Hello world!", filename="hello.txt")
-
-    # return {'base64': True, 'content': codecs.encode(io1.read(), encoding='base64').decode(), 'filename': 'test1.gpkg'}
-
-
-
-

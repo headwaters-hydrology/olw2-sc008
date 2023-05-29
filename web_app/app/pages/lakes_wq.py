@@ -90,25 +90,6 @@ tab_selected_style = {
 
 attribution = 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 
-# catch_style_handle = assign("""function style(feature) {
-#                             return {
-#                                 fillColor: 'grey',
-#                                 weight: 2,
-#                                 opacity: 1,
-#                                 color: 'black',
-#                                 fillOpacity: 0.1
-#                             };
-#                         }""")
-
-# lake_style_handle = assign("""function style4(feature) {
-#                             return {
-#                                 fillColor: '#A4DCCC',
-#                                 weight: 2,
-#                                 opacity: 1,
-#                                 color: 'black',
-#                                 fillOpacity: 1
-#                             };
-#                         }""")
 
 lake_style_handle = assign("""function style4(feature, context){
     const {classes, colorscale, style, colorProp} = context.props.hideout;  // get props from hideout

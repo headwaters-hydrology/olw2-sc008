@@ -5,6 +5,7 @@ Created on Tue Nov 29 11:51:17 2022
 
 @author: mike
 """
+import sys
 import os
 import xarray as xr
 from gistools import vector, rec
@@ -14,18 +15,24 @@ import numpy as np
 import hdf5tools
 import booklet
 
+if '..' not in sys.path:
+    sys.path.append('..')
+
 import utils
 
 pd.options.display.max_columns = 10
 
 #######################################
-### Assign conc
+### Assign power
 
-def gw_process_errors_points():
+
+def gw_process_power_monitored():
     list1 = utils.error_cats(0.01, 15.31, 0.1)
     list1.insert(0, 0.001)
 
-    # errors0 = xr.open_dataset(utils.gw_monitoring_data_path)
+    errors0 = xr.open_dataset(utils.gw_monitoring_data_path).load()
+    errors0 = errors0.n_se.to_dataframe().rename(columns={'n_se': 'error'}).reset_index()
+
     # for param in errors0:
     #     attrs = errors0[param].attrs
     #     val = errors0[param]
@@ -36,7 +43,7 @@ def gw_process_errors_points():
     #     errors0[param] = val
     #     errors0[param].attrs = attrs
 
-    errors0 = pd.read_hdf(utils.gw_data_path, key='data')[['use_std']].rename(columns={'use_std': 'error'})
+    # errors0 = pd.read_hdf(utils.gw_data_path, key='data')[['use_std']].rename(columns={'use_std': 'error'})
     errors0['indicator'] = 'Nitrate'
 
     errors1 = errors0.copy()
@@ -90,7 +97,7 @@ def gw_process_errors_points():
 
     combo = utils.xr_concat(error_list)
 
-    hdf5tools.xr_to_hdf5(combo, utils.gw_points_error_path)
+    hdf5tools.xr_to_hdf5(combo, utils.gw_power_moni_path)
 
 
 
