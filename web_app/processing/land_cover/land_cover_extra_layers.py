@@ -10,13 +10,10 @@ from gistools import vector, rec
 import geopandas as gpd
 import pandas as pd
 import numpy as np
-from shapely import intersection
-import hdf5tools
-import xarray as xr
-import dbm
-import booklet
-import pickle
-import zstandard as zstd
+
+import sys
+if '..' not in sys.path:
+    sys.path.append('..')
 
 import utils
 

@@ -6,17 +6,11 @@ Created on Mon Dec 19 13:11:07 2022
 @author: mike
 """
 import os
-from gistools import vector, rec
 import geopandas as gpd
 import pandas as pd
 import numpy as np
 from shapely import intersection, difference, intersects
-import hdf5tools
-import xarray as xr
-import dbm
 import booklet
-import pickle
-import zstandard as zstd
 
 import utils
 
@@ -27,6 +21,9 @@ pd.options.display.max_columns = 10
 
 # parcels = gpd.read_file(utils.parcels_path)
 # parcels = parcels[['id', 'geometry']].copy()
+
+# way_id = 3076139
+
 
 def rivers_land_cover():
     ## Separate land cover into catchments
@@ -84,10 +81,14 @@ def rivers_land_cover():
 
     catches.close()
 
-    print('save file')
+    print('save files')
     with booklet.open(utils.catch_lc_path, 'n', value_serializer='gpd_zstd', key_serializer='uint4', n_buckets=1600) as land_cover_dict:
         for i, lc2 in lc_dict.items():
             land_cover_dict[i] = lc2
+
+    # with booklet.open(utils.catch_lc_pbf_path, 'n', value_serializer=None, key_serializer='uint4', n_buckets=1600) as land_cover_dict:
+    #     for i, lc2 in lc_dict.items():
+    #         land_cover_dict[i] = lc2
 
     with booklet.open(utils.catch_lc_path) as lc:
         for i, data in lc.items():

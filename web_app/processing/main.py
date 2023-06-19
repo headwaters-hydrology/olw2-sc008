@@ -10,7 +10,7 @@ import pathlib
 import utils
 
 from land_cover.lcdb_processing import lcdb_processing
-from land_cover.land_cover_combine import process_extra_geo_layers
+from land_cover.land_cover_extra_layers import process_extra_geo_layers
 from land_cover.land_cover_reductions import land_cover_reductions
 
 from rivers.rivers_delineate import rec_delin
@@ -43,6 +43,7 @@ process_extra_geo_layers()
 ## Assign reductions
 land_cover_reductions()
 
+####################################################
 ### Rivers
 
 ## Monitoring sites

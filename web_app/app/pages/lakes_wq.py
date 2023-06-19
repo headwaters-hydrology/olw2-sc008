@@ -129,7 +129,7 @@ base_reach_style = dict(weight=4, opacity=1, color='white')
 info = dcc.Markdown(id="info_lakes", className="info", style={"position": "absolute", "top": "10px", "right": "10px", "z-index": "1000"})
 # info = html.Div(id="info", className="info", style={"position": "absolute", "top": "10px", "right": "10px", "z-index": "1000"})
 
-indicator_dict = {'CHLA': 'Chlorophyll a', 'CYANOTOT': 'Total Cyanobacteria', 'ECOLI': 'E.coli', 'NH4N': 'Ammoniacal Nitrogen', 'Secchi': 'Secchi Depth', 'TN': 'Total Nitrogen', 'TP': 'Total Phosphorus', 'pH': 'pH'}
+indicator_dict = {'CHLA': 'Chlorophyll a', 'CYANOTOT': 'Total Cyanobacteria', 'ECOLI': 'E.coli', 'NH4N': 'Ammoniacal Nitrogen', 'Secchi': 'Secchi Depth', 'TN': 'Total Nitrogen', 'TP': 'Total Phosphorus'}
 
 ###############################################
 ### Helper Functions

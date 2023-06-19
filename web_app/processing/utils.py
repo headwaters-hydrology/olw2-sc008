@@ -126,6 +126,7 @@ n_samples_year = [12, 26, 52, 104, 364]
 n_years = [5, 10, 20, 30]
 
 catch_lc_path = assets_path.joinpath('rivers_catch_lc.blt')
+catch_lc_pbf_path = assets_path.joinpath('rivers_catch_lc_pbf.blt')
 
 # catch_lc_clean_path = assets_path.joinpath('rivers_catch_lc.blt')
 

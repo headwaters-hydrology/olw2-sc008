@@ -23,6 +23,10 @@ from sklearn.compose import make_column_transformer
 from sklearn.compose import make_column_selector
 from sklearn.pipeline import make_pipeline
 
+import sys
+if '..' not in sys.path:
+    sys.path.append('..')
+
 import utils
 
 pd.options.display.max_columns = 10
@@ -30,9 +34,69 @@ pd.options.display.max_columns = 10
 ##########################################
 ### land use/cover
 
-lcdb_reductions = {'Exotic Forest': 0, 'Forest - Harvested': 0, 'Orchard, Vineyard or Other Perennial Crop': 10, 'Short-rotation Cropland': 30, 'Built-up Area (settlement)': 0, 'High Producing Exotic Grassland': 30, 'Low Producing Grassland': 10, 'Mixed Exotic Shrubland': 0}
+lcdb_reductions = {'nitrogen': {
+                       'Exotic Forest': 0,
+                       'Forest - Harvested': 0,
+                       'Orchard, Vineyard or Other Perennial Crop': 15,
+                       'Short-rotation Cropland': 30,
+                       'Built-up Area (settlement)': 0,
+                       'High Producing Exotic Grassland': 30,
+                       'Low Producing Grassland': 10,
+                       'Mixed Exotic Shrubland': 0
+                       },
+                   'phosphorus': {
+                       'Exotic Forest': 30,
+                       'Forest - Harvested': 30,
+                       'Orchard, Vineyard or Other Perennial Crop': 50,
+                       'Short-rotation Cropland': 50,
+                       'Built-up Area (settlement)': 0,
+                       'High Producing Exotic Grassland': 30,
+                       'Low Producing Grassland': 10,
+                       'Mixed Exotic Shrubland': 0
+                       },
+                   'sediment': {
+                       'Exotic Forest': 30,
+                       'Forest - Harvested': 30,
+                       'Orchard, Vineyard or Other Perennial Crop': 50,
+                       'Short-rotation Cropland': 50,
+                       'Built-up Area (settlement)': 0,
+                       'High Producing Exotic Grassland': 30,
+                       'Low Producing Grassland': 10,
+                       'Mixed Exotic Shrubland': 0
+                       },
+                   'e.coli': {
+                       'Exotic Forest': 0,
+                       'Forest - Harvested': 0,
+                       'Orchard, Vineyard or Other Perennial Crop': 0,
+                       'Short-rotation Cropland': 30,
+                       'Built-up Area (settlement)': 0,
+                       'High Producing Exotic Grassland': 30,
+                       'Low Producing Grassland': 10,
+                       'Mixed Exotic Shrubland': 0
+                       },
+                   }
+
+
+snb_reductions = {'sediment': 30,
+                  'e.coli': 35
+                  }
+dairy_reductions = {'sediment': 65,
+                  'e.coli': 75
+                  }
 
 features_cols = ['Climate', 'Slope', 'Drainage', 'Wetness']
+
+param_mapping = {'Black disk': 'sediment',
+                 'E.coli': 'e.coli',
+                 'Dissolved reactive phosporus': 'phosphorus',
+                 'Ammoniacal nitrogen': 'nitrogen',
+                 'Nitrate': 'nitrogen',
+                 'Total nitrogen': 'nitrogen',
+                 'Total phosphorus': 'phosphorus',
+                 'Chlorophyll a': 'e.coli',
+                 'Total Cyanobacteria': 'e.coli',
+                 'Secchi Depth': 'sediment'
+                 }
 
 
 def land_cover_reductions():
@@ -48,6 +112,8 @@ def land_cover_reductions():
     snb2 = pd.concat([snb1['typology']['typology'], phos2, nitrate2], axis=1)
     snb2['typology'] = snb2.typology.str.title()
     snb2['typology'] = snb2['typology'].str.replace('Bop', 'BoP')
+    for col, red in snb_reductions.items():
+        snb2[col] = red
 
     # Determine missing typologies for snb
     snb_geo = gpd.read_feather(utils.snb_geo_clean_path)
@@ -79,6 +145,9 @@ def land_cover_reductions():
     dairy2 = dairy2.replace({'Wetness': {'Irrig': 'Irrigated'},
                              'Slope': {'Mod': 'Moderate',
                                        'Flat': 'Low'}})
+
+    for col, red in dairy_reductions.items():
+        dairy2[col] = red
 
     # Determine missing typologies for dairy
     dairy_geo = gpd.read_feather(utils.dairy_geo_clean_path)
@@ -129,6 +198,9 @@ def land_cover_reductions():
     # Export the results for checking
     typo3.to_csv(utils.dairy_model_typo_path, index=False)
 
+    for col, red in dairy_reductions.items():
+        typo3[col] = red
+
     # Combine with original data
     dairy3 = pd.concat([dairy2, typo3])
     dairy3['typology'] = dairy3['Climate'] + '/' + dairy3['Slope'] + '/' + dairy3['Drainage'] + '/' + dairy3['Wetness']
@@ -136,25 +208,34 @@ def land_cover_reductions():
     dairy4 = dairy_geo.merge(dairy3.drop(features_cols, axis=1), on='typology')
 
     combo1 = pd.concat([snb3, dairy4])
-    combo1['default_reductions'] = combo1[['phosphorus', 'nitrogen']].mean(axis=1).round().astype('int8')
+    for param, col in param_mapping.items():
+        combo1[param] = combo1[col].copy()
 
-    utils.gpd_to_feather(combo1.reset_index(drop=True), utils.snb_dairy_red_path)
+    combo2 = combo1.drop(set(param_mapping.values()), axis=1).reset_index(drop=True)
+
+    # combo1['default_reductions'] = combo1[['phosphorus', 'nitrogen']].mean(axis=1).round().astype('int8')
+
+    utils.gpd_to_feather(combo2, utils.snb_dairy_red_path)
 
     ### LCDB
     lcdb0 = gpd.read_feather(utils.lcdb_clean_path)
 
     lcdb_red_list = []
-    for param in ['phosphorus', 'nitrogen', 'default_reductions']:
-        t1 = pd.DataFrame.from_dict(lcdb_reductions, orient='index')
+    for col, red in lcdb_reductions.items():
+        t1 = pd.DataFrame.from_dict(red, orient='index')
         t1.index.name = 'typology'
-        t1.columns = [param]
+        t1.columns = [col]
         lcdb_red_list.append(t1)
 
     lcdb_red = pd.concat(lcdb_red_list, axis=1).reset_index()
 
     lcdb1 = lcdb0.merge(lcdb_red, on='typology')
+    for param, col in param_mapping.items():
+        lcdb1[param] = lcdb1[col].copy()
 
-    utils.gpd_to_feather(lcdb1, utils.lcdb_red_path)
+    lcdb2 = lcdb1.drop(set(param_mapping.values()), axis=1).reset_index(drop=True)
+
+    utils.gpd_to_feather(lcdb2, utils.lcdb_red_path)
 
 
 

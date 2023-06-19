@@ -6,10 +6,10 @@ Created on Tue Feb 14 14:53:57 2023
 @author: mike
 """
 import os
-import sys
 import pandas as pd
 import numpy as np
 
+import sys
 if '..' not in sys.path:
     sys.path.append('..')
 
