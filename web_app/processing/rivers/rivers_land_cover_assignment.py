@@ -12,6 +12,10 @@ import numpy as np
 from shapely import intersection, difference, intersects
 import booklet
 
+import sys
+if '..' not in sys.path:
+    sys.path.append('..')
+
 import utils
 
 pd.options.display.max_columns = 10
