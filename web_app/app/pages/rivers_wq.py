@@ -10,6 +10,10 @@ import xarray as xr
 import dash
 from dash import dcc, html, dash_table, callback, ctx
 from dash.dependencies import Input, Output, State
+# import dash_bootstrap_components as dbc
+import dash_mantine_components as dmc
+import dash_leaflet.express as dlx
+from dash_extensions.javascript import assign, arrow_function
 import pandas as pd
 import numpy as np
 # import requests
@@ -24,8 +28,6 @@ import os
 # import tethysts
 import base64
 import geobuf
-import dash_leaflet.express as dlx
-from dash_extensions.javascript import assign, arrow_function
 import pathlib
 import hdf5plugin
 import booklet
@@ -143,7 +145,7 @@ colorbar = dl.Colorbar(min=0, max=len(ctg), classes=indices, colorscale=colorsca
 
 base_reach_style = dict(weight=4, opacity=1, color='white')
 
-info = dcc.Markdown(id="info", className="info", style={"position": "absolute", "top": "10px", "right": "10px", "z-index": "1000"})
+info = dcc.Markdown(id="info", className="info", style={"position": "absolute", "top": "10px", "right": "160px", "z-index": "1000"})
 # info = html.Div(id="info", className="info", style={"position": "absolute", "top": "10px", "right": "10px", "z-index": "1000"})
 
 indicator_dict = {'BD': 'Black disk', 'EC': 'E.coli', 'DRP': 'Dissolved reactive phosporus', 'NH': 'Ammoniacal nitrogen', 'NO': 'Nitrate', 'TN': 'Total nitrogen', 'TP': 'Total phosphorus'}
@@ -370,53 +372,86 @@ def layout():
     layout = html.Div(children=[
         # html.Div([html.H1('River Water Quality')]),
         html.Div([
-            html.H3('(1) Reductions routing'),
+            html.H5('(1) Catchment selection', style={'font-weight': 'bold'}),
 
-            html.Label('Select a catchment on the map:'),
-            dcc.Dropdown(options=[{'label': d, 'value': d} for d in catches], id='catch_id', optionHeight=40, clearable=False),
+            html.Label('(1a) Select a catchment on the map:'),
+            dcc.Dropdown(options=[{'label': d, 'value': d} for d in catches], id='catch_id', optionHeight=40, clearable=False,
+                          style={'margin-top': 10}
+                         ),
 
+            html.H5('Optional (2) Customise Reductions Layer', style={'font-weight': 'bold'}),
+
+            # dcc.Loading(
+            #     children=[
+            #         dcc.Upload(
+            #             id='upload_data_rivers',
+            #             children=html.Button('Upload reductions polygons gpkg', style={
+            #                 'width': '100%',
+            #             }),
+            #             style={
+            #                 'width': '100%',
+            #                 'height': '50%',
+            #                 'textAlign': 'left',
+            #                 'margin-top': 20
+            #             },
+            #             multiple=False
+            #         ),
+            #         dcc.Markdown('''###### **Or**''', style={
+            #             'textAlign': 'center',
+            #                         }),
+            #         html.Button('Use land cover for reductions', id='demo_data_rivers',
+            #                     style={
+            #                         'width': '100%',
+            #                         'height': '50%',
+            #                         'textAlign': 'left',
+            #                         'margin-top': 20
+            #                     }),
+            #         ]
+            #     ),
+
+            # html.Label('Select a reductions column in the GIS file:', style={'margin-top': 20}),
+            # dcc.Dropdown(options=[], id='col_name', optionHeight=40, clearable=False),
+            html.Label('(2a) Download reductions polygons as GPKG:'),
+            dcc.Loading(
+            id="loading-2",
+            type="default",
+            children=[html.Div(html.Button("Download reductions", id='dl_btn'), style={'margin-top': 10}),
+    dcc.Download(id="dl_poly")],
+            ),
+            html.Label('NOTE: Only modify existing values. Do not add additional columns; they will be ignored.', style={
+                'margin-top': 10
+            }
+                ),
+            html.Label('(2b) Upload modified reductions polygons as GPKG:', style={
+                'margin-top': 20
+            }
+                ),
             dcc.Loading(
                 children=[
                     dcc.Upload(
                         id='upload_data_rivers',
-                        children=html.Button('Upload reductions polygons gpkg', style={
-                            'width': '100%',
-                        }),
+                        children=html.Button('Upload reductions',
+                                             # style={
+                                             #     'width': '50%',
+                                             #     }
+                        ),
                         style={
-                            'width': '100%',
-                            'height': '50%',
-                            'textAlign': 'left',
-                            'margin-top': 20
+                            'margin-top': 10
                         },
                         multiple=False
                     ),
-                    dcc.Markdown('''###### **Or**''', style={
-                        'textAlign': 'center',
-                                    }),
-                    html.Button('Use land cover for reductions', id='demo_data_rivers',
-                                style={
-                                    'width': '100%',
-                                    'height': '50%',
-                                    'textAlign': 'left',
-                                    'margin-top': 20
-                                }),
                     ]
                 ),
-
-            html.Label('Select a reductions column in the GIS file:', style={'margin-top': 20}),
-            dcc.Dropdown(options=[], id='col_name', optionHeight=40, clearable=False),
-            dcc.Loading(
-            id="loading-2",
-            type="default",
-            children=[html.Div(html.Button("Download reductions polygons", id='dl_btn'), style={'margin-top': 10}),
-    dcc.Download(id="dl_poly")],
-            ),
+            html.Label('(2c) Process the reductions layer and route the reductions downstream:', style={
+                'margin-top': 20
+            }
+                ),
             dcc.Loading(
             id="loading-1",
             type="default",
             children=html.Div([html.Button('Process reductions', id='process', n_clicks=0),
                                html.Div(id='process_text')],
-                              style={'margin-top': 20, 'margin-bottom': 10}
+                              style={'margin-top': 10, 'margin-bottom': 10}
                               )
         ),
 
@@ -426,42 +461,44 @@ def layout():
             # dcc.Dropdown(options=[{'label': d, 'value': d} for d in percent_changes], id='percent_change', clearable=False, value=10),
 
             # dcc.Link(html.Img(src=str(app_base_path.joinpath('our-land-and-water-logo.svg'))), href='https://ourlandandwater.nz/')
-            ], className='two columns', style={'margin': 10}),
+            ], className='four columns', style={'margin': 10}),
 
-    html.Div([
-        html.H3('(2) Sampling options'),
-        html.Label('Select Indicator:'),
-        dcc.Dropdown(options=[{'label': indicator_dict[d], 'value': d} for d in indicators], id='indicator', optionHeight=40, clearable=False),
-        html.Label('Select sampling length (years):', style={'margin-top': 20}),
-        dcc.Dropdown(options=[{'label': d, 'value': d} for d in time_periods], id='time_period', clearable=False, value=5),
-        html.Label('Select sampling frequency:'),
-        dcc.Dropdown(options=[{'label': v, 'value': k} for k, v in freq_mapping.items()], id='freq', clearable=False, value=12),
+    # html.Div([
+    #     html.H3('(2) Sampling options'),
+    #     html.Label('Select Indicator:'),
+    #     dcc.Dropdown(options=[{'label': indicator_dict[d], 'value': d} for d in indicators], id='indicator', optionHeight=40, clearable=False),
+    #     html.Label('Select sampling length (years):', style={'margin-top': 20}),
+    #     dcc.Dropdown(options=[{'label': d, 'value': d} for d in time_periods], id='time_period', clearable=False, value=5),
+    #     html.Label('Select sampling frequency:'),
+    #     dcc.Dropdown(options=[{'label': v, 'value': k} for k, v in freq_mapping.items()], id='freq', clearable=False, value=12),
 
-        html.H4(children='Map Layers', style={'margin-top': 20}),
-        dcc.Checklist(
-               options=[
-                   {'label': 'Reductions polygons', 'value': 'reductions_poly'},
-                   # {'label': 'River reach reductions', 'value': 'reach_map'},
-                   {'label': 'River reaches', 'value': 'reach_map'}
-               ],
-               value=['reductions_poly', 'reach_map'],
-               id='map_checkboxes_rivers',
-               style={'padding': 5, 'margin-bottom': 20}
-            ),
-        dcc.Markdown('', style={
-            'textAlign': 'left',
-                        }, id='red_disclaimer_rivers')
-        # dcc.Link(html.Img(src=str(app_base_path.joinpath('our-land-and-water-logo.svg'))), href='https://ourlandandwater.nz/')
-        ], className='two columns', style={'margin': 10}),
+    #     # html.H4(children='Map Layers', style={'margin-top': 20}),
+    #     # dcc.Checklist(
+    #     #        options=[
+    #     #            {'label': 'Reductions polygons', 'value': 'reductions_poly'},
+    #     #            # {'label': 'River reach reductions', 'value': 'reach_map'},
+    #     #            {'label': 'River reaches', 'value': 'reach_map'}
+    #     #        ],
+    #     #        value=['reductions_poly', 'reach_map'],
+    #     #        id='map_checkboxes_rivers',
+    #     #        style={'padding': 5, 'margin-bottom': 20}
+    #     #     ),
+    #     dcc.Markdown('', style={
+    #         'textAlign': 'left',
+    #                     }, id='red_disclaimer_rivers')
+    #     # dcc.Link(html.Img(src=str(app_base_path.joinpath('our-land-and-water-logo.svg'))), href='https://ourlandandwater.nz/')
+    #     ], className='two columns', style={'margin': 10}),
 
     html.Div([
         dl.Map(center=center, zoom=7, children=[
             dl.TileLayer(id='tile_layer', attribution=attribution),
-            dl.GeoJSON(url=str(rivers_catch_pbf_path), format="geobuf", id='catch_map', zoomToBoundsOnClick=True, zoomToBounds=True, options=dict(style=catch_style_handle)),
-            # dl.GeoJSON(url='', format="geobuf", id='base_reach_map', options=dict(style=base_reaches_style_handle)),
-            dl.GeoJSON(data='', format="geobuf", id='reach_map', options={}, hideout={}, hoverStyle=arrow_function(dict(weight=10, color='black', dashArray=''))),
-            dl.GeoJSON(data='', format="geobuf", id='reductions_poly'),
-            dl.GeoJSON(data='', format="geobuf", id='sites_points', options=dict(pointToLayer=sites_points_handle), hideout={'circleOptions': dict(fillOpacity=1, stroke=False, radius=5, color='black')}),
+            dl.LayersControl([
+                dl.Overlay(dl.LayerGroup(dl.GeoJSON(url=str(rivers_catch_pbf_path), format="geobuf", id='catch_map', zoomToBoundsOnClick=True, zoomToBounds=True, options=dict(style=catch_style_handle))), name='Catchments', checked=True),
+                # dl.GeoJSON(url='', format="geobuf", id='base_reach_map', options=dict(style=base_reaches_style_handle)),
+                dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='reach_map', options={}, hideout={}, hoverStyle=arrow_function(dict(weight=10, color='black', dashArray='')))), name='Rivers', checked=True),
+                # dl.GeoJSON(data='', format="geobuf", id='reductions_poly'),
+                dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='sites_points', options=dict(pointToLayer=sites_points_handle), hideout={'circleOptions': dict(fillOpacity=1, stroke=False, radius=5, color='black')})), name='Monitoring sites', checked=True)
+                ]),
             colorbar,
             info
                             ], style={'width': '100%', 'height': 700, 'margin': "auto", "display": "block"}, id="map2")
@@ -511,11 +548,10 @@ def update_catch_id(feature):
 @callback(
         Output('reach_map', 'data'),
         Input('catch_id', 'value'),
-        Input('map_checkboxes_rivers', 'value'),
         )
 # @cache.memoize()
-def update_reaches(catch_id, map_checkboxes):
-    if (catch_id is not None) and ('reach_map' in map_checkboxes):
+def update_reaches(catch_id):
+    if (catch_id is not None):
         with booklet.open(rivers_reach_gbuf_path, 'r') as f:
             data = base64.b64encode(f[int(catch_id)]).decode()
 
@@ -528,7 +564,6 @@ def update_reaches(catch_id, map_checkboxes):
 @callback(
         Output('sites_points', 'data'),
         Input('catch_id', 'value'),
-        # Input('map_checkboxes', 'value'),
         )
 # @cache.memoize()
 def update_monitor_sites(catch_id):
@@ -586,46 +621,46 @@ def update_reductions_obj(contents, n_clicks, catch_id, filename):
         return '', None
 
 
-@callback(
-        Output('red_disclaimer_rivers', 'children'),
-        Input('upload_data_rivers', 'contents'),
-        Input('demo_data_rivers', 'n_clicks'),
-        Input('map_checkboxes_rivers', 'value'),
-        prevent_initial_call=True
-        )
-def update_reductions_diclaimer(contents, n_clicks, map_checkboxes):
-    if (n_clicks is None) or (contents is not None):
-        return ''
-    elif 'reductions_poly' in map_checkboxes:
-        return '''* Areas on the map without polygon reductions are considered to have 0% reductions.'''
-    else:
-        return ''
+# @callback(
+#         Output('red_disclaimer_rivers', 'children'),
+#         Input('upload_data_rivers', 'contents'),
+#         Input('demo_data_rivers', 'n_clicks'),
+#         # Input('map_checkboxes_rivers', 'value'),
+#         prevent_initial_call=True
+#         )
+# def update_reductions_diclaimer(contents, n_clicks, map_checkboxes):
+#     if (n_clicks is None) or (contents is not None):
+#         return ''
+#     elif 'reductions_poly' in map_checkboxes:
+#         return '''* Areas on the map without polygon reductions are considered to have 0% reductions.'''
+#     else:
+#         return ''
 
 
-@callback(
-        Output('reductions_poly', 'data'),
-        Input('reductions_obj', 'data'),
-        Input('map_checkboxes_rivers', 'value'),
-        Input('col_name', 'value'),
-        )
-# @cache.memoize()
-def update_reductions_poly(reductions_obj, map_checkboxes, col_name):
-    # print(reductions_obj)
-    # print(col_name)
-    if (reductions_obj != '') and (reductions_obj is not None) and ('reductions_poly' in map_checkboxes):
+# @callback(
+#         Output('reductions_poly', 'data'),
+#         Input('reductions_obj', 'data'),
+#         Input('map_checkboxes_rivers', 'value'),
+#         Input('col_name', 'value'),
+#         )
+# # @cache.memoize()
+# def update_reductions_poly(reductions_obj, map_checkboxes, col_name):
+#     # print(reductions_obj)
+#     # print(col_name)
+#     if (reductions_obj != '') and (reductions_obj is not None) and ('reductions_poly' in map_checkboxes):
 
-        data = decode_obj(reductions_obj).to_crs(4326)
+#         data = decode_obj(reductions_obj).to_crs(4326)
 
-        if isinstance(col_name, str):
-            data = data[data[col_name] > 0]
-            data[col_name] = data[col_name].astype(str).str[:] + '% reduction'
-            data.rename(columns={col_name: 'tooltip'}, inplace=True)
+#         if isinstance(col_name, str):
+#             data = data[data[col_name] > 0]
+#             data[col_name] = data[col_name].astype(str).str[:] + '% reduction'
+#             data.rename(columns={col_name: 'tooltip'}, inplace=True)
 
-        gbuf = dlx.geojson_to_geobuf(data.__geo_interface__)
+#         gbuf = dlx.geojson_to_geobuf(data.__geo_interface__)
 
-        return gbuf
-    else:
-        return ''
+#         return gbuf
+#     else:
+#         return ''
 
 
 @callback(
@@ -732,17 +767,17 @@ def update_hideout(props_obj):
     Output("info", "children"),
     [Input('props_obj', 'data'),
       Input('reductions_obj', 'data'),
-      Input('map_checkboxes_rivers', 'value'),
+      # Input('map_checkboxes_rivers', 'value'),
       Input("reach_map", "click_feature")],
     )
-def update_map_info(props_obj, reductions_obj, map_checkboxes, feature):
+def update_map_info(props_obj, reductions_obj, feature):
     """
 
     """
     info = """###### Likelihood of observing a reduction (%)"""
 
-    if (reductions_obj != '') and (reductions_obj is not None) and ('reductions_poly' in map_checkboxes):
-        info = info + """\n\nHover over the polygons to see reduction %"""
+    # if (reductions_obj != '') and (reductions_obj is not None) and ('reductions_poly' in map_checkboxes):
+    #     info = info + """\n\nHover over the polygons to see reduction %"""
 
     if (props_obj != '') and (props_obj is not None):
         if feature is not None:
