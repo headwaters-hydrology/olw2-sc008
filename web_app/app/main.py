@@ -9,6 +9,7 @@ import dash
 from dash import Dash, html, dcc, callback
 from dash.dependencies import Input, Output, State
 import dash_mantine_components as dmc
+import dash_bootstrap_components as dbc
 # from dash_iconify import DashIconify
 import pathlib
 from time import sleep
@@ -16,7 +17,10 @@ from time import sleep
 ##############################################
 ### The app
 # sleep(10)
-app = dash.Dash(__name__, use_pages=True)
+app = dash.Dash(__name__,
+                use_pages=True,
+                external_stylesheets=[dbc.themes.BOOTSTRAP]
+                )
 server = app.server
 
 app_base_path = pathlib.Path('/assets')
@@ -64,7 +68,7 @@ def create_nav_link(label, href):
                 #     radius=30,
                 #     variant="light",
                 # ),
-                dmc.Text(label, size="sm", color="gray"),
+                dmc.Text(label, size="sm", color="grey"),
             ]
         ),
         href=href,
@@ -77,7 +81,7 @@ def create_sidebar_children(pages):
 
     """
     list1 = [dmc.Group(
-        direction="column",
+        # direction="column",
         children=[
             create_nav_link(
                 label="Home",
@@ -86,17 +90,17 @@ def create_sidebar_children(pages):
         ],
     ),
     dmc.Divider(
-        label="Pages", style={"marginBottom": 20, "marginTop": 20}
+        label="Water Quality Tools", style={"marginBottom": 20, "marginTop": 20}
     )]
 
     list2 = [
     dmc.Group(
-        direction="column",
+        # direction="column",
         children=[
             create_nav_link(
                 label=page["name"], href=page["path"]
             )
-        ], style={"marginBottom": 20}
+        ], style={"marginBottom": 10}
     )
     for page in pages if 'Home' not in page["name"]]
 
@@ -107,7 +111,8 @@ sidebar = dmc.Navbar(
     fixed=True,
     width={"base": 180},
     position={"top": 80},
-    height=300,
+    px=10,
+    # height=300,
     children=[
         dmc.ScrollArea(
             offsetScrollbars=True,
@@ -118,22 +123,73 @@ sidebar = dmc.Navbar(
     )
 
 app.layout = html.Div(
-    [html.Div(
-         dcc.Link(html.Img(src=str(app_base_path.joinpath('our-land-and-water-logo.svg')), style={'height': 60}), href='https://ourlandandwater.nz/'),
-                # style={"backgroundColor": "#228be6"},
-        className='three columns'
+    [
+     dmc.Header(
+        height=60,
+        fixed=True,
+        px=25,
+        children=[
+            dmc.Grid(
+                # gutter='xl',
+                style={"height": 60},
+                children=[
+                    dmc.Col(
+                        dmc.Anchor(
+                            'Mitigation Effectiveness Monitoring Design',
+                            size="xl",
+                            href="/",
+                            underline=False,
+                            # align='center',
+                            # style={'vertical-align': 'middle'}
+
+                        ),
+                        span=6,
+                        style={'padding': '20px 0'}
+                        # style={'vertical-align': 'middle'}
+                        ),
+                    dmc.Col(
+                        dmc.Text(
+                            '',
+                            id='title',
+                            size=28,
+                            ),
+                        span=3,
+                        style={'padding': '20px 0'}
+                        ),
+                    dmc.Col(
+                        dmc.Anchor(
+                            dmc.Image(
+                                src=str(app_base_path.joinpath('our-land-and-water-logo.svg')),
+                                fit='cover',
+                                width='90%'
+                                ),
+                            href='https://ourlandandwater.nz/'
+                            ),
+                        span=3,
+                        offset=0
+                        ),
+                    ]
+                )
+            ]
         ),
-        html.Div(
-        html.H1('', id='title'), className='seven columns'
-        ),
-        sidebar,
-        html.Div(dash.page_container, className='eleven columns', style={'margin': 0, "marginLeft": 190})
-        # dmc.Container(
-        #     dash.page_container,
-        #     size="lg",
-        #     # pt=20,
-        #     style={"marginLeft": 190},
+
+        #     html.Div(
+        #  dcc.Link(html.Img(src=str(app_base_path.joinpath('our-land-and-water-logo.svg')), style={'height': 60}), href='https://ourlandandwater.nz/'),
+        #         # style={"backgroundColor": "#228be6"},
+        # className='three columns'
         # ),
+        # html.Div(
+        # html.H2('', id='title'), className='seven columns'
+        # ),
+        sidebar,
+        # html.Div(dash.page_container, className='eleven columns', style={'margin': 0, "marginLeft": 190})
+        # html.Div(dash.page_container, style={"margin-top": 80, 'margin-left': 220, 'margin-right': 220})
+        dmc.Container(
+            dash.page_container,
+            size="xl",
+            # pt=20,
+            style={"margin-top": 80, 'margin-left': 200, 'margin-right': 20},
+        ),
     ],
 )
 
@@ -147,7 +203,8 @@ def updated_title(path):
     if isinstance(path, str):
         title = page_mapping[path]
         if title == 'Home':
-            title = 'Mitigation Effectiveness Monitoring Design'
+            # title = 'Mitigation Effectiveness Monitoring Design'
+            title = ''
 
         return title
     else:

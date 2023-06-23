@@ -10,7 +10,7 @@ import xarray as xr
 import dash
 from dash import dcc, html, dash_table, callback, ctx
 from dash.dependencies import Input, Output, State
-# import dash_bootstrap_components as dbc
+import dash_bootstrap_components as dbc
 import dash_mantine_components as dmc
 import dash_leaflet.express as dlx
 from dash_extensions.javascript import assign, arrow_function
@@ -46,8 +46,8 @@ assets_path = pathlib.Path(os.path.split(os.path.realpath(os.path.dirname(__file
 dash.register_page(
     __name__,
     path='/rivers-wq',
-    title='River Water Quality',
-    name='River Water Quality'
+    title='Rivers',
+    name='Rivers'
 )
 
 app_base_path = pathlib.Path('/assets')
@@ -74,22 +74,22 @@ center = [-41.1157, 172.4759]
 
 # mapbox_access_token = "pk.eyJ1IjoibXVsbGVua2FtcDEiLCJhIjoiY2pudXE0bXlmMDc3cTNxbnZ0em4xN2M1ZCJ9.sIOtya_qe9RwkYXj5Du1yg"
 
-tabs_styles = {
-    'height': '40px'
-}
-tab_style = {
-    'borderBottom': '1px solid #d6d6d6',
-    'padding': '5px',
-    'fontWeight': 'bold'
-}
+# tabs_styles = {
+#     'height': '40px'
+# }
+# tab_style = {
+#     'borderBottom': '1px solid #d6d6d6',
+#     'padding': '5px',
+#     'fontWeight': 'bold'
+# }
 
-tab_selected_style = {
-    'borderTop': '1px solid #d6d6d6',
-    'borderBottom': '1px solid #d6d6d6',
-    'backgroundColor': '#119DFF',
-    'color': 'white',
-    'padding': '5px'
-}
+# tab_selected_style = {
+#     'borderTop': '1px solid #d6d6d6',
+#     'borderBottom': '1px solid #d6d6d6',
+#     'backgroundColor': '#119DFF',
+#     'color': 'white',
+#     'padding': '5px'
+# }
 
 attribution = 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 
@@ -126,7 +126,7 @@ sites_points_handle = assign("""function style_sites(feature, latlng, context){
                              const {circleOptions} = context.props.hideout;
                              return L.circleMarker(latlng, circleOptions);}""", name='sites_points_handle')
 
-freq_mapping = {12: 'once a month', 26: 'once a fortnight', 52: 'once a week', 104: 'twice a week', 364: 'once a day'}
+freq_mapping = {12: 'monthly', 26: 'fortnightly', 52: 'weekly', 104: 'twice weekly', 364: 'daily'}
 time_periods = [5, 10, 20, 30]
 
 style = dict(weight=4, opacity=1, color='white')
@@ -293,23 +293,6 @@ def calc_river_reach_reductions(catch_id, plan_file, reduction_col='default_redu
     c5 = c4[['nzsegment', 'base_flow', 'prop_flow']].set_index('nzsegment').copy()
     c5 = {r: list(v.values()) for r, v in c5.to_dict('index').items()}
 
-    # branches = read_pkl_zstd(os.path.join(base_path, 'reach_mappings', '{}.pkl.zst'.format(catch_id)), True)
-
-    # props = {}
-    # for reach, branch in branches.items():
-    #     t_area = []
-    #     a_append = t_area.append
-    #     prop_area = []
-    #     p_append = prop_area.append
-
-    #     for b in branch:
-    #         t_area1, prop_area1 = c5[b]
-    #         a_append(t_area1)
-    #         p_append(prop_area1)
-
-    #     p1 = (np.sum(prop_area)/np.sum(t_area))
-    #     props[reach] = p1
-
     props_index = np.array(list(branches.keys()), dtype='int32')
     props_val = np.zeros(props_index.shape)
     for h, reach in enumerate(branches):
@@ -335,10 +318,6 @@ def calc_river_reach_reductions(catch_id, plan_file, reduction_col='default_redu
                                   },
                         coords={'nzsegment': props_index}
                         ).sortby('nzsegment')
-
-    ## Filter out lower stream orders
-    # so3 = c1.loc[c1.stream_order > 2, 'nzsegment'].to_numpy()
-    # props = props.sel(reach=so3)
 
     return props
 
@@ -369,162 +348,195 @@ indicators.sort()
 
 
 def layout():
-    layout = html.Div(children=[
-        # html.Div([html.H1('River Water Quality')]),
-        html.Div([
-            html.H5('(1) Catchment selection', style={'font-weight': 'bold'}),
-
-            html.Label('(1a) Select a catchment on the map:'),
-            dcc.Dropdown(options=[{'label': d, 'value': d} for d in catches], id='catch_id', optionHeight=40, clearable=False,
-                          style={'margin-top': 10}
-                         ),
-
-            html.H5('Optional (2) Customise Reductions Layer', style={'font-weight': 'bold'}),
-
-            # dcc.Loading(
-            #     children=[
-            #         dcc.Upload(
-            #             id='upload_data_rivers',
-            #             children=html.Button('Upload reductions polygons gpkg', style={
-            #                 'width': '100%',
-            #             }),
-            #             style={
-            #                 'width': '100%',
-            #                 'height': '50%',
-            #                 'textAlign': 'left',
-            #                 'margin-top': 20
-            #             },
-            #             multiple=False
-            #         ),
-            #         dcc.Markdown('''###### **Or**''', style={
-            #             'textAlign': 'center',
-            #                         }),
-            #         html.Button('Use land cover for reductions', id='demo_data_rivers',
-            #                     style={
-            #                         'width': '100%',
-            #                         'height': '50%',
-            #                         'textAlign': 'left',
-            #                         'margin-top': 20
-            #                     }),
-            #         ]
-            #     ),
-
-            # html.Label('Select a reductions column in the GIS file:', style={'margin-top': 20}),
-            # dcc.Dropdown(options=[], id='col_name', optionHeight=40, clearable=False),
-            html.Label('(2a) Download reductions polygons as GPKG:'),
-            dcc.Loading(
-            id="loading-2",
-            type="default",
-            children=[html.Div(html.Button("Download reductions", id='dl_btn'), style={'margin-top': 10}),
-    dcc.Download(id="dl_poly")],
-            ),
-            html.Label('NOTE: Only modify existing values. Do not add additional columns; they will be ignored.', style={
-                'margin-top': 10
-            }
-                ),
-            html.Label('(2b) Upload modified reductions polygons as GPKG:', style={
-                'margin-top': 20
-            }
-                ),
-            dcc.Loading(
+    layout = dmc.Container(
+        fluid=True,
+        # size='xl',
+        px=0,
+        py=0,
+        my=0,
+        mx=0,
+        ml=0,
+        pl=0,
+        # style={
+        #     'margin': 0,
+        #     'padding': 0
+        #     },
+        children=[
+            dmc.Grid(
+                columns=7,
+                # grow=True,
+                # justify="space-between",
+                # align='stretch',
+                # style={
+                #     'margin': 0,
+                #     'padding': 0
+                #     },
                 children=[
-                    dcc.Upload(
-                        id='upload_data_rivers',
-                        children=html.Button('Upload reductions',
-                                             # style={
-                                             #     'width': '50%',
-                                             #     }
+                    dmc.Col(
+                        span=3,
+                        # style={
+                        #     # 'margin-top': 20,
+                        #     'margin': 0,
+                        #     'padding': 0,
+                        #     },
+                        children=dmc.Accordion(
+                            value="1",
+                            chevronPosition='left',
+                            children=[
+                            dmc.AccordionItem([
+                                # html.H5('(1) Catchment selection', style={'font-weight': 'bold'}),
+                                dmc.AccordionControl(html.Div('(1) Catchment Selection', style={'font-size': 22})),
+                                dmc.AccordionPanel([
+
+                                    html.Label('(1a) Select a catchment on the map:'),
+                                    dcc.Dropdown(options=[{'label': d, 'value': d} for d in catches], id='catch_id', optionHeight=40, clearable=False,
+                                                  style={'margin-top': 10}
+                                                  ),
+                                    ]
+                                    )
+                                ],
+                                value='1'
+                                ),
+
+                            dmc.AccordionItem([
+                                # html.H5('Optional (2) Customise Reductions Layer', style={'font-weight': 'bold', 'margin-top': 20}),
+                                dmc.AccordionControl(html.Div('(2 - Optional) Customise Reductions Layer', style={'font-size': 22})),
+                                dmc.AccordionPanel([
+                                    html.Label('(2a) Download reductions polygons as GPKG:'),
+                                    dcc.Loading(
+                                    id="loading-2",
+                                    type="default",
+                                    children=[html.Div(dmc.Button("Download reductions",
+                                                                  id='dl_btn',
+                                                                  # className='btn btn-primary'
+                                                                  ),
+                                                       # className="me-1",
+                                                       style={'margin-top': 10}),
+                            dcc.Download(id="dl_poly")],
+                                    ),
+                                    html.Label('NOTE: Only modify existing values. Do not add additional columns; they will be ignored.', style={
+                                        'margin-top': 10
+                                    }
+                                        ),
+                                    html.Label('(2b) Upload modified reductions polygons as GPKG:', style={
+                                        'margin-top': 20
+                                    }
+                                        ),
+                                    dcc.Loading(
+                                        children=[
+                                            dcc.Upload(
+                                                id='upload_data_rivers',
+                                                children=dmc.Button('Upload reductions',
+                                                                     # className="me-1"
+                                                                      # style={
+                                                                      #     'width': '50%',
+                                                                      #     }
+                                                ),
+                                                style={
+                                                    'margin-top': 10
+                                                },
+                                                multiple=False
+                                            ),
+                                            ]
+                                        ),
+                                    html.Label('(2c) Process the reductions layer and route the reductions downstream:', style={
+                                        'margin-top': 20
+                                    }
+                                        ),
+                                    dcc.Loading(
+                                    id="loading-1",
+                                    type="default",
+                                    children=html.Div([dmc.Button('Process reductions', id='process',
+                                                                  # className="me-1",
+                                                                  n_clicks=0),
+                                                        html.Div(id='process_text')],
+                                                      style={'margin-top': 10, 'margin-bottom': 10}
+                                                      )
+                                    ),
+                                    ]
+                                    )
+                                ],
+                                value='2'
+                                ),
+
+                            dmc.AccordionItem([
+                                dmc.AccordionControl(html.Div('(3) Sampling Options', style={'font-size': 22})),
+                                dmc.AccordionPanel([
+                                    dmc.Text('Select Indicator:'),
+                                    dcc.Dropdown(options=[{'label': indicator_dict[d], 'value': d} for d in indicators], id='indicator', optionHeight=40, clearable=False),
+                                    dmc.Text('Select sampling length (years):', style={'margin-top': 20}),
+                                    dmc.SegmentedControl(data=[{'label': d, 'value': str(d)} for d in time_periods],
+                                                         id='time_period',
+                                                         value='5',
+                                                         fullWidth=True,
+                                                         color=1,
+                                                         ),
+                                    dmc.Text('Select sampling frequency:', style={'margin-top': 20}),
+                                    dmc.SegmentedControl(data=[{'label': v, 'value': str(k)} for k, v in freq_mapping.items()],
+                                                         id='freq',
+                                                         value='12',
+                                                         fullWidth=True,
+                                                         color=1
+                                                         ),
+                                    html.Label('Change the percent of the reductions applied (100% is the max realistic reduction):', style={'margin-top': 20}),
+                                    dmc.Slider(id='Reductions_slider',
+                                               value=100,
+                                               mb=35,
+                                               step=5,
+                                               showLabelOnHover=True,
+                                               marks=[{'label': str(d) + '%', 'value': d} for d in range(0, 101, 20)]
+                                               ),
+                                    # dcc.Dropdown(options=[{'label': d, 'value': d} for d in time_periods], id='time_period', clearable=False, value=5),
+                                    # html.Label('Select sampling frequency:'),
+                                    # dcc.Dropdown(options=[{'label': v, 'value': k} for k, v in freq_mapping.items()], id='freq', clearable=False, value=12),
+
+                                    ],
+                                    )
+                                ],
+                                value='3'
+                                )
+
+                            ],
+                            # style={
+                            #     'margin': 0,
+                            #     'padding': 0
+                            #     },
+                            # className='four columns', style={'margin': 10}
+                            )
                         ),
-                        style={
-                            'margin-top': 10
-                        },
-                        multiple=False
-                    ),
+                    dmc.Col(
+                        span=4,
+                        # style={
+                        #     'margin-top': 20
+                        #     },
+                        children=html.Div([
+                            dl.Map(center=center, zoom=7, children=[
+                                dl.TileLayer(id='tile_layer', attribution=attribution),
+                                dl.LayersControl([
+                                    dl.Overlay(dl.LayerGroup(dl.GeoJSON(url=str(rivers_catch_pbf_path), format="geobuf", id='catch_map', zoomToBoundsOnClick=True, zoomToBounds=True, options=dict(style=catch_style_handle))), name='Catchments', checked=True),
+                                    # dl.GeoJSON(url='', format="geobuf", id='base_reach_map', options=dict(style=base_reaches_style_handle)),
+                                    dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='reach_map', options={}, hideout={}, hoverStyle=arrow_function(dict(weight=10, color='black', dashArray='')))), name='Rivers', checked=True),
+                                    # dl.GeoJSON(data='', format="geobuf", id='reductions_poly'),
+                                    dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='sites_points', options=dict(pointToLayer=sites_points_handle), hideout={'circleOptions': dict(fillOpacity=1, stroke=False, radius=5, color='black')})), name='Monitoring sites', checked=True)
+                                    ]),
+                                colorbar,
+                                info
+                                                ], style={'width': '100%', 'height': 700, 'margin': "auto", "display": "block"}, id="map2"),
+
+                            ],
+                            # className='five columns', style={'margin': 10}
+                            ),
+                        ),
                     ]
-                ),
-            html.Label('(2c) Process the reductions layer and route the reductions downstream:', style={
-                'margin-top': 20
-            }
-                ),
-            dcc.Loading(
-            id="loading-1",
-            type="default",
-            children=html.Div([html.Button('Process reductions', id='process', n_clicks=0),
-                               html.Div(id='process_text')],
-                              style={'margin-top': 10, 'margin-bottom': 10}
-                              )
-        ),
-
-            # html.Label('Select Indicator:'),
-            # dcc.Dropdown(options=[{'label': d, 'value': d} for d in indicators], id='indicator', optionHeight=40, clearable=False, value='NH4'),
-            # html.Label('Select expected percent improvement:'),
-            # dcc.Dropdown(options=[{'label': d, 'value': d} for d in percent_changes], id='percent_change', clearable=False, value=10),
-
-            # dcc.Link(html.Img(src=str(app_base_path.joinpath('our-land-and-water-logo.svg'))), href='https://ourlandandwater.nz/')
-            ], className='four columns', style={'margin': 10}),
-
-    # html.Div([
-    #     html.H3('(2) Sampling options'),
-    #     html.Label('Select Indicator:'),
-    #     dcc.Dropdown(options=[{'label': indicator_dict[d], 'value': d} for d in indicators], id='indicator', optionHeight=40, clearable=False),
-    #     html.Label('Select sampling length (years):', style={'margin-top': 20}),
-    #     dcc.Dropdown(options=[{'label': d, 'value': d} for d in time_periods], id='time_period', clearable=False, value=5),
-    #     html.Label('Select sampling frequency:'),
-    #     dcc.Dropdown(options=[{'label': v, 'value': k} for k, v in freq_mapping.items()], id='freq', clearable=False, value=12),
-
-    #     # html.H4(children='Map Layers', style={'margin-top': 20}),
-    #     # dcc.Checklist(
-    #     #        options=[
-    #     #            {'label': 'Reductions polygons', 'value': 'reductions_poly'},
-    #     #            # {'label': 'River reach reductions', 'value': 'reach_map'},
-    #     #            {'label': 'River reaches', 'value': 'reach_map'}
-    #     #        ],
-    #     #        value=['reductions_poly', 'reach_map'],
-    #     #        id='map_checkboxes_rivers',
-    #     #        style={'padding': 5, 'margin-bottom': 20}
-    #     #     ),
-    #     dcc.Markdown('', style={
-    #         'textAlign': 'left',
-    #                     }, id='red_disclaimer_rivers')
-    #     # dcc.Link(html.Img(src=str(app_base_path.joinpath('our-land-and-water-logo.svg'))), href='https://ourlandandwater.nz/')
-    #     ], className='two columns', style={'margin': 10}),
-
-    html.Div([
-        dl.Map(center=center, zoom=7, children=[
-            dl.TileLayer(id='tile_layer', attribution=attribution),
-            dl.LayersControl([
-                dl.Overlay(dl.LayerGroup(dl.GeoJSON(url=str(rivers_catch_pbf_path), format="geobuf", id='catch_map', zoomToBoundsOnClick=True, zoomToBounds=True, options=dict(style=catch_style_handle))), name='Catchments', checked=True),
-                # dl.GeoJSON(url='', format="geobuf", id='base_reach_map', options=dict(style=base_reaches_style_handle)),
-                dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='reach_map', options={}, hideout={}, hoverStyle=arrow_function(dict(weight=10, color='black', dashArray='')))), name='Rivers', checked=True),
-                # dl.GeoJSON(data='', format="geobuf", id='reductions_poly'),
-                dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='sites_points', options=dict(pointToLayer=sites_points_handle), hideout={'circleOptions': dict(fillOpacity=1, stroke=False, radius=5, color='black')})), name='Monitoring sites', checked=True)
-                ]),
-            colorbar,
-            info
-                            ], style={'width': '100%', 'height': 700, 'margin': "auto", "display": "block"}, id="map2")
-    ], className='five columns', style={'margin': 10}),
-
-    # html.Div([
-    #     dcc.Loading(
-    #             id="loading-tabs",
-    #             type="default",
-    #             children=[dcc.Tabs(id='plot_tabs', value='info_tab', style=tabs_styles, children=[
-    #                         dcc.Tab(label='Info', value='info_tab', style=tab_style, selected_style=tab_selected_style),
-    #                         # dcc.Tab(label='Habitat Suitability', value='hs_tab', style=tab_style, selected_style=tab_selected_style),
-    #                         ]
-    #                     ),
-    #                 html.Div(id='plots')
-    #                 ]
-    #             ),
-
-    # ], className='three columns', style={'margin': 10}),
-
-    dcc.Store(id='props_obj', data=''),
-    dcc.Store(id='reaches_obj', data=''),
-    dcc.Store(id='reductions_obj', data=''),
-], style={'margin':0})
+                    ),
+            dcc.Store(id='props_obj', data=''),
+            dcc.Store(id='reaches_obj', data=''),
+            dcc.Store(id='reductions_obj', data=''),
+            ]
+        )
 
     return layout
+
 
 ###############################################
 ### Callbacks

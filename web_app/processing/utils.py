@@ -21,6 +21,7 @@ import numpy as np
 import xarray as xr
 import hdf5tools
 from scipy import stats
+import booklet
 
 ##############################################
 ### Parameters
@@ -441,6 +442,91 @@ def xr_concat(datasets):
     return xr3
 
 
+def calc_river_reach_reductions(catch_id, reductions, reduction_cols):
+    """
+
+    """
+    with booklet.open(river_catch_path) as f:
+        c1 = f[int(catch_id)]
+
+    with booklet.open(river_reach_mapping_path) as f:
+        branches = f[int(catch_id)]
+
+    # TODO: Package the flow up by catch_id so that there is less work here
+    # flows = {}
+    # with booklet.open(utils.river_flows_rec_path) as f:
+    #     for way_id in branches:
+    #         flows[int(way_id)] = f[int(way_id)]
+
+    # flows_df = pd.DataFrame.from_dict(flows, orient='index', columns=['flow'])
+    # flows_df.index.name = 'nzsegment'
+    # flows_df = flows_df.reset_index()
+
+    plan1 = reductions[reduction_cols + ['geometry']]
+    # plan1 = plan0.to_crs(2193)
+
+    ## Calc reductions per nzsegment given sparse geometry input
+    c2 = plan1.overlay(c1)
+    c2['sub_area'] = c2.area
+
+    c2['combo_area'] = c2.groupby('nzsegment')['sub_area'].transform('sum')
+
+    c2b = c2.copy()
+
+    results_list = []
+    for col in reduction_cols:
+        c2b['prop_reductions'] = c2b[col]*(c2b['sub_area']/c2['combo_area'])
+        c3 = c2b.groupby('nzsegment')[['prop_reductions', 'sub_area']].sum()
+
+        ## Add in missing areas and assume that they are 0 reductions
+        c1['tot_area'] = c1.area
+
+        c4 = pd.merge(c1.drop('geometry', axis=1), c3, on='nzsegment', how='left')
+        c4.loc[c4['prop_reductions'].isnull(), ['prop_reductions', 'sub_area']] = 0
+
+        c4['reduction'] = (c4['prop_reductions'] * c4['sub_area'])/c4['tot_area']
+
+        c5 = c4[['nzsegment', 'reduction']].rename(columns={'reduction': col}).groupby('nzsegment').sum().round(2)
+        results_list.append(c5)
+
+    results = pd.concat(results_list, axis=1)
+
+    ## Scale the reductions to the flows
+    c4 = c4.merge(flows_df, on='nzsegment')
+
+    c4['base_flow'] = c4.flow * 100
+    c4['prop_flow'] = c4.flow * c4['reduction']
+
+    c5 = c4[['nzsegment', 'base_flow', 'prop_flow']].set_index('nzsegment').copy()
+    c5 = {r: list(v.values()) for r, v in c5.to_dict('index').items()}
+
+    props_index = np.array(list(branches.keys()), dtype='int32')
+    props_val = np.zeros(props_index.shape)
+    for h, reach in enumerate(branches):
+        branch = branches[reach]
+        t_area = np.zeros(branch.shape)
+        prop_area = t_area.copy()
+
+        for i, b in enumerate(branch):
+            if b in c5:
+                t_area1, prop_area1 = c5[b]
+                t_area[i] = t_area1
+                prop_area[i] = prop_area1
+            else:
+                prop_area[i] = 0
+
+        p1 = (np.sum(prop_area)/np.sum(t_area))
+        if p1 < 0:
+            props_val[h] = 0
+        else:
+            props_val[h] = p1
+
+    props = xr.Dataset(data_vars={'reduction': (('nzsegment'), np.round(props_val*100).astype('int8')) # Round to nearest even number
+                                  },
+                        coords={'nzsegment': props_index}
+                        ).sortby('nzsegment')
+
+    return props
 
 
 
