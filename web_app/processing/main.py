@@ -7,6 +7,11 @@ Created on Wed Nov 23 09:18:20 2022
 """
 import os
 import pathlib
+
+import sys
+if '..' not in sys.path:
+    sys.path.append('..')
+
 import utils
 
 from land_cover.lcdb_processing import lcdb_processing

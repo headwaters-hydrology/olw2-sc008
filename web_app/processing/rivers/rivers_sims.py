@@ -57,8 +57,9 @@ n_sims = 10000
 
 
 # list1 = utils.log_error_cats(0.01, 2.72, 0.1)
-list1 = utils.log_error_cats(0.01, 2.55, 0.05)
-list1 = [0.001] + list1
+# list1 = utils.log_error_cats(0.01, 2.55, 0.05)
+# list1 = [0.001] + list1
+list1 = utils.log_error_cats(0.14, 1.55, 0.03)
 
 
 if __name__ == '__main__':

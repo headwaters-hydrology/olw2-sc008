@@ -14,6 +14,10 @@ import numpy as np
 import hdf5tools
 import booklet
 
+import sys
+if '..' not in sys.path:
+    sys.path.append('..')
+
 import utils
 
 pd.options.display.max_columns = 10
@@ -23,14 +27,15 @@ pd.options.display.max_columns = 10
 
 # indicators = ['BD', 'DR', 'EC', 'NH', 'NO', 'TN', 'TP', 'TU']
 
-error_name = 'lm_se'
+error_name = '_new_gam_seRes'
 
 
 def rivers_process_power_modelled():
     # list1 = utils.log_error_cats(0.01, 2.72, 0.1)
     # list1 = utils.log_error_cats(0.01, 3.43, 0.1)
-    list1 = utils.log_error_cats(0.01, 3.05, 0.05)
-    list1 = [0.001] + list1
+    # list1 = utils.log_error_cats(0.01, 2.55, 0.05)
+    # list1 = [0.001] + list1
+    list1 = utils.log_error_cats(0.14, 1.55, 0.03)
 
     # conc0 = pd.read_csv(utils.conc_csv_path, usecols=['Indicator', 'nzsegment', 'lm1seRes']).dropna()
     # conc0.rename(columns={'lm1seRes': 'error', 'Indicator': 'indicator'}, inplace=True)
@@ -55,7 +60,7 @@ def rivers_process_power_modelled():
     ## Create rough values from all reaches per indicator
     grp1 = conc1.groupby('indicator')
 
-    median1 = grp1['error'].median().round(3)
+    median1 = grp1['error'].median().round(2)
 
     ## Assign init conc and errors to each catchment
     mapping = booklet.open(utils.river_reach_mapping_path)

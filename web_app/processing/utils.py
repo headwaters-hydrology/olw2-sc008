@@ -26,8 +26,8 @@ import booklet
 ##############################################
 ### Parameters
 
-base_path = '/media/nvme1/data/OLW/web_app'
-# base_path = '/home/mike/data/OLW/web_app'
+# base_path = '/media/nvme1/data/OLW/web_app'
+base_path = '/home/mike/data/OLW/web_app'
 # %cd '/home/mike/data/OLW/web_app'
 
 base_path = pathlib.Path(base_path)
@@ -82,7 +82,7 @@ sites_rec_csv = base_path.joinpath('olw_river_sites_rec.csv')
 sites_names_csv = base_path.joinpath('LAWARiverSiteswithRCIDs.csv')
 
 # conc_csv_path = base_path.joinpath('StBD3.csv')
-river_errors_model_path = base_path.joinpath('rivers_errors_modelled.csv')
+river_errors_model_path = base_path.joinpath('rivers_errors_modelled_v02.csv')
 river_errors_moni_path = base_path.joinpath('rivers_errors_monitored.csv')
 river_sites_path = base_path.joinpath('olw_river_sites.gpkg')
 
