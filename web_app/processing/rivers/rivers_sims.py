@@ -25,6 +25,11 @@ import h5py
 import hdf5tools
 import concurrent.futures
 import multiprocessing as mp
+
+import sys
+if '..' not in sys.path:
+    sys.path.append('..')
+
 import utils
 
 pd.options.display.max_columns = 10
