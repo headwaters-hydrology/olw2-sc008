@@ -70,7 +70,7 @@ list1 = utils.log_error_cats(0.14, 1.55, 0.03)
 if __name__ == '__main__':
     with concurrent.futures.ProcessPoolExecutor(max_workers=12, mp_context=mp.get_context("spawn")) as executor:
         futures = []
-        for error in list1[:-1]:
+        for error in list1:
             f = executor.submit(utils.power_sims, error, n_years, n_samples_year, n_sims, utils.river_sims_path)
             futures.append(f)
         runs = concurrent.futures.wait(futures)
