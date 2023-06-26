@@ -81,16 +81,23 @@ sites_loc_csv = base_path.joinpath('olw_river_sites_locations.csv')
 sites_rec_csv = base_path.joinpath('olw_river_sites_rec.csv')
 sites_names_csv = base_path.joinpath('LAWARiverSiteswithRCIDs.csv')
 
-# conc_csv_path = base_path.joinpath('StBD3.csv')
+## concentrations
+rivers_conc_base_path = base_path.joinpath('rivers')
+rivers_conc_csv_path1 = rivers_conc_base_path.joinpath('NutrientConcsYields.csv')
+rivers_conc_csv_path2 = rivers_conc_base_path.joinpath('EcoliConcsYields.csv')
+rivers_conc_csv_path3 = rivers_conc_base_path.joinpath('river-water-quality-clarity-and-turbidity-modelled-2016-2020.csv')
+
+## Errors and powers
 river_errors_model_path = base_path.joinpath('rivers_errors_modelled_v02.csv')
 river_errors_moni_path = base_path.joinpath('rivers_errors_monitored.csv')
 river_sites_path = base_path.joinpath('olw_river_sites.gpkg')
 
+## Flows and loads
 river_flows_rec_path = assets_path.joinpath('rivers_flows_rec.blt')
-river_flows_area_path = assets_path.joinpath('rivers_flows_area.blt')
+# river_flows_area_path = assets_path.joinpath('rivers_flows_area.blt')
 
 river_loads_rec_path = assets_path.joinpath('rivers_loads_rec.blt')
-river_loads_area_path = assets_path.joinpath('rivers_loads_area.blt')
+# river_loads_area_path = assets_path.joinpath('rivers_loads_area.blt')
 
 # rec_delin_file = output_path.joinpath('rivers_reach_delineation.feather')
 # major_catch_file = output_path.joinpath('rivers_major_catch.feather')
@@ -451,6 +458,9 @@ def calc_river_reach_reductions(catch_id, reductions, reduction_cols):
 
     with booklet.open(river_reach_mapping_path) as f:
         branches = f[int(catch_id)]
+
+    with booklet.open(river_loads_rec_path) as f:
+        loads = f[int(catch_id)][reduction_cols]
 
     # TODO: Package the flow up by catch_id so that there is less work here
     # flows = {}

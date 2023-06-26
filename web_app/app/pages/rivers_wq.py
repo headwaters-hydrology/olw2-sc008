@@ -510,10 +510,10 @@ def layout():
                         #     'margin-top': 20
                         #     },
                         children=html.Div([
-                            dl.Map(center=center, zoom=7, children=[
+                            dl.Map(center=center, zoom=6, children=[
                                 dl.TileLayer(id='tile_layer', attribution=attribution),
                                 dl.LayersControl([
-                                    dl.Overlay(dl.LayerGroup(dl.GeoJSON(url=str(rivers_catch_pbf_path), format="geobuf", id='catch_map', zoomToBoundsOnClick=True, zoomToBounds=True, options=dict(style=catch_style_handle))), name='Catchments', checked=True),
+                                    dl.Overlay(dl.LayerGroup(dl.GeoJSON(url=str(rivers_catch_pbf_path), format="geobuf", id='catch_map', zoomToBoundsOnClick=True, zoomToBounds=False, options=dict(style=catch_style_handle))), name='Catchments', checked=True),
                                     # dl.GeoJSON(url='', format="geobuf", id='base_reach_map', options=dict(style=base_reaches_style_handle)),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='reach_map', options={}, hideout={}, hoverStyle=arrow_function(dict(weight=10, color='black', dashArray='')))), name='Rivers', checked=True),
                                     # dl.GeoJSON(data='', format="geobuf", id='reductions_poly'),
