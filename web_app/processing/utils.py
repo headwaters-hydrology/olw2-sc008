@@ -22,6 +22,7 @@ import xarray as xr
 import hdf5tools
 from scipy import stats
 import booklet
+import tempfile
 
 ##############################################
 ### Parameters
@@ -46,6 +47,10 @@ output_path.mkdir(parents=True, exist_ok=True)
 
 assets_path = output_path.joinpath('assets')
 assets_path.mkdir(parents=True, exist_ok=True)
+
+indicators = {'rivers': ['Black disk', 'E.coli', 'Dissolved reactive phosporus', 'Ammoniacal nitrogen', 'Nitrate', 'Total nitrogen', 'Total phosphorus'],
+              'lakes': ['E.coli', 'Ammoniacal nitrogen', 'Total nitrogen', 'Total phosphorus', 'Chlorophyll a', 'Total Cyanobacteria', 'Secchi Depth']
+              }
 
 ### RC boundaries
 rc_bounds_gbuf = assets_path.joinpath('rc_bounds.pbf')
@@ -133,8 +138,10 @@ conc_perc = np.arange(1, 101, 1, dtype='int8')
 n_samples_year = [12, 26, 52, 104, 364]
 n_years = [5, 10, 20, 30]
 
+## Reductions
 catch_lc_path = assets_path.joinpath('rivers_catch_lc.blt')
 catch_lc_pbf_path = assets_path.joinpath('rivers_catch_lc_pbf.blt')
+river_reductions_model_path = assets_path.joinpath('rivers_reductions_modelled.h5')
 
 # catch_lc_clean_path = assets_path.joinpath('rivers_catch_lc.blt')
 
@@ -449,12 +456,17 @@ def xr_concat(datasets):
     return xr3
 
 
-def calc_river_reach_reductions(catch_id, reductions, reduction_cols):
+def calc_river_reach_reductions(feature, catch_id, reduction_ratios=range(10, 101, 10)):
     """
 
     """
+    print(catch_id)
+
+    red_ratios = np.array(list(reduction_ratios), dtype='int8')
+    reduction_cols = indicators[feature]
+
     with booklet.open(river_catch_path) as f:
-        c1 = f[int(catch_id)]
+        catches1 = f[int(catch_id)]
 
     with booklet.open(river_reach_mapping_path) as f:
         branches = f[int(catch_id)]
@@ -462,26 +474,21 @@ def calc_river_reach_reductions(catch_id, reductions, reduction_cols):
     with booklet.open(river_loads_rec_path) as f:
         loads = f[int(catch_id)][reduction_cols]
 
-    # TODO: Package the flow up by catch_id so that there is less work here
-    # flows = {}
-    # with booklet.open(utils.river_flows_rec_path) as f:
-    #     for way_id in branches:
-    #         flows[int(way_id)] = f[int(way_id)]
-
-    # flows_df = pd.DataFrame.from_dict(flows, orient='index', columns=['flow'])
-    # flows_df.index.name = 'nzsegment'
-    # flows_df = flows_df.reset_index()
+    with booklet.open(catch_lc_path) as f:
+        reductions = f[int(catch_id)]
 
     plan1 = reductions[reduction_cols + ['geometry']]
     # plan1 = plan0.to_crs(2193)
 
     ## Calc reductions per nzsegment given sparse geometry input
-    c2 = plan1.overlay(c1)
+    c2 = plan1.overlay(catches1)
     c2['sub_area'] = c2.area
 
     c2['combo_area'] = c2.groupby('nzsegment')['sub_area'].transform('sum')
 
     c2b = c2.copy()
+    catches1['tot_area'] = catches1.area
+    catches1 = catches1.drop('geometry', axis=1)
 
     results_list = []
     for col in reduction_cols:
@@ -489,11 +496,8 @@ def calc_river_reach_reductions(catch_id, reductions, reduction_cols):
         c3 = c2b.groupby('nzsegment')[['prop_reductions', 'sub_area']].sum()
 
         ## Add in missing areas and assume that they are 0 reductions
-        c1['tot_area'] = c1.area
-
-        c4 = pd.merge(c1.drop('geometry', axis=1), c3, on='nzsegment', how='left')
+        c4 = pd.merge(catches1, c3, on='nzsegment', how='left')
         c4.loc[c4['prop_reductions'].isnull(), ['prop_reductions', 'sub_area']] = 0
-
         c4['reduction'] = (c4['prop_reductions'] * c4['sub_area'])/c4['tot_area']
 
         c5 = c4[['nzsegment', 'reduction']].rename(columns={'reduction': col}).groupby('nzsegment').sum().round(2)
@@ -501,40 +505,51 @@ def calc_river_reach_reductions(catch_id, reductions, reduction_cols):
 
     results = pd.concat(results_list, axis=1)
 
-    ## Scale the reductions to the flows
-    c4 = c4.merge(flows_df, on='nzsegment')
-
-    c4['base_flow'] = c4.flow * 100
-    c4['prop_flow'] = c4.flow * c4['reduction']
-
-    c5 = c4[['nzsegment', 'base_flow', 'prop_flow']].set_index('nzsegment').copy()
-    c5 = {r: list(v.values()) for r, v in c5.to_dict('index').items()}
-
+    ## Scale the reductions
     props_index = np.array(list(branches.keys()), dtype='int32')
-    props_val = np.zeros(props_index.shape)
-    for h, reach in enumerate(branches):
-        branch = branches[reach]
-        t_area = np.zeros(branch.shape)
-        prop_area = t_area.copy()
+    props_val = np.zeros((len(red_ratios), len(props_index)))
 
-        for i, b in enumerate(branch):
-            if b in c5:
-                t_area1, prop_area1 = c5[b]
-                t_area[i] = t_area1
-                prop_area[i] = prop_area1
-            else:
-                prop_area[i] = 0
+    reach_red = {}
+    for ind in reduction_cols:
+        c4 = results[[ind]].merge(loads[[ind]], on='nzsegment')
 
-        p1 = (np.sum(prop_area)/np.sum(t_area))
-        if p1 < 0:
-            props_val[h] = 0
-        else:
-            props_val[h] = p1
+        c4['base'] = c4[ind + '_y'] * 100
 
-    props = xr.Dataset(data_vars={'reduction': (('nzsegment'), np.round(props_val*100).astype('int8')) # Round to nearest even number
-                                  },
-                        coords={'nzsegment': props_index}
-                        ).sortby('nzsegment')
+        for r, ratio in enumerate(red_ratios):
+            c4['prop'] = c4[ind + '_y'] * c4[ind + '_x'] * ratio * 0.01
+            c4b = c4[['base', 'prop']]
+            c5 = {r: list(v.values()) for r, v in c4b.to_dict('index').items()}
+
+            for h, reach in enumerate(branches):
+                branch = branches[reach]
+                t_area = np.zeros(branch.shape)
+                prop_area = t_area.copy()
+
+                for i, b in enumerate(branch):
+                    if b in c5:
+                        t_area1, prop_area1 = c5[b]
+                        t_area[i] = t_area1
+                        prop_area[i] = prop_area1
+                    else:
+                        prop_area[i] = 0
+
+                t_area_sum = np.sum(t_area)
+                if t_area_sum <= 0:
+                    props_val[r, h] = 0
+                else:
+                    p1 = np.sum(prop_area)/t_area_sum
+                    props_val[r, h] = p1
+
+            reach_red[ind] = np.round(props_val*100).astype('int8') # Round to nearest even number
+
+    props = xr.Dataset(data_vars={ind: (('reduction_perc', 'nzsegment'), values)  for ind, values in reach_red.items()},
+                       coords={'nzsegment': props_index,
+                                'reduction_perc': red_ratios}
+                       )
+
+    # file1 = tempfile.NamedTemporaryFile()
+    # hdf5tools.xr_to_hdf5(props, file1)
+    # props = props.assign_coords(catch_id=catch_id).expand_dims('catch_id').sortby(['nzsegment', 'reduction_perc'])
 
     return props
 
