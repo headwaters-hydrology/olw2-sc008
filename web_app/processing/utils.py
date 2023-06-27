@@ -27,8 +27,8 @@ import tempfile
 ##############################################
 ### Parameters
 
-base_path = '/media/nvme1/data/OLW/web_app'
-# base_path = '/home/mike/data/OLW/web_app'
+# base_path = '/media/nvme1/data/OLW/web_app'
+base_path = '/home/mike/data/OLW/web_app'
 # %cd '/home/mike/data/OLW/web_app'
 
 base_path = pathlib.Path(base_path)
