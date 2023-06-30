@@ -13,6 +13,7 @@ import pandas as pd
 import numpy as np
 import hdf5tools
 import booklet
+import nzrec
 
 import sys
 if '..' not in sys.path:
@@ -37,6 +38,8 @@ indicator_dict = {
     'Total Cyanobacteria': 'e.coli',
     'Secchi Depth': 'Clarity',
     }
+
+# way_id = 11018765
 
 
 def process_loads():
@@ -90,6 +93,21 @@ def process_loads():
 
     ## Combine
     combo1 = pd.concat([loads1, loads2, loads3], axis=1)
+
+    ## Remove upstream loads - Not needed because flows are already processed this way
+    # ways = set(combo1.index.values)
+
+    # w0 = nzrec.Water(utils.nzrec_data_path)
+    # way = {k: v for k, v in w0._way.items()}
+    # way_index = {k: v for k, v in w0._way_index.items()}
+    # node_way = {k: v for k, v in w0._node_way_index.items()}
+
+    # load_diff_list = []
+    # for way_id in ways:
+    #     up_ways1 = utils.get_directly_upstream_ways(way_id, node_way, way, way_index)
+    #     up_ways2 = ways.intersection(up_ways1)
+    #     data1 = combo1.loc[list(up_ways2)].sum()
+    #     load_diff = combo1.loc[way_id] - data1
 
     ## Convert to web app parameter
     cols2 = combo1.columns

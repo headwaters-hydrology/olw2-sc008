@@ -54,9 +54,7 @@ app_base_path = pathlib.Path('/assets')
 #               ], className='eleven columns', style={'margin': 0})
 #     ])
 
-
-
-page_mapping = {v['path']: v['title'] for k, v in dash.page_registry.items()}
+page_path_names = {v['path']: v['description'] for k, v in dash.page_registry.items()}
 
 def create_nav_link(label, href):
     return dcc.Link(
@@ -80,31 +78,60 @@ def create_sidebar_children(pages):
     """
 
     """
-    list1 = [dmc.Group(
+    list1 = [
+        dmc.Group(
         # direction="column",
         children=[
             create_nav_link(
                 label="Home",
                 href="/",
+                ),
+            ],
             ),
-        ],
-    ),
-    dmc.Divider(
-        label="Water Quality Tools", style={"marginBottom": 20, "marginTop": 20}
-    )]
+        dmc.Divider(
+            label="User Guides", style={"marginBottom": 20, "marginTop": 20}
+            ),
+        dmc.Divider(
+            label="Main Tools", style={"marginBottom": 20, "marginTop": 20}
+            ),
+        dmc.Group(
+            children=[
+                create_nav_link(
+                    label=pages["pages.rivers_wq"]['title'], href=pages["pages.rivers_wq"]["path"]
+                    )
+                ], style={"marginBottom": 10}
+            ),
+        dmc.Group(
+            children=[
+                create_nav_link(
+                    label=pages["pages.lakes_wq"]['title'], href=pages["pages.lakes_wq"]["path"]
+                    )
+                ], style={"marginBottom": 10}
+            ),
+        dmc.Group(
+            children=[
+                create_nav_link(
+                    label=pages["pages.gw_wq"]['title'], href=pages["pages.gw_wq"]["path"]
+                    )
+                ], style={"marginBottom": 10}
+            ),
+        dmc.Divider(
+            label="Auxiliary Tools", style={"marginBottom": 20, "marginTop": 20}
+            ),
 
-    list2 = [
-    dmc.Group(
-        # direction="column",
-        children=[
-            create_nav_link(
-                label=page["name"], href=page["path"]
-            )
-        ], style={"marginBottom": 10}
-    )
-    for page in pages if 'Home' not in page["name"]]
 
-    return list1 + list2
+        ]
+
+    # dmc.Group(
+    #     children=[
+    #         create_nav_link(
+    #             label=page["name"], href=page["path"]
+    #         )
+    #     ], style={"marginBottom": 10}
+    # )
+    # for page in pages if 'Home' not in page["name"]]
+
+    return list1
 
 
 sidebar = dmc.Navbar(
@@ -117,7 +144,7 @@ sidebar = dmc.Navbar(
         dmc.ScrollArea(
             offsetScrollbars=True,
             type="scroll",
-            children=create_sidebar_children(dash.page_registry.values())
+            children=create_sidebar_children(dash.page_registry)
             )
         ]
     )
@@ -201,7 +228,7 @@ app.layout = html.Div(
 def updated_title(path):
     # print(path)
     if isinstance(path, str):
-        title = page_mapping[path]
+        title = page_path_names[path]
         if title == 'Home':
             # title = 'Mitigation Effectiveness Monitoring Design'
             title = ''

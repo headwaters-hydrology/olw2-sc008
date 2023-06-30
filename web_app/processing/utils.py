@@ -27,8 +27,8 @@ import tempfile
 ##############################################
 ### Parameters
 
-# base_path = '/media/nvme1/data/OLW/web_app'
-base_path = '/home/mike/data/OLW/web_app'
+base_path = '/media/nvme1/data/OLW/web_app'
+# base_path = '/home/mike/data/OLW/web_app'
 # %cd '/home/mike/data/OLW/web_app'
 
 base_path = pathlib.Path(base_path)
@@ -554,6 +554,20 @@ def calc_river_reach_reductions(feature, catch_id, reduction_ratios=range(10, 10
     return props
 
 
+def get_directly_upstream_ways(way_id, node_way, way, way_index):
+    """
+
+    """
+    ways_up = set([way_id])
+
+    new_ways = set(way_index[int(way_id)]).difference(ways_up)
+
+    down_node = way[int(way_id)][-1]
+    down_ways = set(node_way[down_node])
+
+    new_ways = new_ways.difference(down_ways)
+
+    return new_ways
 
 
 

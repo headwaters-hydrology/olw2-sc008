@@ -44,8 +44,9 @@ assets_path = pathlib.Path(os.path.split(os.path.realpath(os.path.dirname(__file
 dash.register_page(
     __name__,
     path='/gw-wq',
-    title='Groundwater',
-    name='Groundwater'
+    title='Groundwater Quality',
+    name='gw_wq',
+    description='Groundwater Quality'
 )
 
 app_base_path = pathlib.Path('/assets')

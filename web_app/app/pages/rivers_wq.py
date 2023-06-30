@@ -46,15 +46,16 @@ assets_path = pathlib.Path(os.path.split(os.path.realpath(os.path.dirname(__file
 dash.register_page(
     __name__,
     path='/rivers-wq',
-    title='Rivers',
-    name='Rivers'
+    title='Rivers Water Quality',
+    name='rivers_wq',
+    description='Rivers Water Quality'
 )
 
 app_base_path = pathlib.Path('/assets')
 
 river_power_model_path = assets_path.joinpath('rivers_reaches_power_modelled.h5')
 # river_power_moni_path = assets_path.joinpath('rivers_reaches_power_monitored.h5')
-
+rivers_reductions_model_path = assets_path.joinpath('rivers_reductions_modelled.h5')
 rivers_catch_pbf_path = app_base_path.joinpath('rivers_catchments.pbf')
 
 rivers_reach_gbuf_path = assets_path.joinpath('rivers_reaches.blt')
@@ -446,7 +447,7 @@ def layout():
                                     dcc.Loading(
                                     id="loading-1",
                                     type="default",
-                                    children=html.Div([dmc.Button('Process reductions', id='process',
+                                    children=html.Div([dmc.Button('Process reductions', id='process_reductions_rivers',
                                                                   # className="me-1",
                                                                   n_clicks=0),
                                                         html.Div(id='process_text')],
@@ -462,28 +463,30 @@ def layout():
                             dmc.AccordionItem([
                                 dmc.AccordionControl(html.Div('(3) Sampling Options', style={'font-size': 22})),
                                 dmc.AccordionPanel([
-                                    dmc.Text('Select Indicator:'),
+                                    dmc.Text('(3a) Select Indicator:'),
                                     dcc.Dropdown(options=[{'label': indicator_dict[d], 'value': d} for d in indicators], id='indicator', optionHeight=40, clearable=False),
-                                    dmc.Text('Select sampling length (years):', style={'margin-top': 20}),
+                                    dmc.Text('(3b) Select sampling length (years):', style={'margin-top': 20}),
                                     dmc.SegmentedControl(data=[{'label': d, 'value': str(d)} for d in time_periods],
                                                          id='time_period',
                                                          value='5',
                                                          fullWidth=True,
                                                          color=1,
                                                          ),
-                                    dmc.Text('Select sampling frequency:', style={'margin-top': 20}),
+                                    dmc.Text('(3c) Select sampling frequency:', style={'margin-top': 20}),
                                     dmc.SegmentedControl(data=[{'label': v, 'value': str(k)} for k, v in freq_mapping.items()],
                                                          id='freq',
                                                          value='12',
                                                          fullWidth=True,
                                                          color=1
                                                          ),
-                                    html.Label('Change the percent of the reductions applied (100% is the max realistic reduction):', style={'margin-top': 20}),
+                                    html.Label('(3d) Change the percent of the reductions applied (100% is the max realistic reduction):', style={'margin-top': 20}),
                                     dmc.Slider(id='Reductions_slider',
                                                value=100,
                                                mb=35,
-                                               step=5,
+                                               step=10,
+                                               # min=10,
                                                showLabelOnHover=True,
+                                               disabled=False,
                                                marks=[{'label': str(d) + '%', 'value': d} for d in range(0, 101, 20)]
                                                ),
                                     # dcc.Dropdown(options=[{'label': d, 'value': d} for d in time_periods], id='time_period', clearable=False, value=5),
@@ -494,7 +497,22 @@ def layout():
                                     )
                                 ],
                                 value='3'
-                                )
+                                ),
+
+                            dmc.AccordionItem([
+                                dmc.AccordionControl(html.Div('(4) Download Results', style={'font-size': 22})),
+                                dmc.AccordionPanel([
+                                    dmc.Text('(4a) Download Power Results (csv):'),
+                                    dcc.Loading(
+                                    type="default",
+                                    children=[html.Div(dmc.Button("Download power results", id='dl_btn_power_rivers'), style={'margin-bottom': 20, 'margin-top': 10}),
+                            dcc.Download(id="dl_power_rivers")],
+                                    ),
+                                    ],
+                                    )
+                                ],
+                                value='4'
+                                ),
 
                             ],
                             # style={
@@ -532,6 +550,7 @@ def layout():
             dcc.Store(id='props_obj', data=''),
             dcc.Store(id='reaches_obj', data=''),
             dcc.Store(id='reductions_obj', data=''),
+            dcc.Store(id='base_reductions_obj', data=''),
             ]
         )
 
@@ -607,30 +626,86 @@ def update_reaches_option(hideout, catch_id):
 
 
 @callback(
-        Output('reductions_obj', 'data'), Output('col_name', 'value'),
+        Output('reductions_obj', 'data'), Output('base_reductions_obj', 'data'),
         Input('upload_data_rivers', 'contents'),
-        Input('demo_data_rivers', 'n_clicks'),
-        Input('catch_id', 'value'),
         State('upload_data_rivers', 'filename'),
+        State('catch_id', 'value'),
         prevent_initial_call=True
         )
 # @cache.memoize()
-def update_reductions_obj(contents, n_clicks, catch_id, filename):
-    if n_clicks is None:
+def update_land_reductions(contents, filename, catch_id):
+    data = None
+    base_data = None
+
+    if catch_id is not None:
         if contents is not None:
             data = parse_gis_file(contents, filename)
 
             if isinstance(data, str):
-                return data, None
-        else:
-            return '', None
-    elif catch_id is not None:
-        with booklet.open(rivers_lc_clean_path, 'r') as f:
-            data = encode_obj(f[int(catch_id)])
+                with booklet.open(rivers_lc_clean_path, 'r') as f:
+                    base_data = encode_obj(f[int(catch_id)])
 
-        return data, 'default_reductions'
+    return data, base_data
+
+
+@callback(
+    Output('reaches_obj', 'data'), Output('process_text', 'children'),
+    Input('process_reductions_rivers', 'n_clicks'),
+    Input('catch_id', 'value')
+    [
+     State('reductions_obj', 'data')
+     ],
+    prevent_initial_call=True)
+def update_reach_reductions(click, catch_id, reductions_obj):
+    """
+
+    """
+    trig = ctx.triggered_id
+
+    if (trig == 'process_reductions_rivers'):
+        if isinstance(catch_id, str) and (reductions_obj != '') and (reductions_obj is not None):
+            plan_file = decode_obj(reductions_obj)
+            props = calc_river_reach_reductions(catch_id, plan_file)
+            data = encode_obj(props)
+            text_out = 'Routing complete'
+        else:
+            data = ''
+            text_out = 'Not all inputs have been selected'
     else:
-        return '', None
+        red1 = xr.open_dataset(rivers_reductions_model_path)
+
+        with booklet.open(rivers_reach_mapping_path) as f:
+            branches = f[int(catch_id)][int(catch_id)]
+
+        red2 = red1.sel(nzsegment=branches)
+
+        data = encode_obj(red2)
+        text_out = ''
+
+    return data, text_out
+
+
+# @callback(
+#         Output('reductions_obj', 'data'),
+#         Input('catch_id', 'value'),
+#         Input('upload_data_rivers', 'contents'),
+#         State('upload_data_rivers', 'filename'),
+#         prevent_initial_call=True
+#         )
+# # @cache.memoize()
+# def update_reductions_obj(catch_id, contents, filename):
+#     if contents is not None:
+#         data = parse_gis_file(contents, filename)
+
+#         if isinstance(data, str):
+#             return data, None
+#     elif catch_id is not None:
+#         with booklet.open(rivers_lc_clean_path, 'r') as f:
+#             data = encode_obj(f[int(catch_id)])
+
+#         return data, 'default_reductions'
+#     else:
+#         return '', None
 
 
 # @callback(
@@ -675,41 +750,41 @@ def update_reductions_obj(contents, n_clicks, catch_id, filename):
 #         return ''
 
 
-@callback(
-        Output('col_name', 'options'),
-        Input('reductions_obj', 'data')
-        )
-# @cache.memoize()
-def update_column_options(reductions_obj):
-    # print(reductions_obj)
-    if (reductions_obj != '') and (reductions_obj is not None):
-        data = decode_obj(reductions_obj)
-        cols = [{'label': col, 'value': col} for col in data.columns if (col not in ['geometry', 'id', 'fid', 'OBJECTID']) and np.issubdtype(data[col].dtype, np.number)]
+# @callback(
+#         Output('col_name', 'options'),
+#         Input('reductions_obj', 'data')
+#         )
+# # @cache.memoize()
+# def update_column_options(reductions_obj):
+#     # print(reductions_obj)
+#     if (reductions_obj != '') and (reductions_obj is not None):
+#         data = decode_obj(reductions_obj)
+#         cols = [{'label': col, 'value': col} for col in data.columns if (col not in ['geometry', 'id', 'fid', 'OBJECTID']) and np.issubdtype(data[col].dtype, np.number)]
 
-        return cols
-    else:
-        return []
+#         return cols
+#     else:
+#         return []
 
 
-@callback(
-    Output('reaches_obj', 'data'), Output('process_text', 'children'),
-    Input('process', 'n_clicks'),
-    [State('catch_id', 'value'), State('reductions_obj', 'data'), State('col_name', 'value')],
-    prevent_initial_call=True)
-def update_reach_data(click, catch_id, reductions_obj, col_name):
-    """
+# @callback(
+#     Output('reaches_obj', 'data'), Output('process_text', 'children'),
+#     Input('process', 'n_clicks'),
+#     [State('catch_id', 'value'), State('reductions_obj', 'data'), State('col_name', 'value')],
+#     prevent_initial_call=True)
+# def update_reach_data(click, catch_id, reductions_obj, col_name):
+#     """
 
-    """
-    if isinstance(catch_id, str) and (reductions_obj != '') and (reductions_obj is not None) and isinstance(col_name, str):
-        plan_file = decode_obj(reductions_obj)
-        props = calc_river_reach_reductions(catch_id, plan_file, reduction_col=col_name)
-        data = encode_obj(props)
-        text_out = 'Routing complete'
-    else:
-        data = ''
-        text_out = 'Not all inputs have been selected'
+#     """
+#     if isinstance(catch_id, str) and (reductions_obj != '') and (reductions_obj is not None) and isinstance(col_name, str):
+#         plan_file = decode_obj(reductions_obj)
+#         props = calc_river_reach_reductions(catch_id, plan_file, reduction_col=col_name)
+#         data = encode_obj(props)
+#         text_out = 'Routing complete'
+#     else:
+#         data = ''
+#         text_out = 'Not all inputs have been selected'
 
-    return data, text_out
+#     return data, text_out
 
 
 @callback(
