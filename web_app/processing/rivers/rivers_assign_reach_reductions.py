@@ -23,7 +23,8 @@ pd.options.display.max_columns = 10
 
 params = ['Total nitrogen', 'Total phosphorus']
 
-output_path = '/media/nvme1/data/OLW/web_app/output/rec_segment_reductions.csv'
+output_path1 = '/media/nvme1/data/OLW/web_app/output/rec_segment_reductions.csv'
+output_path2 = '/media/nvme1/data/OLW/web_app/output/rec_segment_typology_area_ratios.csv'
 
 #############################################
 ### Functions
@@ -54,48 +55,52 @@ def calc_river_reach_reductions(catch_id, reductions, reduction_cols):
 
     ## Calc reductions per nzsegment given sparse geometry input
     c2 = plan1.overlay(c1)
-    c2['sub_area'] = c2.area
+    c2['typology_area'] = c2.area
 
-    c2['combo_area'] = c2.groupby('nzsegment')['sub_area'].transform('sum')
+    c2['catch_area'] = c2.groupby('nzsegment')['typology_area'].transform('sum')
+    c2['area_ratio'] = c2['typology_area']/c2['catch_area']
 
     c2b = c2.copy()
 
     results_list = []
     for col in reduction_cols:
-        c2b['prop_reductions'] = c2b[col]*(c2b['sub_area']/c2['combo_area'])
-        c3 = c2b.groupby('nzsegment')[['prop_reductions', 'sub_area']].sum()
+        c2b['prop_reductions'] = c2b[col]*c2b['area_ratio']
+        c3 = c2b.groupby('nzsegment')[['prop_reductions', 'typology_area']].sum()
 
         ## Add in missing areas and assume that they are 0 reductions
         c1['tot_area'] = c1.area
 
         c4 = pd.merge(c1.drop('geometry', axis=1), c3, on='nzsegment', how='left')
-        c4.loc[c4['prop_reductions'].isnull(), ['prop_reductions', 'sub_area']] = 0
+        c4.loc[c4['prop_reductions'].isnull(), ['prop_reductions', 'typology_area']] = 0
 
-        c4['reduction'] = (c4['prop_reductions'] * c4['sub_area'])/c4['tot_area']
+        c4['reduction'] = (c4['prop_reductions'] * c4['typology_area'])/c4['tot_area']
 
         c5 = c4[['nzsegment', 'reduction']].rename(columns={'reduction': col}).groupby('nzsegment').sum().round(2)
         results_list.append(c5)
 
     results = pd.concat(results_list, axis=1)
 
-    lc0 = c2.sort_values('combo_area').groupby('nzsegment')[['typology', 'farm_type', 'land_cover']].last()
+    lc0 = c2.sort_values('catch_area').groupby('nzsegment')[['typology', 'farm_type', 'land_cover']].last()
 
     results2 = pd.concat([lc0, results], axis=1)
     results2.loc[results2.typology.isnull(), ['typology', 'farm_type', 'land_cover']] = 'Native Forest'
 
-    return results2
+    return results2, pd.DataFrame(c2.drop(['Total nitrogen', 'Total phosphorus', 'geometry'], axis=1))
 
 
 
 ############################################
 ### Processing
 
+reach_lu_list = []
 reach_red_list = []
 with booklet.open(utils.catch_lc_path) as f:
     for catch_id in f:
         print(catch_id)
-        results = calc_river_reach_reductions(catch_id, f[catch_id], params)
-        reach_red_list.append(results)
+        reductions = f[catch_id]
+        results1, results2 = calc_river_reach_reductions(catch_id, reductions, params)
+        reach_red_list.append(results1)
+        reach_lu_list.append(results2)
 
 reach_red0 = pd.concat(reach_red_list).reset_index()
 reach_red1 = reach_red0.groupby('nzsegment')[params].mean().round(2)
@@ -103,10 +108,10 @@ reach_red2 = reach_red0.groupby('nzsegment')[['typology', 'farm_type', 'land_cov
 
 reach_red3 = pd.concat([reach_red2, reach_red1], axis=1)
 
-reach_red3.to_csv(output_path)
+reach_red3.to_csv(output_path1)
 
-
-
+reach_lu0 = pd.concat(reach_lu_list)
+reach_lu0.to_csv(output_path2, index=False)
 
 
 
