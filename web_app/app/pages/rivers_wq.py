@@ -651,7 +651,7 @@ def update_land_reductions(contents, filename, catch_id):
 @callback(
     Output('reaches_obj', 'data'), Output('process_text', 'children'),
     Input('process_reductions_rivers', 'n_clicks'),
-    Input('catch_id', 'value')
+    Input('catch_id', 'value'),
     [
      State('reductions_obj', 'data')
      ],
