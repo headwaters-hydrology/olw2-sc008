@@ -98,7 +98,7 @@ river_errors_moni_path = base_path.joinpath('rivers_errors_monitored.csv')
 river_sites_path = base_path.joinpath('olw_river_sites.gpkg')
 
 ## Flows and loads
-river_flows_rec_path = assets_path.joinpath('rivers_flows_rec.blt')
+# river_flows_rec_path = assets_path.joinpath('rivers_flows_rec.blt')
 # river_flows_area_path = assets_path.joinpath('rivers_flows_area.blt')
 
 river_loads_rec_path = assets_path.joinpath('rivers_loads_rec.blt')

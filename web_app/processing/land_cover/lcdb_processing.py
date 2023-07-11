@@ -18,6 +18,10 @@ import booklet
 import pickle
 import zstandard as zstd
 
+import sys
+if '..' not in sys.path:
+    sys.path.append('..')
+
 import utils
 
 pd.options.display.max_columns = 10
