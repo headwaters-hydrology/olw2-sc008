@@ -35,10 +35,6 @@ sites_rec0['nzsegment'] = sites_rec0['nzsegment'].astype('int32')
 
 sites0 = sites_loc1.merge(sites_rec0, on='site_id').reset_index(drop=True)
 
-
-
-
-
 sites0.to_feather(base_path.joinpath(output_file))
 
 

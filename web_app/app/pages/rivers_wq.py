@@ -60,11 +60,12 @@ rivers_catch_pbf_path = app_base_path.joinpath('rivers_catchments.pbf')
 
 rivers_reach_gbuf_path = assets_path.joinpath('rivers_reaches.blt')
 # rivers_loads_path = assets_path.joinpath('rivers_reaches_loads.h5')
-rivers_flows_path = assets_path.joinpath('rivers_flows_rec.blt')
+# rivers_flows_path = assets_path.joinpath('rivers_flows_rec.blt')
 rivers_lc_clean_path = assets_path.joinpath('rivers_catch_lc.blt')
 rivers_catch_path = assets_path.joinpath('rivers_catchments_minor.blt')
 rivers_reach_mapping_path = assets_path.joinpath('rivers_reaches_mapping.blt')
 rivers_sites_path = assets_path.joinpath('rivers_sites_catchments.blt')
+river_loads_rec_path = assets_path.joinpath('rivers_loads_rec.blt')
 
 rivers_catch_lc_dir = assets_path.joinpath('rivers_land_cover_gpkg')
 rivers_catch_lc_gpkg_str = '{}_rivers_land_cover_reductions.gpkg'
@@ -151,6 +152,13 @@ info = dcc.Markdown(id="info", className="info", style={"position": "absolute", 
 
 indicator_dict = {'BD': 'Black disk', 'EC': 'E.coli', 'DRP': 'Dissolved reactive phosporus', 'NH': 'Ammoniacal nitrogen', 'NO': 'Nitrate', 'TN': 'Total nitrogen', 'TP': 'Total phosphorus'}
 
+reduction_cols = list(indicator_dict.values())
+
+reduction_ratios = range(10, 101, 10)
+red_ratios = np.array(list(reduction_ratios), dtype='int8')
+
+# catch_id = 3076139
+
 ###############################################
 ### Helper Functions
 
@@ -232,95 +240,130 @@ def parse_gis_file(contents, filename):
     """
 
     """
-    if '.gpkg' in filename:
+    try:
         content_type, content_string = contents.split(',')
         decoded = base64.b64decode(content_string)
         plan1 = gpd.read_file(io.BytesIO(decoded))
 
         output = encode_obj(plan1)
-    elif contents is None:
-        output = None
-    else:
-        output = html.Div(['Wrong file type. It must be a GeoPackage (gpkg).'])
+    except:
+        output = ['Wrong file type. It must be a GeoPackage (gpkg).']
 
     return output
 
 
-def calc_river_reach_reductions(catch_id, plan_file, reduction_col='default_reductions'):
+def check_reductions_input(new_reductions, base_reductions):
+    """
+
+    """
+    base_typos = base_reductions.typology.unique()
+    try:
+        missing_typos = np.in1d(new_reductions.typology.unique(), base_typos).all()
+    except:
+        missing_typos = False
+
+    return missing_typos
+
+
+def diff_reductions(new_reductions, base_reductions):
+    """
+
+    """
+    new_reductions1 = new_reductions.set_index('typology').sort_index()[reduction_cols]
+    base_reductions1 = base_reductions.set_index('typology').sort_index()[reduction_cols]
+    temp1 = new_reductions1.compare(base_reductions1, align_axis=0)
+
+    return list(temp1.columns)
+
+
+def calc_river_reach_reductions(catch_id, new_reductions, base_reductions):
     """
     This assumes that the concentration is the same throughout the entire greater catchment. If it's meant to be different, then each small catchment must be set and multiplied by the area to weight the contribution downstream.
     """
+    diff_cols = diff_reductions(new_reductions, base_reductions)
+
     with booklet.open(rivers_catch_path) as f:
-        c1 = f[int(catch_id)]
+        catches1 = f[int(catch_id)]
 
     with booklet.open(rivers_reach_mapping_path) as f:
         branches = f[int(catch_id)]
 
-    # TODO: Package the flow up by catch_id so that there is less work here
-    flows = {}
-    with booklet.open(rivers_flows_path) as f:
-        for way_id in branches:
-            flows[int(way_id)] = f[int(way_id)]
+    with booklet.open(river_loads_rec_path) as f:
+        loads = f[int(catch_id)][diff_cols]
 
-    flows_df = pd.DataFrame.from_dict(flows, orient='index', columns=['flow'])
-    flows_df.index.name = 'nzsegment'
-    flows_df = flows_df.reset_index()
-
-    plan0 = plan_file[[reduction_col, 'geometry']]
-    plan1 = plan0[plan0[reduction_col] > 0].to_crs(2193)
+    new_reductions0 = new_reductions[diff_cols + ['geometry']]
+    not_all_zeros = new_reductions0[diff_cols].sum(axis=1) > 0
+    new_reductions1 = new_reductions0.loc[not_all_zeros]
 
     ## Calc reductions per nzsegment given sparse geometry input
-    c2 = plan1.overlay(c1)
+    c2 = new_reductions1.overlay(catches1)
     c2['sub_area'] = c2.area
 
     c2['combo_area'] = c2.groupby('nzsegment')['sub_area'].transform('sum')
-    c2['prop_reductions'] = c2[reduction_col]*(c2['sub_area']/c2['combo_area'])
-    c3 = c2.groupby('nzsegment')[['prop_reductions', 'sub_area']].sum()
 
-    ## Add in missing areas and assume that they are 0 reductions
-    c1['tot_area'] = c1.area
+    c2b = c2.copy()
+    catches1['tot_area'] = catches1.area
+    catches1 = catches1.drop('geometry', axis=1)
 
-    c4 = pd.merge(c1.drop('geometry', axis=1), c3, on='nzsegment', how='left')
-    c4.loc[c4['prop_reductions'].isnull(), ['prop_reductions', 'sub_area']] = 0
+    results_list = []
+    for col in diff_cols:
+        c2b['prop_reductions'] = c2b[col]*(c2b['sub_area']/c2['combo_area'])
+        c3 = c2b.groupby('nzsegment')[['prop_reductions', 'sub_area']].sum()
 
-    c4['reduction'] = (c4['prop_reductions'] * c4['sub_area'])/c4['tot_area']
+        ## Add in missing areas and assume that they are 0 reductions
+        c4 = pd.merge(catches1, c3, on='nzsegment', how='left')
+        c4.loc[c4['prop_reductions'].isnull(), ['prop_reductions', 'sub_area']] = 0
+        c4['reduction'] = (c4['prop_reductions'] * c4['sub_area'])/c4['tot_area']
 
-    ## Scale the reductions to the flows
-    c4 = c4.merge(flows_df, on='nzsegment')
+        c5 = c4[['nzsegment', 'reduction']].rename(columns={'reduction': col}).groupby('nzsegment').sum().round(2)
+        results_list.append(c5)
 
-    c4['base_flow'] = c4.flow * 100
-    c4['prop_flow'] = c4.flow * c4['reduction']
+    results = pd.concat(results_list, axis=1)
 
-    c5 = c4[['nzsegment', 'base_flow', 'prop_flow']].set_index('nzsegment').copy()
-    c5 = {r: list(v.values()) for r, v in c5.to_dict('index').items()}
-
+    ## Scale the reductions
     props_index = np.array(list(branches.keys()), dtype='int32')
-    props_val = np.zeros(props_index.shape)
-    for h, reach in enumerate(branches):
-        branch = branches[reach]
-        t_area = np.zeros(branch.shape)
-        prop_area = t_area.copy()
+    props_val = np.zeros((len(red_ratios), len(props_index)))
 
-        for i, b in enumerate(branch):
-            if b in c5:
-                t_area1, prop_area1 = c5[b]
-                t_area[i] = t_area1
-                prop_area[i] = prop_area1
-            else:
-                prop_area[i] = 0
+    reach_red = {}
+    for ind in diff_cols:
+        c4 = results[[ind]].merge(loads[[ind]], on='nzsegment')
 
-        p1 = (np.sum(prop_area)/np.sum(t_area))
-        if p1 < 0:
-            props_val[h] = 0
-        else:
-            props_val[h] = p1
+        c4['base'] = c4[ind + '_y'] * 100
 
-    props = xr.Dataset(data_vars={'reduction': (('nzsegment'), np.round(props_val*100).astype('int8')) # Round to nearest even number
-                                  },
-                        coords={'nzsegment': props_index}
-                        ).sortby('nzsegment')
+        for r, ratio in enumerate(red_ratios):
+            c4['prop'] = c4[ind + '_y'] * c4[ind + '_x'] * ratio * 0.01
+            c4b = c4[['base', 'prop']]
+            c5 = {r: list(v.values()) for r, v in c4b.to_dict('index').items()}
 
-    return props
+            for h, reach in enumerate(branches):
+                branch = branches[reach]
+                t_area = np.zeros(branch.shape)
+                prop_area = t_area.copy()
+
+                for i, b in enumerate(branch):
+                    if b in c5:
+                        t_area1, prop_area1 = c5[b]
+                        t_area[i] = t_area1
+                        prop_area[i] = prop_area1
+                    else:
+                        prop_area[i] = 0
+
+                t_area_sum = np.sum(t_area)
+                if t_area_sum <= 0:
+                    props_val[r, h] = 0
+                else:
+                    p1 = np.sum(prop_area)/t_area_sum
+                    props_val[r, h] = p1
+
+            reach_red[ind] = np.round(props_val*100).astype('int8') # Round to nearest even number
+
+    new_props = xr.Dataset(data_vars={ind: (('reduction_perc', 'nzsegment'), values)  for ind, values in reach_red.items()},
+                       coords={'nzsegment': props_index,
+                                'reduction_perc': red_ratios}
+                       )
+
+    return new_props
+
 
 
 ###############################################
@@ -440,6 +483,9 @@ def layout():
                                             ),
                                             ]
                                         ),
+                                    dcc.Markdown('', style={
+                                        'textAlign': 'left',
+                                                    }, id='upload_error_text'),
                                     html.Label('(2c) Process the reductions layer and route the reductions downstream:', style={
                                         'margin-top': 20
                                     }
@@ -464,7 +510,7 @@ def layout():
                                 dmc.AccordionControl(html.Div('(3) Sampling Options', style={'font-size': 22})),
                                 dmc.AccordionPanel([
                                     dmc.Text('(3a) Select Indicator:'),
-                                    dcc.Dropdown(options=[{'label': indicator_dict[d], 'value': d} for d in indicators], id='indicator', optionHeight=40, clearable=False),
+                                    dcc.Dropdown(options=[{'label': indicator_dict[d], 'value': d} for d in indicators], id='indicator_rivers', optionHeight=40, clearable=False),
                                     dmc.Text('(3b) Select sampling length (years):', style={'margin-top': 20}),
                                     dmc.SegmentedControl(data=[{'label': d, 'value': str(d)} for d in time_periods],
                                                          id='time_period',
@@ -547,9 +593,9 @@ def layout():
                         ),
                     ]
                     ),
-            dcc.Store(id='props_obj', data=''),
+            dcc.Store(id='powers_obj', data=''),
             dcc.Store(id='reaches_obj', data=''),
-            dcc.Store(id='reductions_obj', data=''),
+            dcc.Store(id='custom_reductions_obj', data=''),
             dcc.Store(id='base_reductions_obj', data=''),
             ]
         )
@@ -626,7 +672,36 @@ def update_reaches_option(hideout, catch_id):
 
 
 @callback(
-        Output('reductions_obj', 'data'), Output('base_reductions_obj', 'data'),
+        Output('base_reductions_obj', 'data'),
+        Input('catch_id', 'value'),
+        prevent_initial_call=True
+        )
+# @cache.memoize()
+def update_base_reductions_obj(catch_id):
+    data = ''
+
+    if catch_id is not None:
+        with booklet.open(rivers_lc_clean_path, 'r') as f:
+            data = encode_obj(f[int(catch_id)])
+
+    return data
+
+
+@callback(
+    Output("dl_poly", "data"),
+    Input("dl_btn", "n_clicks"),
+    State('catch_id', 'value'),
+    prevent_initial_call=True,
+    )
+def download_lc(n_clicks, catch_id):
+    if isinstance(catch_id, str):
+        path = rivers_catch_lc_dir.joinpath(rivers_catch_lc_gpkg_str.format(catch_id))
+
+        return dcc.send_file(path)
+
+
+@callback(
+        Output('custom_reductions_obj', 'data'), Output('upload_error_text', 'children'),
         Input('upload_data_rivers', 'contents'),
         State('upload_data_rivers', 'filename'),
         State('catch_id', 'value'),
@@ -635,28 +710,29 @@ def update_reaches_option(hideout, catch_id):
 # @cache.memoize()
 def update_land_reductions(contents, filename, catch_id):
     data = None
-    base_data = None
+    error_text = ''
 
     if catch_id is not None:
         if contents is not None:
             data = parse_gis_file(contents, filename)
 
-            if isinstance(data, str):
-                with booklet.open(rivers_lc_clean_path, 'r') as f:
-                    base_data = encode_obj(f[int(catch_id)])
+            if isinstance(data, list):
+                error_text = data[0]
+                data = None
 
-    return data, base_data
+    return data, error_text
 
 
 @callback(
     Output('reaches_obj', 'data'), Output('process_text', 'children'),
     Input('process_reductions_rivers', 'n_clicks'),
-    Input('catch_id', 'value'),
+    Input('base_reductions_obj', 'data'),
     [
-     State('reductions_obj', 'data')
-     ],
+      State('catch_id', 'value'),
+      State('custom_reductions_obj', 'data'),
+      ],
     prevent_initial_call=True)
-def update_reach_reductions(click, catch_id, reductions_obj):
+def update_reach_reductions(click, base_reductions_obj, catch_id, reductions_obj):
     """
 
     """
@@ -664,165 +740,75 @@ def update_reach_reductions(click, catch_id, reductions_obj):
 
     if (trig == 'process_reductions_rivers'):
         if isinstance(catch_id, str) and (reductions_obj != '') and (reductions_obj is not None):
-            plan_file = decode_obj(reductions_obj)
-            props = calc_river_reach_reductions(catch_id, plan_file)
-            data = encode_obj(props)
+            red1 = xr.open_dataset(rivers_reductions_model_path)
+
+            with booklet.open(rivers_reach_mapping_path) as f:
+                branches = f[int(catch_id)][int(catch_id)]
+
+            base_props = red1.sel(nzsegment=branches)
+
+            new_reductions = decode_obj(reductions_obj)
+            base_reductions = decode_obj(base_reductions_obj)
+
+            new_props = calc_river_reach_reductions(catch_id, new_reductions, base_reductions)
+            new_props1 = new_props.combine_first(base_props).sortby('nzsegment')
+            data = encode_obj(new_props1)
             text_out = 'Routing complete'
         else:
             data = ''
             text_out = 'Not all inputs have been selected'
     else:
-        red1 = xr.open_dataset(rivers_reductions_model_path)
+        if isinstance(catch_id, str):
+            red1 = xr.open_dataset(rivers_reductions_model_path)
 
-        with booklet.open(rivers_reach_mapping_path) as f:
-            branches = f[int(catch_id)][int(catch_id)]
+            with booklet.open(rivers_reach_mapping_path) as f:
+                branches = f[int(catch_id)][int(catch_id)]
 
-        red2 = red1.sel(nzsegment=branches)
+            base_props = red1.sel(nzsegment=branches).sortby('nzsegment')
 
-        data = encode_obj(red2)
-        text_out = ''
+            data = encode_obj(base_props)
+            text_out = ''
+        else:
+            data = ''
+            text_out = ''
 
     return data, text_out
 
 
-# @callback(
-#         Output('reductions_obj', 'data'),
-#         Input('catch_id', 'value'),
-#         Input('upload_data_rivers', 'contents'),
-#         State('upload_data_rivers', 'filename'),
-#         prevent_initial_call=True
-#         )
-# # @cache.memoize()
-# def update_reductions_obj(catch_id, contents, filename):
-#     if contents is not None:
-#         data = parse_gis_file(contents, filename)
-
-#         if isinstance(data, str):
-#             return data, None
-#     elif catch_id is not None:
-#         with booklet.open(rivers_lc_clean_path, 'r') as f:
-#             data = encode_obj(f[int(catch_id)])
-
-#         return data, 'default_reductions'
-#     else:
-#         return '', None
-
-
-# @callback(
-#         Output('red_disclaimer_rivers', 'children'),
-#         Input('upload_data_rivers', 'contents'),
-#         Input('demo_data_rivers', 'n_clicks'),
-#         # Input('map_checkboxes_rivers', 'value'),
-#         prevent_initial_call=True
-#         )
-# def update_reductions_diclaimer(contents, n_clicks, map_checkboxes):
-#     if (n_clicks is None) or (contents is not None):
-#         return ''
-#     elif 'reductions_poly' in map_checkboxes:
-#         return '''* Areas on the map without polygon reductions are considered to have 0% reductions.'''
-#     else:
-#         return ''
-
-
-# @callback(
-#         Output('reductions_poly', 'data'),
-#         Input('reductions_obj', 'data'),
-#         Input('map_checkboxes_rivers', 'value'),
-#         Input('col_name', 'value'),
-#         )
-# # @cache.memoize()
-# def update_reductions_poly(reductions_obj, map_checkboxes, col_name):
-#     # print(reductions_obj)
-#     # print(col_name)
-#     if (reductions_obj != '') and (reductions_obj is not None) and ('reductions_poly' in map_checkboxes):
-
-#         data = decode_obj(reductions_obj).to_crs(4326)
-
-#         if isinstance(col_name, str):
-#             data = data[data[col_name] > 0]
-#             data[col_name] = data[col_name].astype(str).str[:] + '% reduction'
-#             data.rename(columns={col_name: 'tooltip'}, inplace=True)
-
-#         gbuf = dlx.geojson_to_geobuf(data.__geo_interface__)
-
-#         return gbuf
-#     else:
-#         return ''
-
-
-# @callback(
-#         Output('col_name', 'options'),
-#         Input('reductions_obj', 'data')
-#         )
-# # @cache.memoize()
-# def update_column_options(reductions_obj):
-#     # print(reductions_obj)
-#     if (reductions_obj != '') and (reductions_obj is not None):
-#         data = decode_obj(reductions_obj)
-#         cols = [{'label': col, 'value': col} for col in data.columns if (col not in ['geometry', 'id', 'fid', 'OBJECTID']) and np.issubdtype(data[col].dtype, np.number)]
-
-#         return cols
-#     else:
-#         return []
-
-
-# @callback(
-#     Output('reaches_obj', 'data'), Output('process_text', 'children'),
-#     Input('process', 'n_clicks'),
-#     [State('catch_id', 'value'), State('reductions_obj', 'data'), State('col_name', 'value')],
-#     prevent_initial_call=True)
-# def update_reach_data(click, catch_id, reductions_obj, col_name):
-#     """
-
-#     """
-#     if isinstance(catch_id, str) and (reductions_obj != '') and (reductions_obj is not None) and isinstance(col_name, str):
-#         plan_file = decode_obj(reductions_obj)
-#         props = calc_river_reach_reductions(catch_id, plan_file, reduction_col=col_name)
-#         data = encode_obj(props)
-#         text_out = 'Routing complete'
-#     else:
-#         data = ''
-#         text_out = 'Not all inputs have been selected'
-
-#     return data, text_out
-
-
 @callback(
-    Output('props_obj', 'data'),
-    [Input('reaches_obj', 'data'), Input('indicator', 'value'), Input('time_period', 'value'), Input('freq', 'value')],
+    Output('powers_obj', 'data'),
+    [Input('reaches_obj', 'data'), Input('indicator_rivers', 'value'), Input('time_period', 'value'), Input('freq', 'value'), Input('Reductions_slider', 'value')],
     [State('catch_id', 'value')]
     )
-def update_props_data(reaches_obj, indicator, n_years, n_samples_year, catch_id):
+def update_props_data(reaches_obj, indicator, n_years, n_samples_year, prop_red, catch_id):
     """
 
     """
-    if (reaches_obj != '') and (reaches_obj is not None) and isinstance(n_years, int) and isinstance(n_samples_year, int) and isinstance(indicator, str):
-        props = decode_obj(reaches_obj)
+    if (reaches_obj != '') and (reaches_obj is not None) and isinstance(indicator, str):
+        # print('triggered')
 
-        n_samples = n_samples_year*n_years
+        ind_name = indicator_dict[indicator]
+
+        props = decode_obj(reaches_obj)[[ind_name]].sel(reduction_perc=prop_red, drop=True)
+
+        n_samples = int(n_samples_year)*int(n_years)
 
         power_data = xr.open_dataset(river_power_model_path, engine='h5netcdf')
 
         with booklet.open(rivers_reach_mapping_path) as f:
             branches = f[int(catch_id)][int(catch_id)]
 
-        power_data1 = power_data.sel(indicator=indicator, nzsegment=branches, n_samples=n_samples).load().sortby('nzsegment').copy()
+        power_data1 = power_data.sel(indicator=indicator, nzsegment=branches, n_samples=n_samples, drop=True).load().sortby('nzsegment').copy()
         power_data.close()
         del power_data
 
-        props['conc_perc'] = 100 - props.reduction
+        conc_perc = 100 - props[ind_name]
 
-        props = props.assign(power_modelled=(('nzsegment'), power_data1.sel(conc_perc=props.conc_perc, drop=True).power.values.astype('int8')))
+        new_powers = props.assign(power_modelled=(('nzsegment'), power_data1.sel(conc_perc=conc_perc).power.values.astype('int8'))).rename({ind_name: 'reduction'})
+        new_powers['nzsegment'] = new_powers['nzsegment'].astype('int32')
+        new_powers['reduction'] = new_powers['reduction'].astype('int8')
 
-        # power = []
-        # for reach in props.nzsegment:
-        #     p = int(props.loc[{'nzsegment': reach}].conc_perc.values)
-        #     power.append(int(power_data1.sel(conc_perc=p, nzsegment=reach).power.values))
-
-        # props = props.assign(power=(('nzsegment'), np.array(power, dtype='int8')))
-        # props['power'] = xr.where((props.reduction >= 5), props['power'], 0)
-
-        data = encode_obj(props)
+        data = encode_obj(new_powers)
     else:
         data = ''
 
@@ -831,15 +817,15 @@ def update_props_data(reaches_obj, indicator, n_years, n_samples_year, catch_id)
 
 @callback(
     Output('reach_map', 'hideout'),
-    [Input('props_obj', 'data')],
+    [Input('powers_obj', 'data')],
     prevent_initial_call=True
     )
-def update_hideout(props_obj):
+def update_hideout(powers_obj):
     """
 
     """
-    if (props_obj != '') and (props_obj is not None):
-        props = decode_obj(props_obj)
+    if (powers_obj != '') and (powers_obj is not None):
+        props = decode_obj(powers_obj)
 
         color_arr = pd.cut(props.power_modelled.values, bins, labels=colorscale, right=False).tolist()
 
@@ -852,12 +838,12 @@ def update_hideout(props_obj):
 
 @callback(
     Output("info", "children"),
-    [Input('props_obj', 'data'),
-      Input('reductions_obj', 'data'),
+    [Input('powers_obj', 'data'),
+      # Input('reductions_obj', 'data'),
       # Input('map_checkboxes_rivers', 'value'),
       Input("reach_map", "click_feature")],
     )
-def update_map_info(props_obj, reductions_obj, feature):
+def update_map_info(powers_obj, feature):
     """
 
     """
@@ -866,10 +852,10 @@ def update_map_info(props_obj, reductions_obj, feature):
     # if (reductions_obj != '') and (reductions_obj is not None) and ('reductions_poly' in map_checkboxes):
     #     info = info + """\n\nHover over the polygons to see reduction %"""
 
-    if (props_obj != '') and (props_obj is not None):
+    if (powers_obj != '') and (powers_obj is not None):
         if feature is not None:
             feature_id = int(feature['id'])
-            props = decode_obj(props_obj)
+            props = decode_obj(powers_obj)
 
             if feature_id in props.nzsegment:
 
@@ -888,43 +874,29 @@ def update_map_info(props_obj, reductions_obj, feature):
     return info
 
 
-# @callback(
-#     Output('dl_btn_div', 'children'),
-#     Input('reductions_obj', 'data'),
-#     prevent_initial_call=True,
-#     )
-# def make_download_visible(reductions_obj):
-#     """
-
-#     """
-#     if (reductions_obj != '') and (reductions_obj is not None):
-#         return html.Button("Download reductions polygons", id='dl_btn')
-#     else:
-#         return []
-
-
 @callback(
-    Output("dl_poly", "data"),
-    Input("dl_btn", "n_clicks"),
+    Output("dl_power_rivers", "data"),
+    Input("dl_btn_power_rivers", "n_clicks"),
     State('catch_id', 'value'),
-    State('reductions_obj', 'data'),
+    State('powers_obj', 'data'),
+    State('indicator_rivers', 'value'),
+    State('time_period', 'value'),
+    State('freq', 'value'),
     prevent_initial_call=True,
     )
-def download_lc(n_clicks, catch_id, reductions_obj):
-    # data = decode_obj(reductions_obj)
-    # io1 = io.BytesIO()
-    # data.to_file(io1, driver='GPKG')
-    # io1.seek(0)
+def download_power(n_clicks, catch_id, powers_obj, indicator, n_years, n_samples_year):
 
-    if isinstance(catch_id, str) and (reductions_obj != '') and (reductions_obj is not None):
-        path = rivers_catch_lc_dir.joinpath(rivers_catch_lc_gpkg_str.format(catch_id))
+    if isinstance(catch_id, str) and (powers_obj != '') and (powers_obj is not None):
+        power_data = decode_obj(powers_obj)
 
-        return dcc.send_file(path)
+        df1 = power_data.to_dataframe().reset_index()
+        df1['indicator'] = indicator_dict[indicator]
+        df1['n_years'] = n_years
+        df1['n_samples_per_year'] = n_samples_year
 
-    # return dict(content="Hello world!", filename="hello.txt")
+        df2 = df1.set_index(['indicator', 'n_years', 'n_samples_per_year', 'nzsegment']).sort_index()
 
-    # return {'base64': True, 'content': codecs.encode(io1.read(), encoding='base64').decode(), 'filename': 'test1.gpkg'}
-
+        return dcc.send_data_frame(df2.to_csv, f"river_power_{catch_id}.csv")
 
 
 

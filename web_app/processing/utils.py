@@ -27,8 +27,8 @@ import tempfile
 ##############################################
 ### Parameters
 
-base_path = '/media/nvme1/data/OLW/web_app'
-# base_path = '/home/mike/data/OLW/web_app'
+# base_path = '/media/nvme1/data/OLW/web_app'
+base_path = '/home/mike/data/OLW/web_app'
 # %cd '/home/mike/data/OLW/web_app'
 
 base_path = pathlib.Path(base_path)
@@ -83,7 +83,7 @@ lc_red_feather_path = base_path.joinpath('land_cover_reductions.feather')
 
 ### Rivers
 sites_loc_csv = base_path.joinpath('olw_river_sites_locations.csv')
-sites_rec_csv = base_path.joinpath('olw_river_sites_rec.csv')
+sites_rec_csv = base_path.joinpath('lawa_to_nzsegment.csv')
 sites_names_csv = base_path.joinpath('LAWARiverSiteswithRCIDs.csv')
 
 ## concentrations
