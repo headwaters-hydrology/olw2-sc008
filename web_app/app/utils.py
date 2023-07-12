@@ -13,17 +13,14 @@ import pandas as pd
 import numpy as np
 # import requests
 import xarray as xr
-import orjson
 # from shapely.geometry import shape, mapping
 # import tethysts
 import os
 from gistools import vector
 import geopandas as gpd
-from scipy import stats
 import base64
 from dash import dcc, html
 import pathlib
-import shelflet
 # import plotly.graph_objs as go
 
 #####################################
@@ -33,13 +30,8 @@ import shelflet
 # base_url = 'http://tethys-api-int:80/tethys/data/'
 # base_url = 'https://api.tethys-ts.xyz/tethys/data/'
 # base_url = 'http://tethys-api-ext:80/tethys/data/'
-assets_path = pathlib.Path(os.path.realpath(os.path.dirname(__file__))).joinpath('assets')
+# assets_path = pathlib.Path(os.path.realpath(os.path.dirname(__file__))).joinpath('assets')
 
-river_catch_path = assets_path.joinpath('rivers_catchments.shelf')
-river_reach_mapping_path = assets_path.joinpath('rivers_reaches_mapping.self')
-
-lakes_reaches_mapping_path = assets_path.joinpath('lakes_reaches_mapping.shelf')
-lakes_catches_minor_path = assets_path.joinpath('lakes_catchments_minor.shelf')
 
 #####################################
 ### Functions
@@ -175,119 +167,6 @@ def seasonal_sine(n_samples_year, n_years):
     s2 = np.tile(s1, n_years)
 
     return s2
-
-
-def calc_river_reach_reductions(catch_id, plan_file, reduction_col='reduction'):
-    """
-    This assumes that the concentration is the same throughout the entire greater catchment. If it's meant to be different, then each small catchment must be set and multiplied by the area to weight the contribution downstream.
-    """
-    with shelflet.open(river_catch_path, 'r') as f:
-        c1 = f[str(catch_id)]
-
-    with shelflet.open(river_reach_mapping_path, 'r') as f:
-        branches = f[str(catch_id)]
-
-    plan1 = plan_file[[reduction_col, 'geometry']].to_crs(2193)
-    # c1 = read_pkl_zstd(os.path.join(base_path, 'catchments', '{}.pkl.zst'.format(catch_id)), True)
-
-    c2 = vector.sjoin(c1, plan1, how='left').drop('index_right', axis=1)
-    c2.loc[c2[reduction_col].isnull(), reduction_col] = 0
-    c2['s_area'] = c2.area
-
-    c2['combo_area'] = c2.groupby('nzsegment')['s_area'].transform('sum')
-
-    c2['prop'] = c2[reduction_col]*(c2['s_area']/c2['combo_area'])
-
-    c3 = c2.groupby('nzsegment')['prop'].sum()
-    c4 = c1.merge(c3.reset_index(), on='nzsegment')
-    area = c4.area
-    c4['base_area'] = area * 100
-    c4['prop_area'] = area * c4['prop']
-
-    c5 = c4[['nzsegment', 'base_area', 'prop_area']].set_index('nzsegment').copy()
-    c5 = {r: list(v.values()) for r, v in c5.to_dict('index').items()}
-
-    # branches = read_pkl_zstd(os.path.join(base_path, 'reach_mappings', '{}.pkl.zst'.format(catch_id)), True)
-
-    # props = {}
-    # for reach, branch in branches.items():
-    #     t_area = []
-    #     a_append = t_area.append
-    #     prop_area = []
-    #     p_append = prop_area.append
-
-    #     for b in branch:
-    #         t_area1, prop_area1 = c5[b]
-    #         a_append(t_area1)
-    #         p_append(prop_area1)
-
-    #     p1 = (np.sum(prop_area)/np.sum(t_area))
-    #     props[reach] = p1
-
-    props_index = np.array(list(branches.keys()), dtype='int32')
-    props_val = np.zeros(props_index.shape)
-    for h, reach in enumerate(branches):
-        branch = branches[reach]
-        t_area = np.zeros(branch.shape)
-        prop_area = t_area.copy()
-
-        for i, b in enumerate(branch):
-            t_area1, prop_area1 = c5[b]
-            t_area[i] = t_area1
-            prop_area[i] = prop_area1
-
-        p1 = (np.sum(prop_area)/np.sum(t_area))
-        props_val[h] = p1
-
-    props = xr.Dataset(data_vars={'reduction': (('reach'), (np.round(props_val*100*0.5)*2).astype('int8')) # Round to nearest even number
-                                  },
-                        coords={'reach': props_index}
-                        )
-    # props = xr.Dataset(data_vars={'reduction': (('reach'), props_val) # Round to nearest even number
-    #                               },
-    #                    coords={'reach': props_index}
-    #                    )
-
-    ## Filter out lower stream orders
-    so3 = c1.loc[c1.stream_order > 2, 'nzsegment'].to_numpy()
-    props = props.sel(reach=so3)
-
-    return props
-
-
-def calc_lake_reach_reductions(lake_id, plan_file, reduction_col='reduction'):
-    """
-    This assumes that the concentration is the same throughout the entire greater catchment. If it's meant to be different, then each small catchment must be set and multiplied by the area to weight the contribution downstream.
-    """
-    with shelflet.open(lakes_catches_minor_path, 'r') as f:
-        c1 = f[str(lake_id)]
-
-    # with shelflet.open(lakes_reaches_mapping_path, 'r') as f:
-    #     branches = f[str(lake_id)]
-
-    plan1 = plan_file[[reduction_col, 'geometry']].to_crs(2193)
-    # c1 = read_pkl_zstd(os.path.join(base_path, 'catchments', '{}.pkl.zst'.format(catch_id)), True)
-
-    c2 = vector.sjoin(c1, plan1, how='left').drop('index_right', axis=1)
-    c2.loc[c2[reduction_col].isnull(), reduction_col] = 0
-    c2['s_area'] = c2.area
-
-    c2['combo_area'] = c2.groupby('nzsegment')['s_area'].transform('sum')
-
-    c2['prop'] = c2[reduction_col]*(c2['s_area']/c2['combo_area'])
-
-    c3 = c2.groupby('nzsegment')['prop'].sum()
-    c4 = c1.merge(c3.reset_index(), on='nzsegment')
-    area = c4.area
-    c4['base_area'] = area * 100
-    c4['prop_area'] = area * c4['prop']
-
-    c5 = c4[['nzsegment', 'base_area', 'prop_area']].set_index('nzsegment').copy()
-
-    c6 = c5.sum()
-    props = (np.round((c6.prop_area/c6.base_area)*100*0.5)*2).astype('int8')
-
-    return props
 
 
 def xr_concat(datasets):

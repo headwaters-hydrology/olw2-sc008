@@ -44,7 +44,7 @@ def rivers_process_power_modelled():
     conc0a = conc0.set_index('nzsegment').loc[:, [col for col in conc0.columns if error_name in col]].stack()
     conc0a.name = 'error'
     conc0b = conc0a.reset_index()
-    conc0b['indicator'] = conc0b['level_1'].str[:2]
+    conc0b['indicator'] = conc0b['level_1'].apply(lambda x: x.split(error_name)[0])
     conc0b = conc0b.drop('level_1', axis=1)
 
     conc1 = conc0b.groupby(['indicator', 'nzsegment']).mean().reset_index()
@@ -116,6 +116,7 @@ def rivers_process_power_modelled():
         error_list.append(river_sims1)
 
     combo = utils.xr_concat(error_list)
+    combo['power'].encoding = {'scale_factor': 1, '_FillValue': -99, 'dtype': 'int8'}
 
     hdf5tools.xr_to_hdf5(combo, utils.river_power_model_path)
 

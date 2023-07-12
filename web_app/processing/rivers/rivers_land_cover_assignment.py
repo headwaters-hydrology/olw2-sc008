@@ -92,7 +92,7 @@ def rivers_land_cover():
         for i, lc2 in lc_dict.items():
             land_cover_dict[i] = lc2
 
-    with booklet.open(utils.catch_lc_pbf_path, 'n', value_serializer='zstd', key_serializer='uint4', n_buckets=1600) as lc_gbuf:
+    with booklet.open(utils.catch_lc_pbf_path, 'n', value_serializer=None, key_serializer='uint4', n_buckets=1600) as lc_gbuf:
         for i, lc2 in lc_dict.items():
             gdf = lc2.to_crs(4326)
             gjson = orjson.loads(gdf.to_json())
@@ -128,7 +128,13 @@ def rivers_land_cover():
 # db[9259625]
 
 
-
+# with booklet.open(utils.catch_lc_path) as lc_dict:
+#     with booklet.open(utils.catch_lc_pbf_path, 'n', value_serializer=None, key_serializer='uint4', n_buckets=1600) as lc_gbuf:
+#         for i, lc2 in lc_dict.items():
+#             gdf = lc2.to_crs(4326)
+#             gjson = orjson.loads(gdf.to_json())
+#             gbuf = geobuf.encode(gjson)
+#             lc_gbuf[i] = gbuf
 
 
 
