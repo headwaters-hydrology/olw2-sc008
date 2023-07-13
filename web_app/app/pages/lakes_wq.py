@@ -53,6 +53,7 @@ app_base_path = pathlib.Path('/assets')
 
 lakes_power_combo_path = assets_path.joinpath('lakes_power_combo.h5')
 # lakes_power_moni_path = assets_path.joinpath('lakes_power_monitored.h5')
+lakes_reductions_model_path = assets_path.joinpath('rivers_reductions_modelled.h5')
 
 lakes_pbf_path = app_base_path.joinpath('lakes_points.pbf')
 lakes_poly_gbuf_path = assets_path.joinpath('lakes_poly.blt')

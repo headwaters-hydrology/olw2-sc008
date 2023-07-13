@@ -33,12 +33,12 @@ base_path = '/home/mike/data/OLW/web_app'
 
 base_path = pathlib.Path(base_path)
 
-rec_rivers_feather = '/media/nvme1/data/NIWA/REC25_rivers/rec25_rivers_clean.feather'
-rec_catch_feather = '/media/nvme1/data/NIWA/REC25_watersheds/rec25_watersheds_clean.feather'
+rec_rivers_feather = '/home/mike/data/NIWA/REC25_rivers/rec25_rivers_clean.feather'
+rec_catch_feather = '/home/mike/data/NIWA/REC25_watersheds/rec25_watersheds_clean.feather'
 
-rc_bounds_gpkg = '/media/nvme1/data/statsnz/regional-council-2023-clipped-generalised.gpkg'
+rc_bounds_gpkg = '/home/mike/data/statsnz/regional-council-2023-clipped-generalised.gpkg'
 
-nzrec_data_path = '/media/nvme1/git/nzrec/data'
+nzrec_data_path = '/home/mike/git/nzrec/data'
 
 segment_id_col = 'nzsegment'
 
@@ -98,7 +98,7 @@ river_errors_moni_path = base_path.joinpath('rivers_errors_monitored.csv')
 river_sites_path = base_path.joinpath('olw_river_sites.gpkg')
 
 ## Flows and loads
-# river_flows_rec_path = assets_path.joinpath('rivers_flows_rec.blt')
+river_flows_rec_path = output_path.joinpath('rivers_flows_rec.blt')
 # river_flows_area_path = assets_path.joinpath('rivers_flows_area.blt')
 
 river_loads_rec_path = assets_path.joinpath('rivers_loads_rec.blt')
@@ -174,8 +174,11 @@ lakes_sims_h5_path = lakes_sims_path.joinpath('lakes_sims.h5')
 lakes_power_combo_path = assets_path.joinpath('lakes_power_combo.h5')
 lakes_power_model_path = assets_path.joinpath('lakes_power_modelled.h5')
 lakes_power_moni_path = assets_path.joinpath('lakes_power_monitored.h5')
+lakes_reductions_model_path = assets_path.joinpath('lakes_reductions_modelled.h5')
 
 lakes_lc_path = assets_path.joinpath('lakes_catch_lc.blt')
+
+lakes_loads_rec_path = assets_path.joinpath('lakes_loads_rec.blt')
 
 ## Model data
 lakes_data_path = base_path.joinpath('lakes_wq_data.csv')
@@ -546,6 +549,107 @@ def calc_river_reach_reductions(feature, catch_id, reduction_ratios=range(10, 10
                        coords={'nzsegment': props_index,
                                 'reduction_perc': red_ratios}
                        )
+
+    # file1 = tempfile.NamedTemporaryFile()
+    # hdf5tools.xr_to_hdf5(props, file1)
+    # props = props.assign_coords(catch_id=catch_id).expand_dims('catch_id').sortby(['nzsegment', 'reduction_perc'])
+
+    return props
+
+
+def calc_lakes_reach_reductions(feature, lake_id, reduction_ratios=range(10, 101, 10)):
+    """
+
+    """
+    print(lake_id)
+
+    red_ratios = np.array(list(reduction_ratios), dtype='int8')
+    reduction_cols = indicators[feature]
+
+    with booklet.open(lakes_catches_minor_path) as f:
+        catches1 = f[int(lake_id)]
+
+    with booklet.open(lakes_reaches_mapping_path) as f:
+        branches = f[int(lake_id)]
+
+    with booklet.open(lakes_loads_rec_path) as f:
+        loads = f[int(lake_id)][reduction_cols]
+
+    with booklet.open(lakes_lc_path) as f:
+        reductions = f[int(lake_id)]
+
+    plan1 = reductions[reduction_cols + ['geometry']]
+    # plan1 = plan0.to_crs(2193)
+
+    ## Calc reductions per nzsegment given sparse geometry input
+    c2 = plan1.overlay(catches1)
+    c2['sub_area'] = c2.area
+
+    c2['combo_area'] = c2.groupby('nzsegment')['sub_area'].transform('sum')
+
+    c2b = c2.copy()
+    catches1['tot_area'] = catches1.area
+    catches1 = catches1.drop('geometry', axis=1)
+
+    results_list = []
+    for col in reduction_cols:
+        c2b['prop_reductions'] = c2b[col]*(c2b['sub_area']/c2['combo_area'])
+        c3 = c2b.groupby('nzsegment')[['prop_reductions', 'sub_area']].sum()
+
+        ## Add in missing areas and assume that they are 0 reductions
+        c4 = pd.merge(catches1, c3, on='nzsegment', how='left')
+        c4.loc[c4['prop_reductions'].isnull(), ['prop_reductions', 'sub_area']] = 0
+        c4['reduction'] = (c4['prop_reductions'] * c4['sub_area'])/c4['tot_area']
+
+        c5 = c4[['nzsegment', 'reduction']].rename(columns={'reduction': col}).groupby('nzsegment').sum().round(2)
+        results_list.append(c5)
+
+    results = pd.concat(results_list, axis=1)
+
+    ## Scale the reductions
+    props_val = np.zeros((len(red_ratios)))
+
+    reach_red = {}
+    for ind in reduction_cols:
+        c4 = results[[ind]].merge(loads[[ind]], on='nzsegment')
+
+        c4['base'] = c4[ind + '_y'] * 100
+
+        for r, ratio in enumerate(red_ratios):
+            c4['prop'] = c4[ind + '_y'] * c4[ind + '_x'] * ratio * 0.01
+            c4b = c4[['base', 'prop']]
+            c5 = {r: list(v.values()) for r, v in c4b.to_dict('index').items()}
+
+            branch = branches
+            t_area = np.zeros(branch.shape)
+            prop_area = t_area.copy()
+
+            for i, b in enumerate(branch):
+                if b in c5:
+                    t_area1, prop_area1 = c5[b]
+                    t_area[i] = t_area1
+                    prop_area[i] = prop_area1
+                else:
+                    prop_area[i] = 0
+
+            t_area_sum = np.sum(t_area)
+            if t_area_sum <= 0:
+                props_val[r] = 0
+            else:
+                p1 = np.sum(prop_area)/t_area_sum
+                props_val[r] = p1
+
+            reach_red[ind] = np.round(props_val*100).astype('int8') # Round to nearest even number
+
+    # props = xr.Dataset(data_vars={ind: (('reduction_perc', 'LFENZID'), values)  for ind, values in reach_red.items()},
+    #                    coords={'LFENZID': lake_id,
+    #                             'reduction_perc': red_ratios}
+    #                    )
+    props = xr.Dataset(data_vars={ind: (('reduction_perc'), values)  for ind, values in reach_red.items()},
+                       coords={
+                                'reduction_perc': red_ratios}
+                       )
+    props = props.assign_coords(LFENZID=np.array(lake_id, dtype='int32')).expand_dims('LFENZID')
 
     # file1 = tempfile.NamedTemporaryFile()
     # hdf5tools.xr_to_hdf5(props, file1)

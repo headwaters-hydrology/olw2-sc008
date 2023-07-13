@@ -157,11 +157,14 @@ colorscale = ['#808080', '#FED976', '#FD8D3C', '#E31A1C', '#800026']
 # ctg.insert(0, 'NA')
 ctg = ["{}%+".format(cls, classes[i + 1]) for i, cls in enumerate(classes[:-1])] + ["{}%+".format(classes[-1])]
 # ctg.insert(0, 'NA')
-# colorbar = dlx.categorical_colorbar(categories=ctg, colorscale=colorscale, width=300, height=30, position="bottomleft")
-indices = list(range(len(ctg) + 1))
-colorbar_power = dl.Colorbar(id='colorbar', min=0, max=len(ctg), classes=indices, colorscale=colorscale, tooltip=True, tickValues=[item + 0.5 for item in indices[:-1]], tickText=ctg, width=300, height=30, position="bottomright")
-colorbar_base = dl.Colorbar(id='colorbar', style={'opacity': 0})
+
+## Colorbar
+colorbar_base = dl.Colorbar(style={'opacity': 0})
 base_reach_style = dict(weight=4, opacity=1, color='white')
+
+indices = list(range(len(ctg) + 1))
+colorbar_power = dl.Colorbar(min=0, max=len(ctg), classes=indices, colorscale=colorscale, tooltip=True, tickValues=[item + 0.5 for item in indices[:-1]], tickText=ctg, width=300, height=30, position="bottomright")
+
 
 info = dcc.Markdown(id="info", className="info", style={"position": "absolute", "top": "10px", "right": "160px", "z-index": "1000"})
 # info = html.Div(id="info", className="info", style={"position": "absolute", "top": "10px", "right": "10px", "z-index": "1000"})
@@ -602,7 +605,9 @@ def layout():
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='reach_map', options={}, hideout={}, hoverStyle=arrow_function(dict(weight=10, color='black', dashArray='')))), name='Rivers', checked=True),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='sites_points', options=dict(pointToLayer=sites_points_handle), hideout=rivers_points_hideout)), name='Monitoring sites', checked=True),
                                     ]),
-                                colorbar_base,
+                                colorbar_power,
+                                # html.Div(id='colorbar', children=colorbar_base),
+                                # dmc.Group(id='colorbar', children=colorbar_base),
                                 info
                                                 ], style={'width': '100%', 'height': 700, 'margin': "auto", "display": "block"}, id="map2"),
 
@@ -852,6 +857,22 @@ def update_powers_data(reaches_obj, indicator, n_years, n_samples_year, prop_red
     return data
 
 
+# @callback(
+#     Output('colorbar', 'children'),
+#     Input('powers_obj', 'data'),
+#     prevent_initial_call=True
+#     )
+# def update_colorbar(powers_obj):
+#     """
+
+#     """
+#     if (powers_obj != '') and (powers_obj is not None):
+#         # print('trigger')
+#         return colorbar_power
+#     else:
+#         return colorbar_base
+
+
 @callback(
     Output('reach_map', 'hideout'),
     Output('sites_points', 'hideout'),
@@ -915,14 +936,13 @@ def update_map_info(powers_obj, reach_feature, sites_feature):
 
         if trig == 'reach_map':
             # print(reach_feature)
-            # print(sites_feature)
             feature_id = int(reach_feature['id'])
 
             if feature_id in props.nzsegment:
 
                 reach_data = props.sel(nzsegment=feature_id)
 
-                info_str = """\n\nReduction: {red}%\n\nLikelihood of observing a reduction (power): {t_stat}%""".format(red=int(reach_data.reduction), t_stat=int(reach_data.power_modelled))
+                info_str = """\n\nnzsegment: {seg}\n\nReduction: {red}%\n\nLikelihood of observing a reduction (power): {t_stat}%""".format(red=int(reach_data.reduction), t_stat=int(reach_data.power_modelled), seg=feature_id)
 
                 info = info + info_str
 
@@ -930,12 +950,13 @@ def update_map_info(powers_obj, reach_feature, sites_feature):
                 info = info + """\n\nClick on a reach to see info"""
         elif trig == 'sites_points':
             feature_id = int(sites_feature['properties']['nzsegment'])
+            # print(sites_feature)
 
             if feature_id in props.nzsegment:
 
                 reach_data = props.sel(nzsegment=feature_id)
 
-                info_str = """\n\nReduction: {red}%\n\nLikelihood of observing a reduction (power): {t_stat}%""".format(red=int(reach_data.reduction), t_stat=int(reach_data.power_monitored))
+                info_str = """\n\nnzsegment: {seg}\n\nSite name: {site}\n\nReduction: {red}%\n\nLikelihood of observing a reduction (power): {t_stat}%""".format(red=int(reach_data.reduction), t_stat=int(reach_data.power_monitored), seg=feature_id, site=sites_feature['id'])
 
                 info = info + info_str
 
