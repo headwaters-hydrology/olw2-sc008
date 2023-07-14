@@ -21,55 +21,130 @@ import geopandas as gpd
 import base64
 from dash import dcc, html
 import pathlib
+import booklet
+import dash_leaflet as dl
+from dash_extensions.javascript import assign, arrow_function
 # import plotly.graph_objs as go
 
 #####################################
-### Parameters
+#### Parameters
 
-# base_url = 'https://api-int.tethys-ts.xyz/tethys/data/'
-# base_url = 'http://tethys-api-int:80/tethys/data/'
-# base_url = 'https://api.tethys-ts.xyz/tethys/data/'
-# base_url = 'http://tethys-api-ext:80/tethys/data/'
-# assets_path = pathlib.Path(os.path.realpath(os.path.dirname(__file__))).joinpath('assets')
+### Paths
+assets_path = pathlib.Path(os.path.realpath(os.path.dirname(__file__))).joinpath('assets')
+
+app_base_path = pathlib.Path('/assets')
+
+## Rivers
+river_power_model_path = assets_path.joinpath('rivers_reaches_power_modelled.h5')
+river_power_moni_path = assets_path.joinpath('rivers_reaches_power_monitored.h5')
+rivers_reductions_model_path = assets_path.joinpath('rivers_reductions_modelled.h5')
+rivers_catch_pbf_path = app_base_path.joinpath('rivers_catchments.pbf')
+
+rivers_reach_gbuf_path = assets_path.joinpath('rivers_reaches.blt')
+# rivers_loads_path = assets_path.joinpath('rivers_reaches_loads.h5')
+# rivers_flows_path = assets_path.joinpath('rivers_flows_rec.blt')
+rivers_lc_clean_path = assets_path.joinpath('rivers_catch_lc.blt')
+rivers_catch_path = assets_path.joinpath('rivers_catchments_minor.blt')
+rivers_reach_mapping_path = assets_path.joinpath('rivers_reaches_mapping.blt')
+rivers_sites_path = assets_path.joinpath('rivers_sites_catchments.blt')
+river_loads_rec_path = assets_path.joinpath('rivers_loads_rec.blt')
+
+rivers_catch_lc_dir = assets_path.joinpath('rivers_land_cover_gpkg')
+rivers_catch_lc_gpkg_str = '{}_rivers_land_cover_reductions.gpkg'
+
+### Layout
+map_height = 700
+center = [-41.1157, 172.4759]
+
+attribution = 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+
+freq_mapping = {12: 'monthly', 26: 'fortnightly', 52: 'weekly', 104: 'twice weekly', 364: 'daily'}
+time_periods = [5, 10, 20, 30]
+
+style = dict(weight=4, opacity=1, color='white')
+classes = [0, 20, 40, 60, 80]
+bins = classes.copy()
+bins.append(101)
+# colorscale = ['#808080', '#FED976', '#FEB24C', '#FC4E2A', '#BD0026', '#800026']
+colorscale = ['#808080', '#FED976', '#FD8D3C', '#E31A1C', '#800026']
+# reductions_colorscale = ['#edf8fb','#b2e2e2','#66c2a4','#2ca25f','#006d2c']
+# ctg = ["{}%+".format(cls, classes[i + 1]) for i, cls in enumerate(classes[1:-1])] + ["{}%+".format(classes[-1])]
+# ctg.insert(0, 'NA')
+ctg = ["{}%+".format(cls, classes[i + 1]) for i, cls in enumerate(classes[:-1])] + ["{}%+".format(classes[-1])]
+# ctg.insert(0, 'NA')
+
+site_point_radius = 6
+
+info = dcc.Markdown(id="info", className="info", style={"position": "absolute", "top": "10px", "right": "160px", "z-index": "1000"})
+
+reduction_ratios = range(10, 101, 10)
+red_ratios = np.array(list(reduction_ratios), dtype='int8')
+
+## Rivers
+
+rivers_points_hideout = {'classes': [], 'colorscale': ['#232323'], 'circleOptions': dict(fillOpacity=1, stroke=True, weight=1, color='black', radius=site_point_radius), 'colorProp': 'nzsegment'}
+
+rivers_indicator_dict = {'BD': 'Black disk', 'EC': 'E.coli', 'DRP': 'Dissolved reactive phosporus', 'NH': 'Ammoniacal nitrogen', 'NO': 'Nitrate', 'TN': 'Total nitrogen', 'TP': 'Total phosphorus'}
+
+rivers_reduction_cols = list(rivers_indicator_dict.values())
+
+### Handles
+
+## Rivers
+catch_style_handle = assign("""function style(feature) {
+    return {
+        fillColor: 'grey',
+        weight: 2,
+        opacity: 1,
+        color: 'black',
+        fillOpacity: 0.1
+    };
+}""", name='rivers_catch_style_handle')
+
+base_reach_style_handle = assign("""function style3(feature) {
+    return {
+        weight: 2,
+        opacity: 0.75,
+        color: 'grey',
+    };
+}""", name='rivers_base_reach_style_handle')
+
+reach_style_handle = assign("""function style2(feature, context){
+    const {classes, colorscale, style, colorProp} = context.props.hideout;  // get props from hideout
+    const value = feature.properties[colorProp];  // get value the determines the color
+    for (let i = 0; i < classes.length; ++i) {
+        if (value == classes[i]) {
+            style.color = colorscale[i];  // set the fill color according to the class
+        }
+    }
+    return style;
+}""", name='rivers_reach_style_handle')
+
+sites_points_handle = assign("""function rivers_sites_points_handle(feature, latlng, context){
+    const {classes, colorscale, circleOptions, colorProp} = context.props.hideout;  // get props from hideout
+    const value = feature.properties[colorProp];  // get value the determines the fillColor
+    for (let i = 0; i < classes.length; ++i) {
+        if (value == classes[i]) {
+            circleOptions.fillColor = colorscale[i];  // set the color according to the class
+        }
+    }
+
+    return L.circleMarker(latlng, circleOptions);
+}""", name='rivers_sites_points_handle')
+
+
+### Colorbar
+colorbar_base = dl.Colorbar(style={'opacity': 0})
+base_reach_style = dict(weight=4, opacity=1, color='white')
+
+indices = list(range(len(ctg) + 1))
+colorbar_power = dl.Colorbar(min=0, max=len(ctg), classes=indices, colorscale=colorscale, tooltip=True, tickValues=[item + 0.5 for item in indices[:-1]], tickText=ctg, width=300, height=30, position="bottomright")
+
+# mapbox_access_token = "pk.eyJ1IjoibXVsbGVua2FtcDEiLCJhIjoiY2pudXE0bXlmMDc3cTNxbnZ0em4xN2M1ZCJ9.sIOtya_qe9RwkYXj5Du1yg"
 
 
 #####################################
 ### Functions
-
-
-def encode_obj(obj):
-    """
-
-    """
-    cctx = zstd.ZstdCompressor(level=1)
-    c_obj = codecs.encode(cctx.compress(pickle.dumps(obj, protocol=pickle.HIGHEST_PROTOCOL)), encoding="base64").decode()
-
-    return c_obj
-
-
-def decode_obj(str_obj):
-    """
-
-    """
-    dctx = zstd.ZstdDecompressor()
-    obj1 = dctx.decompress(codecs.decode(str_obj.encode(), encoding="base64"))
-    d1 = pickle.loads(obj1)
-
-    return d1
-
-
-# def get_stations(base_url, dataset_id):
-#     """
-
-#     """
-#     resp_fn_stns = requests.post(base_url + 'get_stations', params={'dataset_id': dataset_id}, headers={'Accept-Encoding': 'br'})
-
-#     if not resp_fn_stns.ok:
-#         raise ValueError(resp_fn_stns.raise_for_status())
-
-#     fn_stns = orjson.loads(resp_fn_stns.content)
-
-#     return fn_stns
 
 
 def read_pkl_zstd(obj, unpickle=False):
@@ -103,6 +178,27 @@ def read_pkl_zstd(obj, unpickle=False):
         obj1 = pickle.loads(obj1)
 
     return obj1
+
+
+def encode_obj(obj):
+    """
+
+    """
+    cctx = zstd.ZstdCompressor(level=1)
+    c_obj = codecs.encode(cctx.compress(pickle.dumps(obj, protocol=pickle.HIGHEST_PROTOCOL)), encoding="base64").decode()
+
+    return c_obj
+
+
+def decode_obj(str_obj):
+    """
+
+    """
+    dctx = zstd.ZstdDecompressor()
+    obj1 = dctx.decompress(codecs.decode(str_obj.encode(), encoding="base64"))
+    d1 = pickle.loads(obj1)
+
+    return d1
 
 
 def cartesian(arrays, out=None):
@@ -157,16 +253,133 @@ def cartesian(arrays, out=None):
     return out
 
 
-def seasonal_sine(n_samples_year, n_years):
+def parse_gis_file(contents, filename):
     """
 
     """
-    l1 = np.concatenate((np.linspace(start=2, stop=6, num=int(n_samples_year/2), endpoint=False), np.linspace(start=6, stop=2, num=int(n_samples_year/2), endpoint=False)))
+    try:
+        content_type, content_string = contents.split(',')
+        decoded = base64.b64decode(content_string)
+        plan1 = gpd.read_file(io.BytesIO(decoded))
 
-    s1 = np.sin(np.pi/l1)
-    s2 = np.tile(s1, n_years)
+        output = encode_obj(plan1)
+    except:
+        output = ['Wrong file type. It must be a GeoPackage (gpkg).']
 
-    return s2
+    return output
+
+
+def check_reductions_input(new_reductions, base_reductions):
+    """
+
+    """
+    base_typos = base_reductions.typology.unique()
+    try:
+        missing_typos = np.in1d(new_reductions.typology.unique(), base_typos).all()
+    except:
+        missing_typos = False
+
+    return missing_typos
+
+
+def diff_reductions(new_reductions, base_reductions, reduction_cols):
+    """
+
+    """
+    new_reductions1 = new_reductions.set_index('typology').sort_index()[reduction_cols]
+    base_reductions1 = base_reductions.set_index('typology').sort_index()[reduction_cols]
+    temp1 = new_reductions1.compare(base_reductions1, align_axis=0)
+
+    return list(temp1.columns)
+
+
+def calc_river_reach_reductions(catch_id, new_reductions, base_reductions):
+    """
+    This assumes that the concentration is the same throughout the entire greater catchment. If it's meant to be different, then each small catchment must be set and multiplied by the area to weight the contribution downstream.
+    """
+    diff_cols = diff_reductions(new_reductions, base_reductions)
+
+    with booklet.open(rivers_catch_path) as f:
+        catches1 = f[int(catch_id)]
+
+    with booklet.open(rivers_reach_mapping_path) as f:
+        branches = f[int(catch_id)]
+
+    with booklet.open(river_loads_rec_path) as f:
+        loads = f[int(catch_id)][diff_cols]
+
+    new_reductions0 = new_reductions[diff_cols + ['geometry']]
+    not_all_zeros = new_reductions0[diff_cols].sum(axis=1) > 0
+    new_reductions1 = new_reductions0.loc[not_all_zeros]
+
+    ## Calc reductions per nzsegment given sparse geometry input
+    c2 = new_reductions1.overlay(catches1)
+    c2['sub_area'] = c2.area
+
+    c2['combo_area'] = c2.groupby('nzsegment')['sub_area'].transform('sum')
+
+    c2b = c2.copy()
+    catches1['tot_area'] = catches1.area
+    catches1 = catches1.drop('geometry', axis=1)
+
+    results_list = []
+    for col in diff_cols:
+        c2b['prop_reductions'] = c2b[col]*(c2b['sub_area']/c2['combo_area'])
+        c3 = c2b.groupby('nzsegment')[['prop_reductions', 'sub_area']].sum()
+
+        ## Add in missing areas and assume that they are 0 reductions
+        c4 = pd.merge(catches1, c3, on='nzsegment', how='left')
+        c4.loc[c4['prop_reductions'].isnull(), ['prop_reductions', 'sub_area']] = 0
+        c4['reduction'] = (c4['prop_reductions'] * c4['sub_area'])/c4['tot_area']
+
+        c5 = c4[['nzsegment', 'reduction']].rename(columns={'reduction': col}).groupby('nzsegment').sum().round(2)
+        results_list.append(c5)
+
+    results = pd.concat(results_list, axis=1)
+
+    ## Scale the reductions
+    props_index = np.array(list(branches.keys()), dtype='int32')
+    props_val = np.zeros((len(red_ratios), len(props_index)))
+
+    reach_red = {}
+    for ind in diff_cols:
+        c4 = results[[ind]].merge(loads[[ind]], on='nzsegment')
+
+        c4['base'] = c4[ind + '_y'] * 100
+
+        for r, ratio in enumerate(red_ratios):
+            c4['prop'] = c4[ind + '_y'] * c4[ind + '_x'] * ratio * 0.01
+            c4b = c4[['base', 'prop']]
+            c5 = {r: list(v.values()) for r, v in c4b.to_dict('index').items()}
+
+            for h, reach in enumerate(branches):
+                branch = branches[reach]
+                t_area = np.zeros(branch.shape)
+                prop_area = t_area.copy()
+
+                for i, b in enumerate(branch):
+                    if b in c5:
+                        t_area1, prop_area1 = c5[b]
+                        t_area[i] = t_area1
+                        prop_area[i] = prop_area1
+                    else:
+                        prop_area[i] = 0
+
+                t_area_sum = np.sum(t_area)
+                if t_area_sum <= 0:
+                    props_val[r, h] = 0
+                else:
+                    p1 = np.sum(prop_area)/t_area_sum
+                    props_val[r, h] = p1
+
+            reach_red[ind] = np.round(props_val*100).astype('int8') # Round to nearest even number
+
+    new_props = xr.Dataset(data_vars={ind: (('reduction_perc', 'nzsegment'), values)  for ind, values in reach_red.items()},
+                       coords={'nzsegment': props_index,
+                                'reduction_perc': red_ratios}
+                       )
+
+    return new_props
 
 
 def xr_concat(datasets):
@@ -222,279 +435,4 @@ def xr_concat(datasets):
     return xr3
 
 
-# def t_test(props, n_samples_year, n_years):
-#     """
 
-#     """
-#     red1 = 1 - props.reduction.values
-
-#     red2 = np.tile(red1, (n_samples_year*n_years,1)).transpose()
-#     ones = np.ones(red2.shape)
-
-#     rng = np.random.default_rng()
-
-#     r1 = rng.uniform(-.1, .1, red2.shape)
-#     r2 = rng.uniform(-.1, .1, red2.shape)
-
-#     season1 = seasonal_sine(n_samples_year, n_years)
-
-#     o1 = stats.ttest_ind((ones+r1)*season1, (red2+r2)*season1, axis=1)
-
-#     props = props.assign(p_value=(('reach'), o1.pvalue), t_stat=(('reach'), np.abs(o1.statistic)))
-
-#     return props
-
-
-# def get_power(props, n_samples_year, n_years, power_data):
-#     """
-
-#     """
-#     red1 = 100 - props.reduction.values
-
-#     n_samples = n_samples_year*n_years
-
-#     power_data1 = power_data.sel(n_samples=n_samples).sel(conc_perc=red1).power.values.astype('int8')
-
-#     props = props.assign(power=(('reach'), power_data1))
-
-#     return props
-
-
-# def apply_filters(props, reduction_cutoff=5):
-#     """
-
-#     """
-#     # c1 = pd.cut(props.t_stat.values, t_bins, labels=t_bins[:-1])
-
-#     # props = props.assign(t_cat=(('reach'), c1.to_numpy().astype('int8')))
-
-#     # props['power'] = xr.where((props.power > p_cutoff) & (props.reduction >= reduction_cutoff), props['reduction'], 0)
-#     props['power'] = xr.where((props.reduction >= reduction_cutoff), props['power'], 0)
-#     # props['t_cat'] = props['t_cat'].astype('int8')
-
-#     return props
-
-
-def parse_gis_file(contents, filename):
-    """
-
-    """
-    if '.gpkg' in filename:
-        content_type, content_string = contents.split(',')
-        decoded = base64.b64decode(content_string)
-        plan1 = gpd.read_file(io.BytesIO(decoded))
-
-        output = encode_obj(plan1)
-    elif contents is None:
-        output = None
-    else:
-        output = html.Div(['Wrong file type. It must be a GeoPackage (gpkg).'])
-
-    return output
-
-
-# def get_results(tethys, station_id, from_date=None, to_date=None):
-#     """
-
-#     """
-#     data_list = []
-#     for param, ds_id in dataset_ids.items():
-#         params = {'dataset_id': ds_id, 'station_ids': station_id, 'squeeze_dims': True}
-
-#         if from_date is not None:
-#             params['from_date'] = pd.Timestamp(from_date).isoformat()
-#         if to_date is not None:
-#             params['to_date'] = pd.Timestamp(to_date).isoformat()
-
-#         data3 = tethys.get_results(**params)
-
-#         data3['time'] = pd.to_datetime(data3['time'].values) + pd.DateOffset(hours=12)
-#         coords = list(data3.coords)
-#         if 'geometry' in coords:
-#             data3 = data3.drop('geometry')
-#         if 'height' in coords:
-#             data3 = data3.drop('height')
-
-#         data3 = data3[[param]]
-#         data_list.append(data3)
-
-#     data = tethysts.utils.xr_concat(data_list).dropna('time')
-
-#     # data = calc_hs(data, hsc_dict)
-
-#     return data
-
-
-# def get_results(station_id, from_date=None, to_date=None):
-#     """
-
-#     """
-#     data_list = []
-#     for param, ds_id in dataset_ids.items():
-#         params = {'dataset_id': ds_id, 'station_id': station_id, 'squeeze_dims': True}
-
-#         if from_date is not None:
-#             params['from_date'] = pd.Timestamp(from_date).isoformat()
-#         if to_date is not None:
-#             params['to_date'] = pd.Timestamp(to_date).isoformat()
-
-#         resp_fn_results = requests.get(base_url + 'get_results', params=params, headers={'Accept-Encoding': 'br'})
-
-#         if not resp_fn_results.ok:
-#             raise ValueError(resp_fn_results.raise_for_status())
-
-#         fn_results = orjson.loads(resp_fn_results.content)
-
-#         data3 = xr.Dataset.from_dict(fn_results)
-
-#         data3['time'] = pd.to_datetime(data3['time'].values) + pd.DateOffset(hours=12)
-#         coords = list(data3.coords)
-#         if 'geometry' in coords:
-#             data3 = data3.drop('geometry')
-#         if 'height' in coords:
-#             data3 = data3.drop('height')
-
-#         data3 = data3[[param]]
-#         data_list.append(data3)
-
-#     data = tethysts.utils.xr_concat(data_list).dropna('time')
-
-#     data = calc_hs(data, hsc_dict)
-
-#     return data
-
-
-
-# def stns_dict_to_gdf(stns):
-#     """
-
-#     """
-#     stns1 = copy.deepcopy(stns)
-#     geo1 = [shapely.geometry.Point(s['geometry']['coordinates']) for s in stns1]
-
-#     [s.update({'from_date': s['time_range']['from_date'], 'to_date': s['time_range']['to_date']}) for s in stns1]
-#     for s in stns1:
-#         _ = s.pop('geometry')
-#         _ = s.pop('time_range')
-#         if 'stats' in s:
-#             _ = s.pop('stats')
-
-#     df1 = pd.DataFrame(stns1)
-#     df1['from_date'] = pd.to_datetime(df1['from_date'])
-#     df1['to_date'] = pd.to_datetime(df1['to_date'])
-#     df1['modified_date'] = pd.to_datetime(df1['modified_date'])
-
-#     stns_gpd1 = gpd.GeoDataFrame(df1, crs=4326, geometry=geo1)
-
-#     return stns_gpd1
-
-
-# def render_plot(results, hsc_dict, species, refs):
-#     """
-
-#     """
-#     results1 = calc_hs(results, hsc_dict, species, refs)
-
-#     fig = go.Figure()
-
-#     times = pd.to_datetime(results1['time'].values)
-
-#     for s in refs:
-#         # if 'name' in grp:
-#         #     name = str(grp['name'].values)
-#         #     showlegend = True
-#         # elif 'ref' in grp:
-#         #     name = str(grp['ref'].values)
-#         #     showlegend = True
-#         # else:
-#         #     name = None
-#         #     showlegend = False
-
-#         fig.add_trace(
-#             go.Scattergl(
-#             x=times,
-#             y=results1[s].values,
-#             mode='markers',
-#             showlegend=True,
-#             name=s,
-#             opacity=0.8)
-#             )
-
-#     layout = dict(paper_bgcolor = '#F4F4F8', plot_bgcolor = '#F4F4F8', showlegend=True, height=780, legend=dict(yanchor="top", y=0.99, xanchor="left", x=0.01), margin=dict(l=20, r=20, t=20, b=20), yaxis_title='Habitat Suitability Index')
-
-#     fig.update_layout(**layout)
-#     fig.update_xaxes(
-#         type='date',
-#         # range=[from_date.date(), to_date.date()],
-#         # rangeslider=dict(visible=True),
-#         # rangeslider_range=[from_date, to_date],
-#         # rangeslider_visible=True,
-#         rangeselector=dict(
-#             buttons=list([
-#                 dict(step="all", label='1y'),
-#                 # dict(count=1, label="1 year", step="year", stepmode="backward"),
-#                 dict(count=6, label="6m", step="month", stepmode="backward"),
-#                 dict(count=1, label="1m", step="month", stepmode="backward"),
-#                 dict(count=7, label="7d", step="day", stepmode="backward")
-#                 ])
-#             )
-#         )
-
-#     fig.update_yaxes(
-#         # autorange = True,
-#         # fixedrange= False,
-#         range=[-0.01, 1.01])
-
-#     return fig
-
-
-# def stn_labels(stns, init_active):
-#     """
-
-#     """
-#     stns_name_list = []
-#     append = stns_name_list.append
-#     for stn_id, stn in stns[init_active].items():
-#         name_dict = {'label': stn['ref'], 'value': stn['station_id']}
-#         append(name_dict)
-
-#     return stns_name_list
-
-
-# def stns_to_geojson(stns, init_active):
-#     """
-
-#     """
-#     gj = {'type': 'FeatureCollection', 'features': []}
-#     for s in list(stns[init_active].values()):
-#         if s['geometry']['type'] in ['Polygon', 'LineString']:
-#             geo1 = shape(s['geometry'])
-#             geo2 = mapping(geo1.centroid)
-#         else:
-#             geo2 = s['geometry']
-
-#         if 'name' in s:
-#             sgj = {'type': 'Feature', 'geometry': geo2, 'properties': {'name': s['station_id'], 'tooltip': s['name']}}
-#         elif 'ref' in s:
-#             sgj = {'type': 'Feature', 'geometry': geo2, 'properties': {'name': s['station_id'], 'tooltip': s['ref']}}
-#         else:
-#             sgj = {'type': 'Feature', 'geometry': geo2, 'properties': {'name': s['station_id']}}
-#         gj['features'].append(sgj)
-
-#     return gj
-
-
-# def stn_date_range(stn, freq='365D'):
-#     """
-
-#     """
-#     from_date = pd.Timestamp(stn['time_range']['from_date'])
-#     to_date = pd.Timestamp(stn['time_range']['to_date'])
-#     to_date1 = to_date.ceil('D')
-
-#     from_date1 = (to_date1 - pd.Timedelta(freq))
-
-#     if from_date1 < from_date:
-#         from_date1 = from_date.ceil('D')
-
-#     return from_date1, to_date1

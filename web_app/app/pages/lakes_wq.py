@@ -34,7 +34,7 @@ import booklet
 # from . import utils
 
 # from app import app
-# import utils
+import utils
 
 ##########################################
 ### Parameters
@@ -105,6 +105,21 @@ lake_style_handle = assign("""function style4(feature, context){
     return style;
 }""", name='lakes_lake_style_handle')
 
+# sites_points_handle = assign("""function rivers_sites_points_handle(feature, latlng, context){
+#     const {classes, colorscale, circleOptions, colorProp} = context.props.hideout;  // get props from hideout
+#     const value = feature.properties[colorProp];  // get value the determines the fillColor
+#     for (let i = 0; i < classes.length; ++i) {
+#         if (value == classes[i]) {
+#             circleOptions.fillColor = colorscale[i];  // set the color according to the class
+#         }
+#     }
+
+#     return L.circleMarker(latlng, circleOptions);
+# }""", name='lakes_sites_points_handle')
+
+# point_radius = 6
+# lakes_points_hideout = {'classes': [], 'colorscale': ['#232323'], 'circleOptions': dict(fillOpacity=1, stroke=True, weight=1, color='black', radius=point_radius), 'colorProp': 'nzsegment'}
+
 freq_mapping = {12: 'once a month', 26: 'once a fortnight', 52: 'once a week', 104: 'twice a week', 364: 'once a day'}
 time_periods = [5, 10, 20, 30]
 
@@ -124,7 +139,7 @@ ctg = ["{}%+".format(cls, classes[i + 1]) for i, cls in enumerate(classes[:-1])]
 # ctg.insert(0, 'NA')
 # colorbar = dlx.categorical_colorbar(categories=ctg, colorscale=colorscale, width=300, height=30, position="bottomleft")
 indices = list(range(len(ctg) + 1))
-colorbar = dl.Colorbar(min=0, max=len(ctg), classes=indices, colorscale=colorscale, tooltip=True, tickValues=[item + 0.5 for item in indices[:-1]], tickText=ctg, width=300, height=30, position="bottomright")
+colorbar_power = dl.Colorbar(min=0, max=len(ctg), classes=indices, colorscale=colorscale, tooltip=True, tickValues=[item + 0.5 for item in indices[:-1]], tickText=ctg, width=300, height=30, position="bottomright")
 
 base_reach_style = dict(weight=4, opacity=1, color='white')
 
@@ -132,6 +147,11 @@ info = dcc.Markdown(id="info_lakes", className="info", style={"position": "absol
 # info = html.Div(id="info", className="info", style={"position": "absolute", "top": "10px", "right": "10px", "z-index": "1000"})
 
 indicator_dict = {'CHLA': 'Chlorophyll a', 'CYANOTOT': 'Total Cyanobacteria', 'ECOLI': 'E.coli', 'NH4N': 'Ammoniacal Nitrogen', 'Secchi': 'Secchi Depth', 'TN': 'Total Nitrogen', 'TP': 'Total Phosphorus'}
+
+reduction_cols = list(indicator_dict.values())
+
+reduction_ratios = range(10, 101, 10)
+red_ratios = np.array(list(reduction_ratios), dtype='int8')
 
 ###############################################
 ### Helper Functions
@@ -415,7 +435,7 @@ dcc.Download(id="dl_power_lakes")],
             dl.GeoJSON(data='', format="geobuf", id='reach_map_lakes', options=dict(style=reach_style), hideout={}),
             dl.GeoJSON(data='', format="geobuf", id='lake_poly', options=dict(style=lake_style_handle), hideout={'classes': [''], 'colorscale': ['#808080'], 'style': lake_style, 'colorProp': 'name'}),
             dl.GeoJSON(data='', format="geobuf", id='reductions_poly_lakes'),
-            colorbar,
+            colorbar_power,
             info
                             ], style={'width': '100%', 'height': 700, 'margin': "auto", "display": "block"})
     ], className='five columns', style={'margin': 10}),

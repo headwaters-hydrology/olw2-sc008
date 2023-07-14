@@ -31,10 +31,20 @@ window.dashExtensions = Object.assign({}, window.dashExtensions, {
             }
             return style;
         },
-        sites_points_handle: function style_sites(feature, latlng, context) {
+        rivers_sites_points_handle: function rivers_sites_points_handle(feature, latlng, context) {
             const {
-                circleOptions
-            } = context.props.hideout;
+                classes,
+                colorscale,
+                circleOptions,
+                colorProp
+            } = context.props.hideout; // get props from hideout
+            const value = feature.properties[colorProp]; // get value the determines the fillColor
+            for (let i = 0; i < classes.length; ++i) {
+                if (value == classes[i]) {
+                    circleOptions.fillColor = colorscale[i]; // set the color according to the class
+                }
+            }
+
             return L.circleMarker(latlng, circleOptions);
         }
     }
