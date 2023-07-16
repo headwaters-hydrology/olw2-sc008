@@ -30,7 +30,7 @@ from dash_extensions.javascript import assign, arrow_function
 #### Parameters
 
 ### Paths
-assets_path = pathlib.Path(os.path.realpath(os.path.dirname(__file__))).joinpath('assets')
+assets_path = pathlib.Path(os.path.realpath(os.path.dirname(__file__))).parent.joinpath('assets')
 
 app_base_path = pathlib.Path('/assets')
 
@@ -51,6 +51,32 @@ river_loads_rec_path = assets_path.joinpath('rivers_loads_rec.blt')
 
 rivers_catch_lc_dir = assets_path.joinpath('rivers_land_cover_gpkg')
 rivers_catch_lc_gpkg_str = '{}_rivers_land_cover_reductions.gpkg'
+
+## Lakes
+lakes_power_combo_path = assets_path.joinpath('lakes_power_combo.h5')
+# lakes_power_moni_path = assets_path.joinpath('lakes_power_monitored.h5')
+lakes_reductions_model_path = assets_path.joinpath('lakes_reductions_modelled.h5')
+
+lakes_pbf_path = app_base_path.joinpath('lakes_points.pbf')
+lakes_poly_gbuf_path = assets_path.joinpath('lakes_poly.blt')
+lakes_catches_major_path = assets_path.joinpath('lakes_catchments_major.blt')
+lakes_reach_gbuf_path = assets_path.joinpath('lakes_reaches.blt')
+lakes_lc_path = assets_path.joinpath('lakes_catch_lc.blt')
+lakes_reaches_mapping_path = assets_path.joinpath('lakes_reaches_mapping.blt')
+lakes_catches_minor_path = assets_path.joinpath('lakes_catchments_minor.blt')
+
+lakes_catch_lc_dir = assets_path.joinpath('lakes_land_cover_gpkg')
+lakes_catch_lc_gpkg_str = '{}_lakes_land_cover_reductions.gpkg'
+
+lakes_loads_rec_path = assets_path.joinpath('lakes_loads_rec.blt')
+
+## GW
+gw_error_path = assets_path.joinpath('gw_points_error.h5')
+
+# gw_pbf_path = app_base_path.joinpath('gw_points.pbf')
+gw_points_rc_blt = assets_path.joinpath('gw_points_rc.blt')
+rc_bounds_gbuf = app_base_path.joinpath('rc_bounds.pbf')
+
 
 ### Layout
 map_height = 700
@@ -75,8 +101,6 @@ ctg = ["{}%+".format(cls, classes[i + 1]) for i, cls in enumerate(classes[:-1])]
 
 site_point_radius = 6
 
-info = dcc.Markdown(id="info", className="info", style={"position": "absolute", "top": "10px", "right": "160px", "z-index": "1000"})
-
 reduction_ratios = range(10, 101, 10)
 red_ratios = np.array(list(reduction_ratios), dtype='int8')
 
@@ -87,6 +111,27 @@ rivers_points_hideout = {'classes': [], 'colorscale': ['#232323'], 'circleOption
 rivers_indicator_dict = {'BD': 'Black disk', 'EC': 'E.coli', 'DRP': 'Dissolved reactive phosporus', 'NH': 'Ammoniacal nitrogen', 'NO': 'Nitrate', 'TN': 'Total nitrogen', 'TP': 'Total phosphorus'}
 
 rivers_reduction_cols = list(rivers_indicator_dict.values())
+
+## Lakes
+catch_style = {'fillColor': 'grey', 'weight': 2, 'opacity': 1, 'color': 'black', 'fillOpacity': 0.1}
+lake_style = {'fillColor': '#A4DCCC', 'weight': 4, 'opacity': 1, 'color': 'black', 'fillOpacity': 1}
+reach_style = {'weight': 2, 'opacity': 0.75, 'color': 'grey'}
+
+lakes_indicator_dict = {'CHLA': 'Chlorophyll a', 'CYANOTOT': 'Total Cyanobacteria', 'ECOLI': 'E.coli', 'NH4N': 'Ammoniacal nitrogen', 'Secchi': 'Secchi Depth', 'TN': 'Total nitrogen', 'TP': 'Total phosphorus'}
+
+lakes_reduction_cols = list(lakes_indicator_dict.values())
+
+
+## GW
+gw_points_hideout = {'classes': [], 'colorscale': ['#808080'], 'circleOptions': dict(fillOpacity=1, stroke=False, radius=site_point_radius), 'colorProp': 'tooltip'}
+
+gw_freq_mapping = {1: 'Yearly', 4: 'Quarterly', 12: 'monthly', 26: 'fortnightly', 52: 'weekly'}
+
+gw_indicator_dict = {'Nitrate': 'Nitrate'}
+
+gw_reductions_values = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
+
+gw_reductions_options = [{'value': v, 'label': str(v)+'%'} for v in gw_reductions_values]
 
 ### Handles
 
@@ -131,6 +176,43 @@ sites_points_handle = assign("""function rivers_sites_points_handle(feature, lat
 
     return L.circleMarker(latlng, circleOptions);
 }""", name='rivers_sites_points_handle')
+
+## Lakes
+lake_style_handle = assign("""function style4(feature, context){
+    const {classes, colorscale, style, colorProp} = context.props.hideout;  // get props from hideout
+    const value = feature.properties[colorProp];  // get value the determines the color
+    for (let i = 0; i < classes.length; ++i) {
+        if (value == classes[i]) {
+            style.color = colorscale[i];  // set the color according to the class
+        }
+    }
+
+    return style;
+}""", name='lakes_lake_style_handle')
+
+
+## GW
+rc_style_handle = assign("""function style(feature) {
+    return {
+        fillColor: 'grey',
+        weight: 2,
+        opacity: 1,
+        color: 'black',
+        fillOpacity: 0.1
+    };
+}""", name='gw_rc_style_handle')
+
+gw_points_style_handle = assign("""function gw_points_style_handle(feature, latlng, context){
+    const {classes, colorscale, circleOptions, colorProp} = context.props.hideout;  // get props from hideout
+    const value = feature.properties[colorProp];  // get value the determines the fillColor
+    for (let i = 0; i < classes.length; ++i) {
+        if (value == classes[i]) {
+            circleOptions.fillColor = colorscale[i];  // set the color according to the class
+        }
+    }
+
+    return L.circleMarker(latlng, circleOptions);
+}""", name='gw_points_style_handle')
 
 
 ### Colorbar
@@ -380,6 +462,93 @@ def calc_river_reach_reductions(catch_id, new_reductions, base_reductions):
                        )
 
     return new_props
+
+
+def calc_lake_reach_reductions(lake_id, new_reductions, base_reductions):
+    """
+    This assumes that the concentration is the same throughout the entire greater catchment. If it's meant to be different, then each small catchment must be set and multiplied by the area to weight the contribution downstream.
+    """
+    diff_cols = diff_reductions(new_reductions, base_reductions)
+
+    with booklet.open(lakes_catches_minor_path, 'r') as f:
+        catches1 = f[str(lake_id)]
+
+    with booklet.open(lakes_reaches_mapping_path) as f:
+        branches = f[int(lake_id)]
+
+    with booklet.open(lakes_loads_rec_path) as f:
+        loads = f[int(lake_id)][diff_cols]
+
+    new_reductions0 = new_reductions[diff_cols + ['geometry']]
+    not_all_zeros = new_reductions0[diff_cols].sum(axis=1) > 0
+    new_reductions1 = new_reductions0.loc[not_all_zeros]
+
+    ## Calc reductions per nzsegment given sparse geometry input
+    c2 = new_reductions1.overlay(catches1)
+    c2['sub_area'] = c2.area
+
+    c2['combo_area'] = c2.groupby('nzsegment')['sub_area'].transform('sum')
+
+    c2b = c2.copy()
+    catches1['tot_area'] = catches1.area
+    catches1 = catches1.drop('geometry', axis=1)
+
+    results_list = []
+    for col in diff_cols:
+        c2b['prop_reductions'] = c2b[col]*(c2b['sub_area']/c2['combo_area'])
+        c3 = c2b.groupby('nzsegment')[['prop_reductions', 'sub_area']].sum()
+
+        ## Add in missing areas and assume that they are 0 reductions
+        c4 = pd.merge(catches1, c3, on='nzsegment', how='left')
+        c4.loc[c4['prop_reductions'].isnull(), ['prop_reductions', 'sub_area']] = 0
+        c4['reduction'] = (c4['prop_reductions'] * c4['sub_area'])/c4['tot_area']
+
+        c5 = c4[['nzsegment', 'reduction']].rename(columns={'reduction': col}).groupby('nzsegment').sum().round(2)
+        results_list.append(c5)
+
+    results = pd.concat(results_list, axis=1)
+
+    ## Scale the reductions
+    props_val = np.zeros((len(red_ratios)))
+
+    reach_red = {}
+    for ind in diff_cols:
+        c4 = results[[ind]].merge(loads[[ind]], on='nzsegment')
+
+        c4['base'] = c4[ind + '_y'] * 100
+
+        for r, ratio in enumerate(red_ratios):
+            c4['prop'] = c4[ind + '_y'] * c4[ind + '_x'] * ratio * 0.01
+            c4b = c4[['base', 'prop']]
+            c5 = {r: list(v.values()) for r, v in c4b.to_dict('index').items()}
+
+            branch = branches
+            t_area = np.zeros(branch.shape)
+            prop_area = t_area.copy()
+
+            for i, b in enumerate(branch):
+                if b in c5:
+                    t_area1, prop_area1 = c5[b]
+                    t_area[i] = t_area1
+                    prop_area[i] = prop_area1
+                else:
+                    prop_area[i] = 0
+
+            t_area_sum = np.sum(t_area)
+            if t_area_sum <= 0:
+                props_val[r] = 0
+            else:
+                p1 = np.sum(prop_area)/t_area_sum
+                props_val[r] = p1
+
+            reach_red[ind] = np.round(props_val*100).astype('int8') # Round to nearest even number
+
+    props = xr.Dataset(data_vars={ind: (('reduction_perc'), values)  for ind, values in reach_red.items()},
+                       coords={
+                                'reduction_perc': red_ratios}
+                       )
+
+    return props
 
 
 def xr_concat(datasets):

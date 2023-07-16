@@ -31,10 +31,6 @@ import pathlib
 import hdf5plugin
 import booklet
 
-import sys
-if '..' not in sys.path:
-    sys.path.append('..')
-
 # from .app import app
 # from . import utils
 
@@ -64,21 +60,12 @@ dash.register_page(
 ###############################################
 ### Initial processing
 
-# sel1 = xr.open_dataset(base_path.joinpath(sel_data_h5), engine='h5netcdf')
-
 with booklet.open(utils.rivers_reach_gbuf_path, 'r') as f:
     catches = [int(c) for c in f]
 
 catches.sort()
-# freqs = sel1['frequency'].values
 indicators = list(utils.rivers_indicator_dict.keys())
 indicators.sort()
-# nzsegments = sel1['nzsegment'].values
-# percent_changes = sel1['percent_change'].values
-# time_periods = sel1['time_period'].values
-
-# sel1.close()
-# del sel1
 
 
 
@@ -280,11 +267,11 @@ def layout():
                                     # dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='reductions_poly')), name='Land use reductions', checked=False),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='reach_map', options={}, hideout={}, hoverStyle=arrow_function(dict(weight=10, color='black', dashArray='')))), name='Rivers', checked=True),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='sites_points', options=dict(pointToLayer=utils.sites_points_handle), hideout=utils.rivers_points_hideout)), name='Monitoring sites', checked=True),
-                                    ]),
+                                    ], id='layers_rivers'),
                                 utils.colorbar_power,
                                 # html.Div(id='colorbar', children=colorbar_base),
                                 # dmc.Group(id='colorbar', children=colorbar_base),
-                                utils.info
+                                dcc.Markdown(id="info", className="info", style={"position": "absolute", "top": "10px", "right": "160px", "z-index": "1000"})
                                                 ], style={'width': '100%', 'height': 700, 'margin': "auto", "display": "block"}, id="map2"),
 
                             ],
@@ -317,7 +304,8 @@ def update_catch_id(feature):
     # print(ds_id)
     catch_id = None
     if feature is not None:
-        catch_id = feature['id']
+        if not feature['properties']['cluster']:
+            catch_id = feature['id']
 
     return catch_id
 
@@ -618,7 +606,7 @@ def update_map_info(powers_obj, reach_feature, sites_feature):
 
                 reach_data = props.sel(nzsegment=feature_id)
 
-                info_str = """\n\nnzsegment: {seg}\n\nReduction: {red}%\n\nLikelihood of observing a reduction (power): {t_stat}%""".format(red=int(reach_data.reduction), t_stat=int(reach_data.power_modelled), seg=feature_id)
+                info_str = """\n\n**nzsegment**: {seg}\n\n**Reduction**: {red}%\n\n**Likelihood of observing a reduction (power)**: {t_stat}%""".format(red=int(reach_data.reduction), t_stat=int(reach_data.power_modelled), seg=feature_id)
 
                 info = info + info_str
 
@@ -632,7 +620,7 @@ def update_map_info(powers_obj, reach_feature, sites_feature):
 
                 reach_data = props.sel(nzsegment=feature_id)
 
-                info_str = """\n\nnzsegment: {seg}\n\nSite name: {site}\n\nReduction: {red}%\n\nLikelihood of observing a reduction (power): {t_stat}%""".format(red=int(reach_data.reduction), t_stat=int(reach_data.power_monitored), seg=feature_id, site=sites_feature['id'])
+                info_str = """\n\n**nzsegment**: {seg}\n\n**Site name**: {site}\n\n**Reduction**: {red}%\n\n**Likelihood of observing a reduction (power)**: {t_stat}%""".format(red=int(reach_data.reduction), t_stat=int(reach_data.power_monitored), seg=feature_id, site=sites_feature['id'])
 
                 info = info + info_str
 
@@ -665,6 +653,3 @@ def download_power(n_clicks, catch_id, powers_obj, indicator, n_years, n_samples
         df2 = df1.set_index(['indicator', 'n_years', 'n_samples_per_year', 'nzsegment']).sort_index()
 
         return dcc.send_data_frame(df2.to_csv, f"river_power_{catch_id}.csv")
-
-
-

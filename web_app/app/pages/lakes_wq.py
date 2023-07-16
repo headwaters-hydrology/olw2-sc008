@@ -10,36 +10,35 @@ import xarray as xr
 import dash
 from dash import dcc, html, dash_table, callback, ctx
 from dash.dependencies import Input, Output, State
+import dash_bootstrap_components as dbc
+import dash_mantine_components as dmc
+import dash_leaflet as dl
+import dash_leaflet.express as dlx
+from dash_extensions.javascript import assign, arrow_function
 import pandas as pd
 import numpy as np
 # import requests
 import zstandard as zstd
 import codecs
 import pickle
-import dash_leaflet as dl
-import dash_leaflet.express as dlx
 import geopandas as gpd
 from gistools import vector
 import os
 # import tethysts
 import base64
 import geobuf
-import dash_leaflet.express as dlx
-from dash_extensions.javascript import assign, arrow_function
 import pathlib
 import hdf5plugin
 import booklet
 
 # from .app import app
-# from . import utils
 
 # from app import app
-import utils
+# import utils
+from . import utils
 
 ##########################################
 ### Parameters
-
-assets_path = pathlib.Path(os.path.split(os.path.realpath(os.path.dirname(__file__)))[0]).joinpath('assets')
 
 dash.register_page(
     __name__,
@@ -49,418 +48,321 @@ dash.register_page(
     description='Lakes and Lagoons Water Quality'
 )
 
-app_base_path = pathlib.Path('/assets')
-
-lakes_power_combo_path = assets_path.joinpath('lakes_power_combo.h5')
-# lakes_power_moni_path = assets_path.joinpath('lakes_power_monitored.h5')
-lakes_reductions_model_path = assets_path.joinpath('rivers_reductions_modelled.h5')
-
-lakes_pbf_path = app_base_path.joinpath('lakes_points.pbf')
-lakes_poly_gbuf_path = assets_path.joinpath('lakes_poly.blt')
-lakes_catches_major_path = assets_path.joinpath('lakes_catchments_major.blt')
-lakes_reach_gbuf_path = assets_path.joinpath('lakes_reaches.blt')
-lakes_lc_path = assets_path.joinpath('lakes_catch_lc.blt')
-lakes_reaches_mapping_path = assets_path.joinpath('lakes_reaches_mapping.blt')
-lakes_catches_minor_path = assets_path.joinpath('lakes_catchments_minor.blt')
-rivers_flows_path = assets_path.joinpath('rivers_flows_rec.blt')
-
-lakes_catch_lc_dir = assets_path.joinpath('lakes_land_cover_gpkg')
-lakes_catch_lc_gpkg_str = '{}_lakes_land_cover_reductions.gpkg'
-
-map_height = 700
-
-center = [-41.1157, 172.4759]
-
-# mapbox_access_token = "pk.eyJ1IjoibXVsbGVua2FtcDEiLCJhIjoiY2pudXE0bXlmMDc3cTNxbnZ0em4xN2M1ZCJ9.sIOtya_qe9RwkYXj5Du1yg"
-
-tabs_styles = {
-    'height': '40px'
-}
-tab_style = {
-    'borderBottom': '1px solid #d6d6d6',
-    'padding': '5px',
-    'fontWeight': 'bold'
-}
-
-tab_selected_style = {
-    'borderTop': '1px solid #d6d6d6',
-    'borderBottom': '1px solid #d6d6d6',
-    'backgroundColor': '#119DFF',
-    'color': 'white',
-    'padding': '5px'
-}
-
-attribution = 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 
 
-lake_style_handle = assign("""function style4(feature, context){
-    const {classes, colorscale, style, colorProp} = context.props.hideout;  // get props from hideout
-    const value = feature.properties[colorProp];  // get value the determines the color
-    for (let i = 0; i < classes.length; ++i) {
-        if (value == classes[i]) {
-            style.color = colorscale[i];  // set the color according to the class
-        }
-    }
+# base_reach_style = dict(weight=4, opacity=1, color='white')
 
-    return style;
-}""", name='lakes_lake_style_handle')
-
-# sites_points_handle = assign("""function rivers_sites_points_handle(feature, latlng, context){
-#     const {classes, colorscale, circleOptions, colorProp} = context.props.hideout;  // get props from hideout
-#     const value = feature.properties[colorProp];  // get value the determines the fillColor
-#     for (let i = 0; i < classes.length; ++i) {
-#         if (value == classes[i]) {
-#             circleOptions.fillColor = colorscale[i];  // set the color according to the class
-#         }
-#     }
-
-#     return L.circleMarker(latlng, circleOptions);
-# }""", name='lakes_sites_points_handle')
-
-# point_radius = 6
-# lakes_points_hideout = {'classes': [], 'colorscale': ['#232323'], 'circleOptions': dict(fillOpacity=1, stroke=True, weight=1, color='black', radius=point_radius), 'colorProp': 'nzsegment'}
-
-freq_mapping = {12: 'once a month', 26: 'once a fortnight', 52: 'once a week', 104: 'twice a week', 364: 'once a day'}
-time_periods = [5, 10, 20, 30]
-
-catch_style = {'fillColor': 'grey', 'weight': 2, 'opacity': 1, 'color': 'black', 'fillOpacity': 0.1}
-lake_style = {'fillColor': '#A4DCCC', 'weight': 4, 'opacity': 1, 'color': 'black', 'fillOpacity': 1}
-reach_style = {'weight': 2, 'opacity': 0.75, 'color': 'grey'}
-# lake_style2 = dict(weight=4, opacity=1, color='white', fillColor='#A4DCCC', fillOpacity=1)
-# style = dict(weight=4, opacity=1, color='white')
-classes = [0, 20, 40, 60, 80]
-bins = classes.copy()
-bins.append(101)
-# colorscale = ['#808080', '#FED976', '#FEB24C', '#FC4E2A', '#BD0026', '#800026']
-colorscale = ['#808080', '#FED976', '#FD8D3C', '#E31A1C', '#800026']
-# ctg = ["{}%+".format(cls, classes[i + 1]) for i, cls in enumerate(classes[1:-1])] + ["{}%+".format(classes[-1])]
-# ctg.insert(0, 'NA')
-ctg = ["{}%+".format(cls, classes[i + 1]) for i, cls in enumerate(classes[:-1])] + ["{}%+".format(classes[-1])]
-# ctg.insert(0, 'NA')
-# colorbar = dlx.categorical_colorbar(categories=ctg, colorscale=colorscale, width=300, height=30, position="bottomleft")
-indices = list(range(len(ctg) + 1))
-colorbar_power = dl.Colorbar(min=0, max=len(ctg), classes=indices, colorscale=colorscale, tooltip=True, tickValues=[item + 0.5 for item in indices[:-1]], tickText=ctg, width=300, height=30, position="bottomright")
-
-base_reach_style = dict(weight=4, opacity=1, color='white')
-
-info = dcc.Markdown(id="info_lakes", className="info", style={"position": "absolute", "top": "10px", "right": "10px", "z-index": "1000"})
-# info = html.Div(id="info", className="info", style={"position": "absolute", "top": "10px", "right": "10px", "z-index": "1000"})
-
-indicator_dict = {'CHLA': 'Chlorophyll a', 'CYANOTOT': 'Total Cyanobacteria', 'ECOLI': 'E.coli', 'NH4N': 'Ammoniacal Nitrogen', 'Secchi': 'Secchi Depth', 'TN': 'Total Nitrogen', 'TP': 'Total Phosphorus'}
-
-reduction_cols = list(indicator_dict.values())
-
-reduction_ratios = range(10, 101, 10)
-red_ratios = np.array(list(reduction_ratios), dtype='int8')
+# lake_id = 48177
 
 ###############################################
 ### Helper Functions
-
-def encode_obj(obj):
-    """
-
-    """
-    cctx = zstd.ZstdCompressor(level=1)
-    c_obj = codecs.encode(cctx.compress(pickle.dumps(obj, protocol=pickle.HIGHEST_PROTOCOL)), encoding="base64").decode()
-
-    return c_obj
-
-
-def decode_obj(str_obj):
-    """
-
-    """
-    dctx = zstd.ZstdDecompressor()
-    obj1 = dctx.decompress(codecs.decode(str_obj.encode(), encoding="base64"))
-    d1 = pickle.loads(obj1)
-
-    return d1
-
-
-def cartesian(arrays, out=None):
-    """
-    Generate a cartesian product of input arrays.
-
-    Parameters
-    ----------
-    arrays : list of array-like
-        1-D arrays to form the cartesian product of.
-    out : ndarray
-        Array to place the cartesian product in.
-
-    Returns
-    -------
-    out : ndarray
-        2-D array of shape (M, len(arrays)) containing cartesian products
-        formed of input arrays.
-
-    Examples
-    --------
-    >>> cartesian(([1, 2, 3], [4, 5], [6, 7]))
-    array([[1, 4, 6],
-            [1, 4, 7],
-            [1, 5, 6],
-            [1, 5, 7],
-            [2, 4, 6],
-            [2, 4, 7],
-            [2, 5, 6],
-            [2, 5, 7],
-            [3, 4, 6],
-            [3, 4, 7],
-            [3, 5, 6],
-            [3, 5, 7]])
-
-    """
-
-    arrays = [np.asarray(x) for x in arrays]
-    dtype = arrays[0].dtype
-
-    n = np.prod([x.size for x in arrays])
-    if out is None:
-        out = np.zeros([n, len(arrays)], dtype=dtype)
-
-    m = int(n / arrays[0].size)
-    out[:,0] = np.repeat(arrays[0], m)
-    if arrays[1:]:
-        cartesian(arrays[1:], out=out[0:m, 1:])
-        for j in range(1, arrays[0].size):
-            out[j*m:(j+1)*m, 1:] = out[0:m, 1:]
-
-    return out
-
-
-def parse_gis_file(contents, filename):
-    """
-
-    """
-    if '.gpkg' in filename:
-        content_type, content_string = contents.split(',')
-        decoded = base64.b64decode(content_string)
-        plan1 = gpd.read_file(io.BytesIO(decoded))
-
-        output = encode_obj(plan1)
-    elif contents is None:
-        output = None
-    else:
-        output = html.Div(['Wrong file type. It must be a GeoPackage (gpkg).'])
-
-    return output
-
-
-def calc_lake_reach_reductions(lake_id, plan_file, reduction_col='default_reductions'):
-    """
-    This assumes that the concentration is the same throughout the entire greater catchment. If it's meant to be different, then each small catchment must be set and multiplied by the area to weight the contribution downstream.
-    """
-    with booklet.open(lakes_catches_minor_path, 'r') as f:
-        c1 = f[str(lake_id)]
-
-    with booklet.open(lakes_reaches_mapping_path) as f:
-        branches = f[int(lake_id)]
-
-    # TODO: Package the flow up by catch_id so that there is less work here
-    flows = {}
-    with booklet.open(rivers_flows_path) as f:
-        for way_id in branches:
-            try:
-                flows[int(way_id)] = f[int(way_id)]
-            except:
-                pass
-
-    flows_df = pd.DataFrame.from_dict(flows, orient='index', columns=['flow'])
-    flows_df.index.name = 'nzsegment'
-    flows_df = flows_df.reset_index()
-
-    c1 = c1[c1.nzsegment.isin(flows_df.nzsegment)].copy()
-
-    plan1 = plan_file[[reduction_col, 'geometry']].to_crs(2193)
-
-    ## Calc reductions per nzsegment given sparse geometry input
-    c2 = plan1.overlay(c1)
-    c2['sub_area'] = c2.area
-
-    c2['combo_area'] = c2.groupby('nzsegment')['sub_area'].transform('sum')
-    c2['prop_reductions'] = c2[reduction_col]*(c2['sub_area']/c2['combo_area'])
-    c3 = c2.groupby('nzsegment')[['prop_reductions', 'sub_area']].sum()
-
-    ## Add in missing areas and assume that they are 0 reductions
-    c1['tot_area'] = c1.area
-
-    c4 = pd.merge(c1.drop('geometry', axis=1), c3, on='nzsegment', how='left')
-    c4.loc[c4['prop_reductions'].isnull(), ['prop_reductions', 'sub_area']] = 0
-
-    c4['reduction'] = (c4['prop_reductions'] * c4['sub_area'])/c4['tot_area']
-
-    ## Scale the reductions to the flows
-    c4 = c4.merge(flows_df, on='nzsegment')
-
-    c4['base_flow'] = c4.flow * 100
-    c4['prop_flow'] = c4.flow * c4['reduction']
-
-    c5 = c4[['nzsegment', 'base_flow', 'prop_flow']].set_index('nzsegment').copy()
-
-    c6 = c5.sum()
-    props = (np.round((c6.prop_flow/c6.base_flow)*100*0.5)*2).astype('int8')
-
-    return props
 
 
 
 ###############################################
 ### Initial processing
 
-# sel1 = xr.open_dataset(base_path.joinpath(sel_data_h5), engine='h5netcdf')
-
 # with booklet.open(lakes_catches_major_path, 'r') as f:
 #     lakes = list(f.keys())
 
 # lakes.sort()
 
-with open(assets_path.joinpath('lakes_points.pbf'), 'rb') as f:
+with open(utils.assets_path.joinpath('lakes_points.pbf'), 'rb') as f:
     geodict = geobuf.decode(f.read())
 
 lakes_options = [{'value': int(f['id']), 'label': ' '.join(f['properties']['name'].split())} for f in geodict['features']]
 
 lakes_data = {int(f['id']): f['properties'] for f in geodict['features']}
 
-# freqs = sel1['frequency'].values
-# x1 = xr.open_dataset(lakes_error_path, engine='h5netcdf')
-# indicators = x1.indicator.values
-# indicators.sort()
-# nzsegments = sel1['nzsegment'].values
-# percent_changes = sel1['percent_change'].values
-# time_periods = sel1['time_period'].values
-
-# x1.close()
-# del x1
-
-indicators = [{'value': k, 'label': v} for k, v in indicator_dict.items()]
+indicators = [{'value': k, 'label': v} for k, v in utils.lakes_indicator_dict.items()]
 
 ###############################################
 ### App layout
 
 
 def layout():
-    layout = html.Div(children=[
-        # html.Div([html.H1('Lake/Lagoon Water Quality')]),
-        html.Div([
-            html.H3('(1) Reductions routing'),
+    layout = dmc.Container(
+        fluid=True,
+        # size='xl',
+        px=0,
+        py=0,
+        my=0,
+        mx=0,
+        ml=0,
+        pl=0,
+        children=[
+            dmc.Grid(
+                columns=7,
+                children=[
+                    dmc.Col(
+                        span=3,
+                        children=dmc.Accordion(
+                            value="1",
+                            chevronPosition='left',
+                            children=[
+                            dmc.AccordionItem([
+                                dmc.AccordionControl(html.Div('(1) Lake Selection', style={'font-size': 22})),
+                                dmc.AccordionPanel([
 
-            html.Label('Select a lake/lagoon on the map:'),
-            dcc.Dropdown(options=lakes_options, id='lake_id', optionHeight=40, clearable=False),
+                                    html.Label('(1a) Select a lake/lagoon on the map:'),
+                                    dcc.Dropdown(options=[v for v in lakes_options], id='lake_id', optionHeight=40, clearable=False,
+                                                  style={'margin-top': 10}
+                                                  ),
+                                    ]
+                                    )
+                                ],
+                                value='1'
+                                ),
 
-            dcc.Upload(
-                id='upload_data_lakes',
-                children=html.Button('Upload reductions polygons gpkg', style={
-                    'width': '100%',
-                }),
-                style={
-                    'width': '100%',
-                    'height': '50%',
-                    'textAlign': 'left',
-                    'margin-top': 20
-                },
-                multiple=False
-            ),
-            dcc.Markdown('''###### **Or**''', style={
-                'textAlign': 'center',
-                            }),
-            html.Button('Use land cover for reductions', id='demo_data_lakes',
-                        style={
-                            'width': '100%',
-                            'height': '50%',
-                            'textAlign': 'left',
-                            'margin-top': 20
-                        }),
+                            dmc.AccordionItem([
+                                dmc.AccordionControl(html.Div('(2 - Optional) Customise Reductions Layer', style={'font-size': 22})),
+                                dmc.AccordionPanel([
+                                    html.Label('(2a) Download reductions polygons as GPKG:'),
+                                    dcc.Loading(
+                                    type="default",
+                                    children=[html.Div(dmc.Button("Download reductions",
+                                                                  id='dl_btn_lakes',
+                                                                  ),
+                                                       style={'margin-top': 10}),
+                            dcc.Download(id="dl_poly_lakes")],
+                                    ),
+                                    html.Label('NOTE: Only modify existing values. Do not add additional columns; they will be ignored.', style={
+                                        'margin-top': 10
+                                    }
+                                        ),
+                                    html.Label('(2b) Upload modified reductions polygons as GPKG:', style={
+                                        'margin-top': 20
+                                    }
+                                        ),
+                                    dcc.Loading(
+                                        children=[
+                                            dcc.Upload(
+                                                id='upload_data_lakes',
+                                                children=dmc.Button('Upload reductions',
+                                                ),
+                                                style={
+                                                    'margin-top': 10
+                                                },
+                                                multiple=False
+                                            ),
+                                            ]
+                                        ),
+                                    dcc.Markdown('', style={
+                                        'textAlign': 'left',
+                                                    }, id='upload_error_text_lakes'),
+                                    html.Label('(2c) Process the reductions layer and route the reductions downstream:', style={
+                                        'margin-top': 20
+                                    }
+                                        ),
+                                    dcc.Loading(
+                                    type="default",
+                                    children=html.Div([dmc.Button('Process reductions', id='process_reductions_lakes',
+                                                                  # className="me-1",
+                                                                  n_clicks=0),
+                                                        html.Div(id='process_text_lakes')],
+                                                      style={'margin-top': 10, 'margin-bottom': 10}
+                                                      )
+                                    ),
+                                    ]
+                                    )
+                                ],
+                                value='2'
+                                ),
 
-            html.Label('Select a reductions column in the GIS file:', style={'margin-top': 20}),
-            dcc.Dropdown(options=[], id='col_name_lakes', optionHeight=40, clearable=False),
-            dcc.Loading(
-            type="default",
-            children=[html.Div(html.Button("Download reductions polygons", id='dl_btn_lakes'), style={'margin-top': 10}),
-    dcc.Download(id="dl_poly_lakes")],
-            ),
-            dcc.Loading(
-            type="default",
-            children=html.Div([html.Button('Process reductions', id='process_lakes', n_clicks=0),
-                               html.Div(id='process_text_lakes')],
-                              style={'margin-top': 20, 'margin-bottom': 10}
-                              )
-        ),
+                            dmc.AccordionItem([
+                                dmc.AccordionControl(html.Div('(3) Sampling Options', style={'font-size': 22})),
+                                dmc.AccordionPanel([
+                                    dmc.Text('(3a) Select Indicator:'),
+                                    dcc.Dropdown(options=indicators, id='indicator_lakes', optionHeight=40, clearable=False),
+                                    dmc.Text('(3b) Select sampling length (years):', style={'margin-top': 20}),
+                                    dmc.SegmentedControl(data=[{'label': d, 'value': str(d)} for d in utils.time_periods],
+                                                         id='time_period_lakes',
+                                                         value='5',
+                                                         fullWidth=True,
+                                                         color=1,
+                                                         ),
+                                    dmc.Text('(3c) Select sampling frequency:', style={'margin-top': 20}),
+                                    dmc.SegmentedControl(data=[{'label': v, 'value': str(k)} for k, v in utils.freq_mapping.items()],
+                                                         id='freq_lakes',
+                                                         value='12',
+                                                         fullWidth=True,
+                                                         color=1
+                                                         ),
+                                    html.Label('(3d) Change the percent of the reductions applied (100% is the max realistic reduction):', style={'margin-top': 20}),
+                                    dmc.Slider(id='reductions_slider_lakes',
+                                               value=100,
+                                               mb=35,
+                                               step=10,
+                                               # min=10,
+                                               showLabelOnHover=True,
+                                               disabled=False,
+                                               marks=[{'label': str(d) + '%', 'value': d} for d in range(0, 101, 20)]
+                                               ),
+                                    ],
+                                    )
+                                ],
+                                value='3'
+                                ),
 
-            # html.Label('Select Indicator:'),
-            # dcc.Dropdown(options=[{'label': d, 'value': d} for d in indicators], id='indicator', optionHeight=40, clearable=False, value='NH4'),
-            # html.Label('Select expected percent improvement:'),
-            # dcc.Dropdown(options=[{'label': d, 'value': d} for d in percent_changes], id='percent_change', clearable=False, value=10),
+                            dmc.AccordionItem([
+                                dmc.AccordionControl(html.Div('(4) Download Results', style={'font-size': 22})),
+                                dmc.AccordionPanel([
+                                    dmc.Text('(4a) Download power results given the prior sampling options (csv):'),
+                                    dcc.Loading(
+                                    type="default",
+                                    children=[html.Div(dmc.Button("Download power results", id='dl_btn_power_lakes'), style={'margin-bottom': 20, 'margin-top': 10}),
+                            dcc.Download(id="dl_power_lakes")],
+                                    ),
+                                    ],
+                                    )
+                                ],
+                                value='4'
+                                ),
 
-            # dcc.Link(html.Img(src=str(app_base_path.joinpath('our-land-and-water-logo.svg'))), href='https://ourlandandwater.nz/')
-            ], className='two columns', style={'margin': 10}),
+                            ],
+                            # style={
+                            #     'margin': 0,
+                            #     'padding': 0
+                            #     },
+                            # className='four columns', style={'margin': 10}
+                            )
+                        ),
+                    dmc.Col(
+                        span=4,
+                        # style={
+                        #     'margin-top': 20
+                        #     },
+                        children=html.Div([
+                            dl.Map(center=utils.center, zoom=6, children=[
+                                dl.LayersControl([
+                                    dl.BaseLayer(dl.TileLayer(attribution=utils.attribution), checked=True, name='OpenStreetMap'),
+                                    dl.BaseLayer(dl.TileLayer(url='https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', attribution='Map data: © OpenStreetMap contributors, SRTM | Map style: © OpenTopoMap (CC-BY-SA)'), checked=False, name='OpenTopoMap'),
+                                    dl.Overlay(dl.LayerGroup(dl.GeoJSON(url=str(utils.lakes_pbf_path), format="geobuf", id='lake_points', zoomToBoundsOnClick=True, cluster=True)), name='Lake points', checked=True),
+                                    dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='catch_map_lakes', zoomToBoundsOnClick=True, zoomToBounds=False, options=dict(style=utils.catch_style_handle))), name='Catchments', checked=True),
+                                    dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='reach_map_lakes', options=dict(style=utils.reach_style))), name='Rivers', checked=True),
+                                    dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='lake_poly', options=dict(style=utils.lake_style_handle), hideout={'classes': [''], 'colorscale': ['#808080'], 'style': utils.lake_style, 'colorProp': 'name'})), name='Lakes', checked=True),
+                                    # dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='sites_points_lakes', options=dict(pointToLayer=utils.sites_points_handle), hideout=utils.rivers_points_hideout)), name='Monitoring sites', checked=True),
+                                    ], id='layers_gw'),
+                                utils.colorbar_power,
+                                # html.Div(id='colorbar', children=colorbar_base),
+                                # dmc.Group(id='colorbar', children=colorbar_base),
+                                dcc.Markdown(id="info_lakes", className="info", style={"position": "absolute", "top": "10px", "right": "160px", "z-index": "1000"})
+                                                ], style={'width': '100%', 'height': 700, 'margin': "auto", "display": "block"}, id="map2"),
 
-    html.Div([
-        html.H3('(2) Sampling options'),
-        html.Label('Select Indicator:'),
-        dcc.Dropdown(options=indicators, id='indicator_lakes', optionHeight=40, clearable=False),
-        html.Label('Select sampling length (years):', style={'margin-top': 20}),
-        dcc.Dropdown(options=[{'label': d, 'value': d} for d in time_periods], id='time_period_lakes', clearable=False, value=5),
-        html.Label('Select sampling frequency:'),
-        dcc.Dropdown(options=[{'label': v, 'value': k} for k, v in freq_mapping.items()], id='freq_lakes', clearable=False, value=12),
-
-        html.H4(children='Map Layers', style={'margin-top': 20}),
-        dcc.Checklist(
-               options=[
-                   {'label': 'Reductions polygons', 'value': 'reductions_poly'},
-                    # {'label': 'Lake polygon', 'value': 'lake_poly'},
-                   {'label': 'River reaches', 'value': 'reach_map'}
-               ],
-               value=['reductions_poly', 'reach_map'],
-               id='map_checkboxes_lakes',
-               style={'padding': 5, 'margin-bottom': 50}
-            ),
-        dcc.Loading(
-        type="default",
-        children=[html.Div(html.Button("Download power results csv", id='dl_btn_power_lakes'), style={'margin-bottom': 20}),
-dcc.Download(id="dl_power_lakes")],
-        ),
-        dcc.Markdown('', style={
-            'textAlign': 'left',
-                        }, id='red_disclaimer_lakes'),
-
-        ], className='two columns', style={'margin': 10}),
-
-    html.Div([
-        dl.Map(center=center, zoom=7, children=[
-            dl.TileLayer(id='tile_layer_lakes', attribution=attribution),
-            dl.GeoJSON(url=str(lakes_pbf_path), format="geobuf", id='lake_points', zoomToBoundsOnClick=True, zoomToBounds=True, cluster=True),
-            dl.GeoJSON(data='', format="geobuf", id='catch_map_lakes', zoomToBoundsOnClick=True, options=dict(style=catch_style)),
-            # dl.GeoJSON(url='', format="geobuf", id='base_reach_map', options=dict(style=base_reaches_style_handle)),
-            dl.GeoJSON(data='', format="geobuf", id='reach_map_lakes', options=dict(style=reach_style), hideout={}),
-            dl.GeoJSON(data='', format="geobuf", id='lake_poly', options=dict(style=lake_style_handle), hideout={'classes': [''], 'colorscale': ['#808080'], 'style': lake_style, 'colorProp': 'name'}),
-            dl.GeoJSON(data='', format="geobuf", id='reductions_poly_lakes'),
-            colorbar_power,
-            info
-                            ], style={'width': '100%', 'height': 700, 'margin': "auto", "display": "block"})
-    ], className='five columns', style={'margin': 10}),
-
-    # html.Div([
-    #     dcc.Loading(
-    #             id="loading-tabs",
-    #             type="default",
-    #             children=[dcc.Tabs(id='plot_tabs', value='info_tab', style=tabs_styles, children=[
-    #                         dcc.Tab(label='Info', value='info_tab', style=tab_style, selected_style=tab_selected_style),
-    #                         # dcc.Tab(label='Habitat Suitability', value='hs_tab', style=tab_style, selected_style=tab_selected_style),
-    #                         ]
-    #                     ),
-    #                 html.Div(id='plots')
-    #                 ]
-    #             ),
-
-    # ], className='three columns', style={'margin': 10}),
-
-    dcc.Store(id='props_obj_lakes', data=''),
-    dcc.Store(id='reaches_obj_lakes', data=''),
-    dcc.Store(id='reductions_obj_lakes', data=''),
-], style={'margin':0})
+                            ],
+                            ),
+                        ),
+                    ]
+                    ),
+            dcc.Store(id='powers_obj_lakes', data=''),
+            dcc.Store(id='reaches_obj_lakes', data=''),
+            dcc.Store(id='custom_reductions_obj_lakes', data=''),
+            dcc.Store(id='base_reductions_obj_lakes', data=''),
+            ]
+        )
 
     return layout
+
+
+# def layout():
+#     layout = html.Div(children=[
+#         # html.Div([html.H1('Lake/Lagoon Water Quality')]),
+#         html.Div([
+#             html.H3('(1) Reductions routing'),
+
+#             html.Label('Select a lake/lagoon on the map:'),
+#             dcc.Dropdown(options=lakes_options, id='lake_id', optionHeight=40, clearable=False),
+
+#             dcc.Upload(
+#                 id='upload_data_lakes',
+#                 children=html.Button('Upload reductions polygons gpkg', style={
+#                     'width': '100%',
+#                 }),
+#                 style={
+#                     'width': '100%',
+#                     'height': '50%',
+#                     'textAlign': 'left',
+#                     'margin-top': 20
+#                 },
+#                 multiple=False
+#             ),
+#             dcc.Markdown('''###### **Or**''', style={
+#                 'textAlign': 'center',
+#                             }),
+#             html.Button('Use land cover for reductions', id='demo_data_lakes',
+#                         style={
+#                             'width': '100%',
+#                             'height': '50%',
+#                             'textAlign': 'left',
+#                             'margin-top': 20
+#                         }),
+
+#             html.Label('Select a reductions column in the GIS file:', style={'margin-top': 20}),
+#             dcc.Dropdown(options=[], id='col_name_lakes', optionHeight=40, clearable=False),
+#             dcc.Loading(
+#             type="default",
+#             children=[html.Div(html.Button("Download reductions polygons", id='dl_btn_lakes'), style={'margin-top': 10}),
+#     dcc.Download(id="dl_poly_lakes")],
+#             ),
+#             dcc.Loading(
+#             type="default",
+#             children=html.Div([html.Button('Process reductions', id='process_lakes', n_clicks=0),
+#                                html.Div(id='process_text_lakes')],
+#                               style={'margin-top': 20, 'margin-bottom': 10}
+#                               )
+#         ),
+#             ], className='two columns', style={'margin': 10}),
+
+#     html.Div([
+#         html.H3('(2) Sampling options'),
+#         html.Label('Select Indicator:'),
+#         dcc.Dropdown(options=indicators, id='indicator_lakes', optionHeight=40, clearable=False),
+#         html.Label('Select sampling length (years):', style={'margin-top': 20}),
+#         dcc.Dropdown(options=[{'label': d, 'value': d} for d in time_periods], id='time_period_lakes', clearable=False, value=5),
+#         html.Label('Select sampling frequency:'),
+#         dcc.Dropdown(options=[{'label': v, 'value': k} for k, v in freq_mapping.items()], id='freq_lakes', clearable=False, value=12),
+
+#         html.H4(children='Map Layers', style={'margin-top': 20}),
+#         dcc.Checklist(
+#                options=[
+#                    {'label': 'Reductions polygons', 'value': 'reductions_poly'},
+#                     # {'label': 'Lake polygon', 'value': 'lake_poly'},
+#                    {'label': 'River reaches', 'value': 'reach_map'}
+#                ],
+#                value=['reductions_poly', 'reach_map'],
+#                id='map_checkboxes_lakes',
+#                style={'padding': 5, 'margin-bottom': 50}
+#             ),
+#         dcc.Loading(
+#         type="default",
+#         children=[html.Div(html.Button("Download power results csv", id='dl_btn_power_lakes'), style={'margin-bottom': 20}),
+# dcc.Download(id="dl_power_lakes")],
+#         ),
+#         dcc.Markdown('', style={
+#             'textAlign': 'left',
+#                         }, id='red_disclaimer_lakes'),
+
+#         ], className='two columns', style={'margin': 10}),
+
+#     html.Div([
+#         dl.Map(center=center, zoom=7, children=[
+#             dl.TileLayer(id='tile_layer_lakes', attribution=attribution),
+#             dl.GeoJSON(url=str(lakes_pbf_path), format="geobuf", id='lake_points', zoomToBoundsOnClick=True, zoomToBounds=True, cluster=True),
+#             dl.GeoJSON(data='', format="geobuf", id='catch_map_lakes', zoomToBoundsOnClick=True, options=dict(style=catch_style)),
+#             dl.GeoJSON(data='', format="geobuf", id='reach_map_lakes', options=dict(style=reach_style)),
+#             dl.GeoJSON(data='', format="geobuf", id='lake_poly', options=dict(style=lake_style_handle), hideout={'classes': [''], 'colorscale': ['#808080'], 'style': lake_style, 'colorProp': 'name'}),
+#             dl.GeoJSON(data='', format="geobuf", id='reductions_poly_lakes'),
+#             colorbar_power,
+#             info
+#                             ], style={'width': '100%', 'height': 700, 'margin': "auto", "display": "block"})
+#     ], className='five columns', style={'margin': 10}),
+
+#     dcc.Store(id='props_obj_lakes', data=''),
+#     dcc.Store(id='reaches_obj_lakes', data=''),
+#     dcc.Store(id='reductions_obj_lakes', data=''),
+# ], style={'margin':0})
+
+#     return layout
 
 ###############################################
 ### Callbacks
@@ -476,7 +378,9 @@ def update_lake_id(feature):
     # print(ds_id)
     lake_id = None
     if feature is not None:
-        lake_id = feature['id']
+        # print(feature)
+        if not feature['properties']['cluster']:
+            lake_id = feature['id']
 
     return lake_id
 
@@ -484,17 +388,33 @@ def update_lake_id(feature):
 @callback(
         Output('reach_map_lakes', 'data'),
         Input('lake_id', 'value'),
-        Input('map_checkboxes_lakes', 'value'),
         )
 # @cache.memoize()
-def update_reaches_lakes(lake_id, map_checkboxes):
-    if isinstance(lake_id, str) and ('reach_map' in map_checkboxes):
-        with booklet.open(lakes_reach_gbuf_path, 'r') as f:
+def update_reaches_lakes(lake_id):
+    if (lake_id is not None):
+        with booklet.open(utils.lakes_reach_gbuf_path, 'r') as f:
             data = base64.b64encode(f[int(lake_id)]).decode()
+
     else:
         data = ''
 
     return data
+
+
+# @callback(
+#         Output('sites_points', 'data'),
+#         Input('lake_id', 'value'),
+#         )
+# # @cache.memoize()
+# def update_monitor_sites(lake_id):
+#     if (lake_id is not None):
+#         with booklet.open(utils.lakes_sites_path, 'r') as f:
+#             data = base64.b64encode(f[int(lake_id)]).decode()
+
+#     else:
+#         data = ''
+
+#     return data
 
 
 @callback(
@@ -504,7 +424,7 @@ def update_reaches_lakes(lake_id, map_checkboxes):
 # @cache.memoize()
 def update_catch_lakes(lake_id):
     if isinstance(lake_id, str):
-        with booklet.open(lakes_catches_major_path, 'r') as f:
+        with booklet.open(utils.lakes_catches_major_path, 'r') as f:
             data = base64.b64encode(f[int(lake_id)]).decode()
     else:
         data = ''
@@ -519,7 +439,7 @@ def update_catch_lakes(lake_id):
 # @cache.memoize()
 def update_lake(lake_id):
     if isinstance(lake_id, str):
-        with booklet.open(lakes_poly_gbuf_path, 'r') as f:
+        with booklet.open(utils.lakes_poly_gbuf_path, 'r') as f:
             data = base64.b64encode(f[int(lake_id)]).decode()
     else:
         data = ''
@@ -528,118 +448,156 @@ def update_lake(lake_id):
 
 
 @callback(
-        Output('reductions_obj_lakes', 'data'), Output('col_name_lakes', 'value'),
-        Input('upload_data_lakes', 'contents'),
-        Input('demo_data_lakes', 'n_clicks'),
+        Output('base_reductions_obj_lakes', 'data'),
         Input('lake_id', 'value'),
-        State('upload_data_lakes', 'filename'),
         prevent_initial_call=True
         )
-def update_reductions_obj_lakes(contents, n_clicks, lake_id, filename):
-    if n_clicks is None:
-        if contents is not None:
-            data = parse_gis_file(contents, filename)
+# @cache.memoize()
+def update_base_reductions_obj(lake_id):
+    data = ''
 
-            if isinstance(data, str):
-                return data, None
-        else:
-            return '', None
-    elif isinstance(lake_id, str):
-        with booklet.open(lakes_lc_path, 'r') as f:
-            data = encode_obj(f[int(lake_id)])
+    if lake_id is not None:
+        with booklet.open(utils.lakes_lc_path, 'r') as f:
+            data = utils.encode_obj(f[int(lake_id)])
 
-        return data, 'default_reductions'
-    else:
-        return '', None
+    return data
 
 
 @callback(
-        Output('red_disclaimer_lakes', 'children'),
+    Output("dl_poly_lakes", "data"),
+    Input("dl_btn_lakes", "n_clicks"),
+    State('lake_id', 'value'),
+    prevent_initial_call=True,
+    )
+def download_lc(n_clicks, lake_id):
+    if isinstance(lake_id, str):
+        path = utils.lakes_catch_lc_dir.joinpath(utils.lakes_catch_lc_gpkg_str.format(lake_id))
+
+        return dcc.send_file(path)
+
+
+@callback(
+        Output('custom_reductions_obj_lakes', 'data'), Output('upload_error_text_lakes', 'children'),
         Input('upload_data_lakes', 'contents'),
-        Input('demo_data_lakes', 'n_clicks'),
-        Input('map_checkboxes_lakes', 'value'),
+        State('upload_data_lakes', 'filename'),
+        State('lake_id', 'value'),
         prevent_initial_call=True
         )
-def update_reductions_diclaimer(contents, n_clicks, map_checkboxes):
-    if (n_clicks is None) or (contents is not None):
-        return ''
-    elif 'reductions_poly' in map_checkboxes:
-        return '''* Areas on the map without polygon reductions are considered to have 0% reductions.'''
-    else:
-        return ''
+# @cache.memoize()
+def update_land_reductions(contents, filename, lake_id):
+    data = None
+    error_text = ''
 
+    if lake_id is not None:
+        if contents is not None:
+            data = utils.parse_gis_file(contents, filename)
 
-@callback(
-        Output('reductions_poly_lakes', 'data'),
-        Input('reductions_obj_lakes', 'data'),
-        Input('map_checkboxes_lakes', 'value'),
-        Input('col_name_lakes', 'value'),
-        )
-def update_reductions_poly_lakes(reductions_obj, map_checkboxes, col_name):
-    # print(reductions_obj)
-    # print(col_name)
-    if (reductions_obj != '') and (reductions_obj is not None) and ('reductions_poly' in map_checkboxes):
+            if isinstance(data, list):
+                error_text = data[0]
+                data = None
 
-        data = decode_obj(reductions_obj).to_crs(4326)
-
-        if isinstance(col_name, str):
-            data[col_name] = data[col_name].astype(str).str[:] + '% reduction'
-            data.rename(columns={col_name: 'tooltip'}, inplace=True)
-
-        gbuf = dlx.geojson_to_geobuf(data.__geo_interface__)
-
-        return gbuf
-    else:
-        return ''
-
-
-@callback(
-        Output('col_name_lakes', 'options'),
-        Input('reductions_obj_lakes', 'data')
-        )
-def update_column_options_lakes(reductions_obj):
-    # print(reductions_obj)
-    if (reductions_obj != '') and (reductions_obj is not None):
-        data = decode_obj(reductions_obj)
-        cols = [{'label': col, 'value': col} for col in data.columns if (col not in ['geometry', 'id', 'fid', 'OBJECTID']) and np.issubdtype(data[col].dtype, np.number)]
-
-        return cols
-    else:
-        return []
+    return data, error_text
 
 
 @callback(
     Output('reaches_obj_lakes', 'data'), Output('process_text_lakes', 'children'),
-    Input('process_lakes', 'n_clicks'),
-    [State('lake_id', 'value'), State('reductions_obj_lakes', 'data'), State('col_name_lakes', 'value')],
+    Input('process_reductions_lakes', 'n_clicks'),
+    Input('base_reductions_obj_lakes', 'data'),
+    [
+      State('lake_id', 'value'),
+      State('custom_reductions_obj_lakes', 'data'),
+      ],
     prevent_initial_call=True)
-def update_reach_data_lakes(click, lake_id, reductions_obj, col_name):
+def update_reach_reductions(click, base_reductions_obj, lake_id, reductions_obj):
     """
 
     """
-    if isinstance(lake_id, str) and (reductions_obj != '') and (reductions_obj is not None) and isinstance(col_name, str):
-        plan_file = decode_obj(reductions_obj)
-        props = calc_lake_reach_reductions(lake_id, plan_file, reduction_col=col_name)
-        data = encode_obj(props)
-        text_out = 'Routing complete'
+    trig = ctx.triggered_id
+
+    if (trig == 'process_reductions_lakes'):
+        if isinstance(lake_id, str) and (reductions_obj != '') and (reductions_obj is not None):
+            red1 = xr.open_dataset(utils.lakes_reductions_model_path)
+
+            base_props = red1.sel(LFENZID=int(lake_id), drop=True)
+
+            new_reductions = utils.decode_obj(reductions_obj)
+            base_reductions = utils.decode_obj(base_reductions_obj)
+
+            new_props = utils.calc_lake_reach_reductions(lake_id, new_reductions, base_reductions)
+            new_props1 = new_props.combine_first(base_props)
+            data = utils.encode_obj(new_props1)
+            text_out = 'Routing complete'
+        else:
+            data = ''
+            text_out = 'Not all inputs have been selected'
     else:
-        data = ''
-        text_out = 'Not all inputs have been selected'
+        if isinstance(lake_id, str):
+            red1 = xr.open_dataset(utils.lakes_reductions_model_path)
+
+            base_props = red1.sel(LFENZID=int(lake_id), drop=True)
+
+            data = utils.encode_obj(base_props)
+            text_out = ''
+        else:
+            data = ''
+            text_out = ''
 
     return data, text_out
 
 
+# @callback(
+#         Output('red_disclaimer_lakes', 'children'),
+#         Input('upload_data_lakes', 'contents'),
+#         Input('demo_data_lakes', 'n_clicks'),
+#         Input('map_checkboxes_lakes', 'value'),
+#         prevent_initial_call=True
+#         )
+# def update_reductions_diclaimer(contents, n_clicks, map_checkboxes):
+#     if (n_clicks is None) or (contents is not None):
+#         return ''
+#     elif 'reductions_poly' in map_checkboxes:
+#         return '''* Areas on the map without polygon reductions are considered to have 0% reductions.'''
+#     else:
+#         return ''
+
+
+# @callback(
+#         Output('reductions_poly_lakes', 'data'),
+#         Input('reductions_obj_lakes', 'data'),
+#         Input('map_checkboxes_lakes', 'value'),
+#         Input('col_name_lakes', 'value'),
+#         )
+# def update_reductions_poly_lakes(reductions_obj, map_checkboxes, col_name):
+#     # print(reductions_obj)
+#     # print(col_name)
+#     if (reductions_obj != '') and (reductions_obj is not None) and ('reductions_poly' in map_checkboxes):
+
+#         data = decode_obj(reductions_obj).to_crs(4326)
+
+#         if isinstance(col_name, str):
+#             data[col_name] = data[col_name].astype(str).str[:] + '% reduction'
+#             data.rename(columns={col_name: 'tooltip'}, inplace=True)
+
+#         gbuf = dlx.geojson_to_geobuf(data.__geo_interface__)
+
+#         return gbuf
+#     else:
+#         return ''
+
+
 @callback(
-    Output('props_obj_lakes', 'data'),
-    [Input('reaches_obj_lakes', 'data'), Input('indicator_lakes', 'value'), Input('time_period_lakes', 'value'), Input('freq_lakes', 'value')],
+    Output('powers_obj_lakes', 'data'),
+    [Input('reaches_obj_lakes', 'data'), Input('indicator_lakes', 'value'), Input('time_period_lakes', 'value'), Input('freq_lakes', 'value'), Input('reductions_slider_lakes', 'value')],
     [State('lake_id', 'value')]
     )
-def update_props_data_lakes(reaches_obj, indicator, n_years, n_samples_year, lake_id):
+def update_powers_data_lakes(reaches_obj, indicator, n_years, n_samples_year, prop_red, lake_id):
     """
 
     """
-    if (reaches_obj != '') and (reaches_obj is not None) and isinstance(n_years, int) and isinstance(n_samples_year, int) and isinstance(indicator, str):
-        props = decode_obj(reaches_obj)
+    if (reaches_obj != '') and (reaches_obj is not None) and isinstance(n_years, str) and isinstance(n_samples_year, str) and isinstance(indicator, str):
+        ind_name = utils.lakes_indicator_dict[indicator]
+
+        props = int(utils.decode_obj(reaches_obj)[ind_name].sel(reduction_perc=prop_red, drop=True))
         # print(props)
 
         conc_perc = 100 - props
@@ -667,9 +625,9 @@ def update_props_data_lakes(reaches_obj, indicator, n_years, n_samples_year, lak
             conc_perc = 100
 
         ## Lookup power
-        n_samples = n_samples_year*n_years
+        n_samples = int(n_samples_year)*int(n_years)
 
-        power_data = xr.open_dataset(lakes_power_combo_path, engine='h5netcdf')
+        power_data = xr.open_dataset(utils.lakes_power_combo_path, engine='h5netcdf')
         try:
             power_data1 = power_data.sel(indicator=indicator, LFENZID=int(lake_id), n_samples=n_samples, conc_perc=conc_perc)
 
@@ -679,7 +637,7 @@ def update_props_data_lakes(reaches_obj, indicator, n_years, n_samples_year, lak
         power_data.close()
         del power_data
 
-        data = encode_obj({'reduction': props, 'power': power_data2, 'lake_id': lake_id})
+        data = utils.encode_obj({'reduction': props, 'power': power_data2, 'lake_id': lake_id})
     else:
         data = ''
 
@@ -707,61 +665,59 @@ def update_props_data_lakes(reaches_obj, indicator, n_years, n_samples_year, lak
 
 @callback(
     Output('lake_poly', 'hideout'),
-    [Input('props_obj_lakes', 'data')],
+    [Input('powers_obj_lakes', 'data')],
     Input('lake_id', 'value'),
     prevent_initial_call=True
     )
-def update_hideout_lakes(props_obj, lake_id):
+def update_hideout_lakes(powers_obj, lake_id):
     """
 
     """
-    if (props_obj != '') and (props_obj is not None):
+    if (powers_obj != '') and (powers_obj is not None):
         # print('trigger')
-        props = decode_obj(props_obj)
+        props = utils.decode_obj(powers_obj)
         # print(props)
         # print(type(lake_id))
 
         if props['lake_id'] == lake_id:
 
-            color_arr = pd.cut([props['power'][0]], bins, labels=colorscale, right=False).tolist()
+            color_arr = pd.cut([props['power'][0]], utils.bins, labels=utils.colorscale, right=False).tolist()
             # print(color_arr)
             # print(props['lake_id'])
 
-            hideout = {'classes': [props['lake_id']], 'colorscale': color_arr, 'style': lake_style, 'colorProp': 'LFENZID'}
+            hideout = {'classes': [props['lake_id']], 'colorscale': color_arr, 'style': utils.lake_style, 'colorProp': 'LFENZID'}
         else:
-            hideout = {'classes': [lake_id], 'colorscale': ['#808080'], 'style': lake_style, 'colorProp': 'LFENZID'}
+            hideout = {'classes': [lake_id], 'colorscale': ['#808080'], 'style': utils.lake_style, 'colorProp': 'LFENZID'}
     else:
-        hideout = {'classes': [lake_id], 'colorscale': ['#808080'], 'style': lake_style, 'colorProp': 'LFENZID'}
+        hideout = {'classes': [lake_id], 'colorscale': ['#808080'], 'style': utils.lake_style, 'colorProp': 'LFENZID'}
 
     return hideout
 
 
 @callback(
     Output("info_lakes", "children"),
-    [Input('props_obj_lakes', 'data'),
-      Input('reductions_obj_lakes', 'data'),
-      Input('map_checkboxes_lakes', 'value'),
+    [Input('powers_obj_lakes', 'data'),
       Input("lake_poly", "click_feature")],
     )
-def update_map_info_lakes(props_obj, reductions_obj, map_checkboxes, feature):
+def update_map_info_lakes(powers_obj, feature):
     """
 
     """
-    info = """###### Likelihood of observing a reduction (%)"""
+    info = """"""
 
-    if (reductions_obj != '') and (reductions_obj is not None) and ('reductions_poly' in map_checkboxes):
-        info = info + """\n\nHover over the polygons to see reduction %"""
+    # if (reductions_obj != '') and (reductions_obj is not None) and ('reductions_poly' in map_checkboxes):
+    #     info = info + """\n\nHover over the polygons to see reduction %"""
 
-    if (props_obj != '') and (props_obj is not None):
+    if (powers_obj != '') and (powers_obj is not None):
         if feature is not None:
-            props = decode_obj(props_obj)
+            props = utils.decode_obj(powers_obj)
 
             if np.isnan(props['power'][1]):
                 moni1 = 'NA'
             else:
                 moni1 = str(int(props['power'][1])) + '%'
 
-            info_str = """\n\nReduction: {red}%\n\nLikelihood of observing a reduction (power):\n\n&nbsp;&nbsp;&nbsp;&nbsp;**Modelled: {t_stat1}%**\n\n&nbsp;&nbsp;&nbsp;&nbsp;**Monitored: {t_stat2}**""".format(red=int(props['reduction']), t_stat1=int(props['power'][0]), t_stat2=moni1)
+            info_str = """\n\n**Reduction**: {red}%\n\n**Likelihood of observing a reduction (power)**:\n\n&nbsp;&nbsp;&nbsp;&nbsp;**Modelled**: {t_stat1}%\n\n&nbsp;&nbsp;&nbsp;&nbsp;**Monitored**: {t_stat2}""".format(red=int(props['reduction']), t_stat1=int(props['power'][0]), t_stat2=moni1)
 
             info = info + info_str
 
@@ -771,56 +727,47 @@ def update_map_info_lakes(props_obj, reductions_obj, map_checkboxes, feature):
     return info
 
 
-@callback(
-    Output("dl_poly_lakes", "data"),
-    Input("dl_btn_lakes", "n_clicks"),
-    State('lake_id', 'value'),
-    State('reductions_obj_lakes', 'data'),
-    prevent_initial_call=True,
-    )
-def download_lc(n_clicks, lake_id, reductions_obj):
-    # data = decode_obj(reductions_obj)
-    # io1 = io.BytesIO()
-    # data.to_file(io1, driver='GPKG')
-    # io1.seek(0)
+# @callback(
+#     Output("dl_poly_lakes", "data"),
+#     Input("dl_btn_lakes", "n_clicks"),
+#     State('lake_id', 'value'),
+#     State('reductions_obj_lakes', 'data'),
+#     prevent_initial_call=True,
+#     )
+# def download_lc(n_clicks, lake_id, reductions_obj):
+#     # data = decode_obj(reductions_obj)
+#     # io1 = io.BytesIO()
+#     # data.to_file(io1, driver='GPKG')
+#     # io1.seek(0)
 
-    if isinstance(lake_id, str) and (reductions_obj != '') and (reductions_obj is not None):
-        path = lakes_catch_lc_dir.joinpath(lakes_catch_lc_gpkg_str.format(lake_id))
+#     if isinstance(lake_id, str) and (reductions_obj != '') and (reductions_obj is not None):
+#         path = utils.lakes_catch_lc_dir.joinpath(utils.lakes_catch_lc_gpkg_str.format(lake_id))
 
-        return dcc.send_file(path)
+#         return dcc.send_file(path)
 
 
 @callback(
     Output("dl_power_lakes", "data"),
     Input("dl_btn_power_lakes", "n_clicks"),
     State('lake_id', 'value'),
-    State('reaches_obj_lakes', 'data'),
+    State('powers_obj_lakes', 'data'),
     State('indicator_lakes', 'value'),
     State('time_period_lakes', 'value'),
     State('freq_lakes', 'value'),
     prevent_initial_call=True,
     )
-def download_power(n_clicks, lake_id, props_obj, indicator, n_years, n_samples_year):
-    # data = decode_obj(reductions_obj)
-    # io1 = io.BytesIO()
-    # data.to_file(io1, driver='GPKG')
-    # io1.seek(0)
+def download_power(n_clicks, lake_id, powers_obj, indicator, n_years, n_samples_year):
 
-    if isinstance(lake_id, str) and (props_obj != '') and (props_obj is not None):
-        props = decode_obj(props_obj)
-        conc_perc = 100 - props
+    if isinstance(lake_id, str) and (powers_obj != '') and (powers_obj is not None):
+        power_data = utils.decode_obj(powers_obj)
 
-        power_data = xr.open_dataset(lakes_power_combo_path, engine='h5netcdf')
-        power_data1 = power_data.sel(LFENZID=int(lake_id), conc_perc=conc_perc, drop=True)
-        power_data1['n_samples'] = power_data1['n_samples'].astype('int16')
-        # power_data1 = power_data1.assign_coords(indicator=indicator).expand_dims('indicator')
-        power_data1 = power_data1.assign_coords(lake_id=int(lake_id)).expand_dims('lake_id')
+        df1 = pd.DataFrame([power_data['power']], columns=['modelled', 'monitored'])
+        df1['indicator'] = utils.lakes_indicator_dict[indicator]
+        df1['n_years'] = n_years
+        df1['n_samples_per_year'] = n_samples_year
+        df1['LFENZID'] = lake_id
+        df1['reduction'] = power_data['reduction']
 
-        df = power_data1.to_dataframe().reset_index().set_index(['lake_id', 'indicator', 'n_samples']).sort_index()
+        df2 = df1.set_index(['indicator', 'n_years', 'n_samples_per_year', 'reduction', 'LFENZID']).sort_index()
 
-        return dcc.send_data_frame(df.to_csv, f"lake_power_{lake_id}.csv")
-
-
-
-# with shelflet.open(lakes_lc_path, 'r') as f:
-#     plan_file = f[str(lake_id)]
+        return dcc.send_data_frame(df2.to_csv, f"lake_power_{lake_id}.csv")
