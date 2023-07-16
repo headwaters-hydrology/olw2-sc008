@@ -47,22 +47,6 @@ window.dashExtensions = Object.assign({}, window.dashExtensions, {
 
             return L.circleMarker(latlng, circleOptions);
         },
-        lakes_lake_style_handle: function style4(feature, context) {
-            const {
-                classes,
-                colorscale,
-                style,
-                colorProp
-            } = context.props.hideout; // get props from hideout
-            const value = feature.properties[colorProp]; // get value the determines the color
-            for (let i = 0; i < classes.length; ++i) {
-                if (value == classes[i]) {
-                    style.color = colorscale[i]; // set the color according to the class
-                }
-            }
-
-            return style;
-        },
         gw_rc_style_handle: function style(feature) {
             return {
                 fillColor: 'grey',
@@ -87,6 +71,22 @@ window.dashExtensions = Object.assign({}, window.dashExtensions, {
             }
 
             return L.circleMarker(latlng, circleOptions);
+        },
+        lakes_lake_style_handle: function style4(feature, context) {
+            const {
+                classes,
+                colorscale,
+                style,
+                colorProp
+            } = context.props.hideout; // get props from hideout
+            const value = feature.properties[colorProp]; // get value the determines the color
+            for (let i = 0; i < classes.length; ++i) {
+                if (value == classes[i]) {
+                    style.color = colorscale[i]; // set the color according to the class
+                }
+            }
+
+            return style;
         }
     }
 });

@@ -135,7 +135,6 @@ gw_reductions_options = [{'value': v, 'label': str(v)+'%'} for v in gw_reduction
 
 ### Handles
 
-## Rivers
 catch_style_handle = assign("""function style(feature) {
     return {
         fillColor: 'grey',
@@ -145,6 +144,8 @@ catch_style_handle = assign("""function style(feature) {
         fillOpacity: 0.1
     };
 }""", name='rivers_catch_style_handle')
+
+## Rivers
 
 base_reach_style_handle = assign("""function style3(feature) {
     return {
