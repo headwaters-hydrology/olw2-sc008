@@ -471,7 +471,7 @@ def layout():
                             chevronPosition='left',
                             children=[
                             dmc.AccordionItem([
-                                dmc.AccordionControl(html.Div('(1) Lake Selection', style={'font-size': 22})),
+                                dmc.AccordionControl('(1) Lake Selection'),
                                 dmc.AccordionPanel([
 
                                     html.Label('(1a) Select a lake/lagoon on the map:'),
@@ -485,7 +485,7 @@ def layout():
                                 ),
 
                             dmc.AccordionItem([
-                                dmc.AccordionControl(html.Div('(2 - Optional) Customise Reductions Layer', style={'font-size': 22})),
+                                dmc.AccordionControl('(2 - Optional) Customise Reductions Layer'),
                                 dmc.AccordionPanel([
                                     html.Label('(2a) Download reductions polygons as GPKG:'),
                                     dcc.Loading(
@@ -540,7 +540,7 @@ def layout():
                                 ),
 
                             dmc.AccordionItem([
-                                dmc.AccordionControl(html.Div('(3) Sampling Options', style={'font-size': 22})),
+                                dmc.AccordionControl('(3) Sampling Options'),
                                 dmc.AccordionPanel([
                                     dmc.Text('(3a) Select Indicator:'),
                                     dcc.Dropdown(options=indicators, id='indicator_lakes', optionHeight=40, clearable=False),
@@ -575,7 +575,7 @@ def layout():
                                 ),
 
                             dmc.AccordionItem([
-                                dmc.AccordionControl(html.Div('(4) Download Results', style={'font-size': 22})),
+                                dmc.AccordionControl('(4) Download Results'),
                                 dmc.AccordionPanel([
                                     dmc.Text('(4a) Download power results given the prior sampling options (csv):'),
                                     dcc.Loading(

@@ -387,7 +387,7 @@ def layout():
                             chevronPosition='left',
                             children=[
                             dmc.AccordionItem([
-                                dmc.AccordionControl(html.Div('(1) Select a Regional Council', style={'font-size': 22})),
+                                dmc.AccordionControl('(1) Select a Regional Council'),
                                 dmc.AccordionPanel([
 
                                     html.Label('(1a) Select a Regional Council on the map:'),
@@ -401,7 +401,7 @@ def layout():
                                 ),
 
                             dmc.AccordionItem([
-                                dmc.AccordionControl(html.Div('(2) Select a reduction', style={'font-size': 22})),
+                                dmc.AccordionControl('(2) Select a reduction'),
                                 dmc.AccordionPanel([
                                     html.Label('(2a) Select a reduction:'),
                                     dmc.Slider(id='reductions_slider_gw',
@@ -424,7 +424,7 @@ def layout():
                                 ),
 
                             dmc.AccordionItem([
-                                dmc.AccordionControl(html.Div('(3) Sampling Options', style={'font-size': 22})),
+                                dmc.AccordionControl('(3) Sampling Options'),
                                 dmc.AccordionPanel([
                                     dmc.Text('(3a) Select Indicator:'),
                                     dcc.Dropdown(options=indicators, id='indicator_gw', optionHeight=40, clearable=False),
@@ -449,7 +449,7 @@ def layout():
                                 ),
 
                             dmc.AccordionItem([
-                                dmc.AccordionControl(html.Div('(4) Download Results', style={'font-size': 22})),
+                                dmc.AccordionControl('(4) Download Results'),
                                 dmc.AccordionPanel([
                                     dmc.Text('(4a) Download power results given the prior sampling options (csv):'),
                                     dcc.Loading(

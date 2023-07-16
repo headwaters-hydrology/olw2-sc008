@@ -523,7 +523,7 @@ def layout():
                             children=[
                             dmc.AccordionItem([
                                 # html.H5('(1) Catchment selection', style={'font-weight': 'bold'}),
-                                dmc.AccordionControl(html.Div('(1) Catchment Selection', style={'font-size': 22})),
+                                dmc.AccordionControl('(1) Catchment Selection'),
                                 dmc.AccordionPanel([
 
                                     html.Label('(1a) Select a catchment on the map:'),
@@ -538,7 +538,7 @@ def layout():
 
                             dmc.AccordionItem([
                                 # html.H5('Optional (2) Customise Reductions Layer', style={'font-weight': 'bold', 'margin-top': 20}),
-                                dmc.AccordionControl(html.Div('(2 - Optional) Customise Reductions Layer', style={'font-size': 22})),
+                                dmc.AccordionControl('(2 - Optional) Customise Reductions Layer'),
                                 dmc.AccordionPanel([
                                     html.Label('(2a) Download reductions polygons as GPKG:'),
                                     dcc.Loading(
@@ -601,7 +601,7 @@ def layout():
                                 ),
 
                             dmc.AccordionItem([
-                                dmc.AccordionControl(html.Div('(3) Sampling Options', style={'font-size': 22})),
+                                dmc.AccordionControl('(3) Sampling Options'),
                                 dmc.AccordionPanel([
                                     dmc.Text('(3a) Select Indicator:'),
                                     dcc.Dropdown(options=[{'label': rivers_indicator_dict[d], 'value': d} for d in indicators], id='indicator_rivers', optionHeight=40, clearable=False),
@@ -640,7 +640,7 @@ def layout():
                                 ),
 
                             dmc.AccordionItem([
-                                dmc.AccordionControl(html.Div('(4) Download Results', style={'font-size': 22})),
+                                dmc.AccordionControl('(4) Download Results'),
                                 dmc.AccordionPanel([
                                     dmc.Text('(4a) Download power results given the prior sampling options (csv):'),
                                     dcc.Loading(
