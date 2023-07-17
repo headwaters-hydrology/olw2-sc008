@@ -18,6 +18,10 @@ import geobuf
 import shapely
 from shapely.geometry import Point, Polygon, box, LineString, mapping
 
+import sys
+if '..' not in sys.path:
+    sys.path.append('..')
+
 import utils
 
 pd.options.display.max_columns = 10

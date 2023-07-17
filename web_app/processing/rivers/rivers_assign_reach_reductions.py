@@ -23,8 +23,8 @@ pd.options.display.max_columns = 10
 
 params = ['Total nitrogen', 'Total phosphorus']
 
-output_path1 = '/media/nvme1/data/OLW/web_app/output/rec_segment_reductions.csv'
-output_path2 = '/media/nvme1/data/OLW/web_app/output/rec_segment_typology_area_ratios.csv'
+output_path1 = '/home/mike/data/OLW/web_app/output/rec_segment_reductions.csv'
+output_path2 = '/home/mike/data/OLW/web_app/output/rec_segment_typology_area_ratios.csv'
 
 #############################################
 ### Functions
