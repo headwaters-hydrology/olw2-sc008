@@ -65,7 +65,6 @@ center = [-41.1157, 172.4759]
 
 attribution = 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 
-freq_mapping = {12: 'monthly', 26: 'fortnightly', 52: 'weekly', 104: 'twice weekly', 364: 'daily'}
 time_periods = [5, 10, 20, 30]
 
 style = dict(weight=4, opacity=1, color='white')
@@ -436,7 +435,7 @@ def layout():
                                                          color=1,
                                                          ),
                                     dmc.Text('(3c) Select sampling frequency:', style={'margin-top': 20}),
-                                    dmc.SegmentedControl(data=[{'label': v, 'value': str(k)} for k, v in freq_mapping.items()],
+                                    dmc.SegmentedControl(data=[{'label': v, 'value': str(k)} for k, v in gw_freq_mapping.items()],
                                                          id='freq_gw',
                                                          value='12',
                                                          fullWidth=True,
