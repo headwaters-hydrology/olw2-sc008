@@ -17,7 +17,7 @@ pd.options.display.max_columns = 10
 base_path = pathlib.Path('/media/nvme1/data/OLW')
 
 flow_data_csv = 'NZRiverMaps_hydro_data_2023-01-09.csv'
-sites_csv = 'olw_river_sites.csv'
+sites_csv = 'olw_river_sites_rec.csv'
 
 output_csv = 'hydro_stats_at_river_sites.csv'
 

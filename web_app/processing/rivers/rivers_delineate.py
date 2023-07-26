@@ -18,6 +18,10 @@ import geobuf
 import shapely
 from shapely.geometry import Point, Polygon, box, LineString, mapping
 
+import sys
+if '..' not in sys.path:
+    sys.path.append('..')
+
 import utils
 
 pd.options.display.max_columns = 10
@@ -25,6 +29,8 @@ pd.options.display.max_columns = 10
 
 #############################################
 ### Rivers
+
+extra_end_segs = [3076139]
 
 
 def rec_delin():
@@ -45,6 +51,8 @@ def rec_delin():
         down_node = way[way_id][-1]
         if len(node_way[down_node]) == 1:
             append(way_id)
+
+    end_segs.extend(extra_end_segs)
 
     ways_1st_2nd = set([i for i, v in stream_orders.items() if v < 3])
 

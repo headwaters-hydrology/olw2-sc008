@@ -1,6 +1,6 @@
 window.dashExtensions = Object.assign({}, window.dashExtensions, {
     default: {
-        function0: function style(feature) {
+        rivers_catch_style_handle: function style(feature) {
             return {
                 fillColor: 'grey',
                 weight: 2,
@@ -9,14 +9,14 @@ window.dashExtensions = Object.assign({}, window.dashExtensions, {
                 fillOpacity: 0.1
             };
         },
-        function1: function style3(feature) {
+        rivers_base_reach_style_handle: function style3(feature) {
             return {
                 weight: 2,
                 opacity: 0.75,
                 color: 'grey',
             };
         },
-        function2: function style2(feature, context) {
+        rivers_reach_style_handle: function style2(feature, context) {
             const {
                 classes,
                 colorscale,
@@ -31,7 +31,23 @@ window.dashExtensions = Object.assign({}, window.dashExtensions, {
             }
             return style;
         },
-        function3: function style(feature) {
+        rivers_sites_points_handle: function rivers_sites_points_handle(feature, latlng, context) {
+            const {
+                classes,
+                colorscale,
+                circleOptions,
+                colorProp
+            } = context.props.hideout; // get props from hideout
+            const value = feature.properties[colorProp]; // get value the determines the fillColor
+            for (let i = 0; i < classes.length; ++i) {
+                if (value == classes[i]) {
+                    circleOptions.fillColor = colorscale[i]; // set the color according to the class
+                }
+            }
+
+            return L.circleMarker(latlng, circleOptions);
+        },
+        gw_rc_style_handle: function style(feature) {
             return {
                 fillColor: 'grey',
                 weight: 2,
@@ -40,14 +56,23 @@ window.dashExtensions = Object.assign({}, window.dashExtensions, {
                 fillOpacity: 0.1
             };
         },
-        function4: function style3(feature) {
-            return {
-                weight: 2,
-                opacity: 0.75,
-                color: 'grey',
-            };
+        gw_points_style_handle: function gw_points_style_handle(feature, latlng, context) {
+            const {
+                classes,
+                colorscale,
+                circleOptions,
+                colorProp
+            } = context.props.hideout; // get props from hideout
+            const value = feature.properties[colorProp]; // get value the determines the fillColor
+            for (let i = 0; i < classes.length; ++i) {
+                if (value == classes[i]) {
+                    circleOptions.fillColor = colorscale[i]; // set the color according to the class
+                }
+            }
+
+            return L.circleMarker(latlng, circleOptions);
         },
-        function5: function style2(feature, context) {
+        lakes_lake_style_handle: function style4(feature, context) {
             const {
                 classes,
                 colorscale,
@@ -57,9 +82,10 @@ window.dashExtensions = Object.assign({}, window.dashExtensions, {
             const value = feature.properties[colorProp]; // get value the determines the color
             for (let i = 0; i < classes.length; ++i) {
                 if (value == classes[i]) {
-                    style.color = colorscale[i]; // set the fill color according to the class
+                    style.color = colorscale[i]; // set the color according to the class
                 }
             }
+
             return style;
         }
     }

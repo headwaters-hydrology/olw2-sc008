@@ -56,14 +56,16 @@ n_sims = 10000
 #         errors.add(int(error['error']*1000))
 
 
-list1 = utils.error_cats()
+# list1 = utils.log_error_cats(0.01, 3.43, 0.1)
+list1 = utils.log_error_cats(0.01, 3.05, 0.05)
+list1 = [0.001] + list1
 
 
 if __name__ == '__main__':
     with concurrent.futures.ProcessPoolExecutor(max_workers=16, mp_context=mp.get_context("spawn")) as executor:
         futures = []
         for error in list1[:-1]:
-            f = executor.submit(utils.catch_sims, error, n_years, n_samples_year, n_sims, utils.river_sims_path)
+            f = executor.submit(utils.power_sims, error, n_years, n_samples_year, n_sims, utils.river_sims_path)
             futures.append(f)
         runs = concurrent.futures.wait(futures)
 
@@ -71,87 +73,8 @@ if __name__ == '__main__':
     paths.sort()
 
     h5 = hdf5tools.H5(paths)
-    h5.to_hdf5(utils.river_sims_h5_path)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
+    h5.to_hdf5(utils.river_sims_gam_path)
+
+    ## Remove temp files
+    for path in paths:
+        os.remove(path)

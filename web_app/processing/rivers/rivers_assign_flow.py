@@ -21,7 +21,10 @@ import utils
 pd.options.display.max_columns = 10
 
 #######################################
-### Assign conc
+### Assign flows
+
+extra_end_segs = (3076139,)
+
 
 def process_flows_rec():
     w0 = nzrec.Water(utils.nzrec_data_path)
@@ -41,6 +44,7 @@ def process_flows_rec():
     ## Calc diff flows
     up_flows_dict = {}
     for way_id in reaches:
+        # if way_id not in extra_end_segs:
         down_ways = set([way_id])
         down_flow = flows[way_id]
 
@@ -61,7 +65,6 @@ def process_flows_rec():
                     up_flows_dict[way_id] = 0
                 else:
                     up_flows_dict[way_id] = diff_flow
-
 
         while new_ways:
             down_ways.update(new_ways)
@@ -84,9 +87,9 @@ def process_flows_rec():
 
                         diff_flow = round(down_flow - up_flow, 3)
                         if diff_flow < 0:
-                            up_flows_dict[way_id] = 0
+                            up_flows_dict[new_way_id] = 0
                         else:
-                            up_flows_dict[way_id] = diff_flow
+                            up_flows_dict[new_way_id] = diff_flow
 
     with booklet.open(utils.river_flows_rec_path, 'n', key_serializer='uint4', value_serializer='int4') as f:
         for way_id, flow in up_flows_dict.items():
