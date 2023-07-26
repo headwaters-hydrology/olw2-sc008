@@ -1,0 +1,31 @@
+version: '3.3'
+
+networks:
+  net:
+    # driver: overlay
+    attachable: true
+
+volumes:
+  olw-assets:
+
+services:
+  assets:
+    image: mullenkamp/olw-monitoring-app-assets:1.4
+    volumes:
+      - olw-assets:/app/assets
+    networks:
+      - net
+    deploy:
+      restart_policy:
+        condition: none
+
+  olw-app:
+    image: mullenkamp/olw-monitoring-app:1.26
+    volumes:
+      - olw-assets:/app/assets
+    networks:
+      - net
+    depends_on:
+      - assets
+    ports:
+      - "8000:80"
