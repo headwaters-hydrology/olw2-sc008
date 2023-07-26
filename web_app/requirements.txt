@@ -1,5 +1,2 @@
 gistools==1.2.27
-dash-bootstrap-components==1.2.1
-booklet==0.0.18
 pyarrow==10.0.1
-dash-mantine-components==0.9.0

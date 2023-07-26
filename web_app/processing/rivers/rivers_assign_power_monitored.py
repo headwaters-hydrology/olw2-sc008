@@ -14,6 +14,10 @@ import numpy as np
 import hdf5tools
 import booklet
 
+import sys
+if '..' not in sys.path:
+    sys.path.append('..')
+
 import utils
 
 pd.options.display.max_columns = 10
@@ -23,14 +27,15 @@ pd.options.display.max_columns = 10
 
 # indicators = ['BD', 'DR', 'EC', 'NH', 'NO', 'TN', 'TP', 'TU']
 
-error_name = 'lm1seRes'
+error_name = 'gam1seRes'
 
 
 def rivers_process_power_monitored():
     # list1 = utils.log_error_cats(0.01, 2.72, 0.1)
     # list1 = utils.log_error_cats(0.01, 3.43, 0.1)
-    list1 = utils.log_error_cats(0.01, 3.05, 0.05)
-    list1 = [0.001] + list1
+    # list1 = utils.log_error_cats(0.01, 3.05, 0.05)
+    # list1 = [0.001] + list1
+    list1 = utils.log_error_cats(0.14, 1.55, 0.03)
 
     # conc0 = pd.read_csv(utils.conc_csv_path, usecols=['Indicator', 'nzsegment', 'lm1seRes']).dropna()
     # conc0.rename(columns={'lm1seRes': 'error', 'Indicator': 'indicator'}, inplace=True)
@@ -39,9 +44,9 @@ def rivers_process_power_monitored():
     conc0a = conc0.set_index('nzsegment').loc[:, [col for col in conc0.columns if error_name in col]].stack()
     conc0a.name = 'error'
     conc0b = conc0a.reset_index()
-    conc0b['indicator'] = conc0b['level_1'].str[:2]
+    conc0b['indicator'] = conc0b['level_1'].apply(lambda x: x.split(error_name)[0])
     conc0b = conc0b.drop('level_1', axis=1)
-    conc0b['indicator'] = conc0b['indicator'].replace({'E_': 'EC'})
+    conc0b['indicator'] = conc0b['indicator'].replace({'E_': 'EC', 'DR': 'DRP'})
 
     conc1 = conc0b.groupby(['indicator', 'nzsegment']).mean().reset_index()
     # conc1.loc[(conc1.indicator == 'EC') & (conc1.init_conc > 1000)] = np.nan

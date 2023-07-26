@@ -25,6 +25,11 @@ import h5py
 import hdf5tools
 import concurrent.futures
 import multiprocessing as mp
+
+import sys
+if '..' not in sys.path:
+    sys.path.append('..')
+
 import utils
 
 pd.options.display.max_columns = 10
@@ -57,14 +62,15 @@ n_sims = 10000
 
 
 # list1 = utils.log_error_cats(0.01, 2.72, 0.1)
-list1 = utils.log_error_cats(0.01, 2.55, 0.05)
-list1 = [0.001] + list1
+# list1 = utils.log_error_cats(0.01, 2.55, 0.05)
+# list1 = [0.001] + list1
+list1 = utils.log_error_cats(0.14, 1.55, 0.03)
 
 
 if __name__ == '__main__':
-    with concurrent.futures.ProcessPoolExecutor(max_workers=8, mp_context=mp.get_context("spawn")) as executor:
+    with concurrent.futures.ProcessPoolExecutor(max_workers=12, mp_context=mp.get_context("spawn")) as executor:
         futures = []
-        for error in list1[:-1]:
+        for error in list1:
             f = executor.submit(utils.power_sims, error, n_years, n_samples_year, n_sims, utils.river_sims_path)
             futures.append(f)
         runs = concurrent.futures.wait(futures)

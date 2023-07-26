@@ -27,7 +27,7 @@ services:
           - node.hostname == uswest3.tethys-ts.xyz
 
   dash:
-    image: mullenkamp/olw-monitoring-app:1.26
+    image: mullenkamp/olw-monitoring-app:1.27
     volumes:
       - olw-assets:/app/assets
     networks:
@@ -36,7 +36,7 @@ services:
     depends_on:
       - assets
     deploy:
-      replicas: 4
+      replicas: 1
       placement:
         constraints:
           - node.labels.function == web_server
@@ -45,11 +45,11 @@ services:
         - traefik.enable=true
         - traefik.docker.network=traefik-public
         - traefik.constraint-label=traefik-public
-        - traefik.http.routers.olw-vis-http.rule=Host(`olw-vis.nzrivers.xyz`)
-        - traefik.http.routers.olw-vis-http.entrypoints=http
-        - traefik.http.routers.olw-vis-http.middlewares=https-redirect
-        - traefik.http.routers.olw-vis-https.rule=Host(`olw-vis.nzrivers.xyz`)
-        - traefik.http.routers.olw-vis-https.entrypoints=https
-        - traefik.http.routers.olw-vis-https.tls=true
+        - traefik.http.routers.olw-vis-test-http.rule=Host(`olw-vis-test.nzrivers.xyz`)
+        - traefik.http.routers.olw-vis-test-http.entrypoints=http
+        - traefik.http.routers.olw-vis-test-http.middlewares=https-redirect
+        - traefik.http.routers.olw-vis-test-https.rule=Host(`olw-vis-test.nzrivers.xyz`)
+        - traefik.http.routers.olw-vis-test-https.entrypoints=https
+        - traefik.http.routers.olw-vis-test-https.tls=true
         # - traefik.http.routers.es-dash-https.tls.certresolver=le
-        - traefik.http.services.olw-vis.loadbalancer.server.port=80
+        - traefik.http.services.olw-vis-test.loadbalancer.server.port=80

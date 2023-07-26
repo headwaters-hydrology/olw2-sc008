@@ -19,15 +19,15 @@ pd.options.display.max_columns = 10
 ######################################################
 ### Parameters
 
-base_path = pathlib.Path('/media/nvme1/data/OLW')
+base_path = pathlib.Path('/home/mike/data/OLW')
 
-rivers_reach_error_path = '/media/nvme1/data/OLW/web_app/output/rivers_reaches_error_gam.h5'
+rivers_reach_error_path = '/home/mike/data/OLW/web_app/output/assets/rivers_reaches_power_modelled.h5'
 
-sites_csv = 'olw_river_sites_rec.csv'
+sites_csv = 'lawa_to_nzsegment.csv'
 
-output_csv = 'power_calcs_above_3rd_order_gam_v03.csv'
+output_csv = 'power_calcs_above_3rd_order_gam_v04.csv'
 
-reductions = [20, 30]
+reductions = [30]
 
 n_years = [5, 20]
 n_samples_year = [12, 26, 52, 104, 364]
@@ -41,13 +41,13 @@ n_samples_df['n_samples'] = n_samples
 #####################################################
 ### Process data
 
-w0 = nzrec.Water('/media/nvme1/git/nzrec/data')
+w0 = nzrec.Water('/home/mike/git/nzrec/data')
 
 stream_orders = {way_id: v['Strahler stream order'] for way_id, v in w0._way_tag.items()}
 
 ways_4th_up = [i for i, v in stream_orders.items() if v > 3]
 
-conc0 = pd.read_csv('/media/nvme1/data/OLW/web_app/StBD3.csv', usecols=['Indicator', 'nzsegment', 'lm1seRes']).dropna()
+conc0 = pd.read_csv('/home/mike/data/OLW/web_app/rivers/StBD3.csv', usecols=['Indicator', 'nzsegment', 'lm1seRes']).dropna()
 nzsegments = conc0.nzsegment.unique().astype('int32')
 
 sites = pd.read_csv(base_path.joinpath(sites_csv)).dropna()
@@ -79,6 +79,6 @@ s_orders_df = s_orders_df.reset_index()
 pd_df1 = pd.merge(pd_df1, s_orders_df, on='nzsegment', how='left')
 pd_df1 = pd.merge(pd_df1, sites, on='nzsegment', how='left')
 
-pd_df1[['nzsegment', 'indicator', 'reduction', 'n_years', 'n_samples_year', 'power', 'stream_order', 'site_id']].sort_values(['nzsegment', 'indicator', 'reduction', 'n_years', 'n_samples_year']).to_csv(base_path.joinpath(output_csv), index=False)
+pd_df1[['nzsegment', 'indicator', 'reduction', 'n_years', 'n_samples_year', 'power', 'stream_order', 'lawa_id']].sort_values(['nzsegment', 'indicator', 'reduction', 'n_years', 'n_samples_year']).to_csv(base_path.joinpath(output_csv), index=False)
 
 

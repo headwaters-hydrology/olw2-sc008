@@ -10,43 +10,46 @@ import xarray as xr
 import dash
 from dash import dcc, html, dash_table, callback, ctx
 from dash.dependencies import Input, Output, State
+import dash_bootstrap_components as dbc
+import dash_mantine_components as dmc
+import dash_leaflet as dl
+import dash_leaflet.express as dlx
+from dash_extensions.javascript import assign, arrow_function
 import pandas as pd
 import numpy as np
 # import requests
 import zstandard as zstd
 import codecs
 import pickle
-import dash_leaflet as dl
-import dash_leaflet.express as dlx
 import geopandas as gpd
 from gistools import vector
 import os
 # import tethysts
 import base64
 import geobuf
-import dash_leaflet.express as dlx
-from dash_extensions.javascript import assign, arrow_function
 import pathlib
 import hdf5plugin
 import booklet
 
 # from .app import app
-# from . import utils
 
 # from app import app
 # import utils
+# from . import utils
 
 ##########################################
 ### Parameters
-
-assets_path = pathlib.Path(os.path.split(os.path.realpath(os.path.dirname(__file__)))[0]).joinpath('assets')
 
 dash.register_page(
     __name__,
     path='/gw-wq',
     title='Groundwater Quality',
-    name='Groundwater Quality'
+    name='gw_wq',
+    description='Groundwater Quality'
 )
+
+### Paths
+assets_path = pathlib.Path(os.path.realpath(os.path.dirname(__file__))).parent.joinpath('assets')
 
 app_base_path = pathlib.Path('/assets')
 
@@ -56,45 +59,40 @@ gw_error_path = assets_path.joinpath('gw_points_error.h5')
 gw_points_rc_blt = assets_path.joinpath('gw_points_rc.blt')
 rc_bounds_gbuf = app_base_path.joinpath('rc_bounds.pbf')
 
-# gw_poly_gbuf_path = assets_path.joinpath('gw_poly.blt')
-# gw_catches_major_path = assets_path.joinpath('gw_catchments_major.blt')
-# gw_reach_gbuf_path = assets_path.joinpath('gw_reaches.blt')
-# gw_lc_path = assets_path.joinpath('gw_catch_lc.blt')
-# gw_reaches_mapping_path = assets_path.joinpath('gw_reaches_mapping.blt')
-# gw_catches_minor_path = assets_path.joinpath('gw_catchments_minor.blt')
-
+### Layout
 map_height = 700
-
 center = [-41.1157, 172.4759]
-
-# mapbox_access_token = "pk.eyJ1IjoibXVsbGVua2FtcDEiLCJhIjoiY2pudXE0bXlmMDc3cTNxbnZ0em4xN2M1ZCJ9.sIOtya_qe9RwkYXj5Du1yg"
-
-tabs_styles = {
-    'height': '40px'
-}
-tab_style = {
-    'borderBottom': '1px solid #d6d6d6',
-    'padding': '5px',
-    'fontWeight': 'bold'
-}
-
-tab_selected_style = {
-    'borderTop': '1px solid #d6d6d6',
-    'borderBottom': '1px solid #d6d6d6',
-    'backgroundColor': '#119DFF',
-    'color': 'white',
-    'padding': '5px'
-}
 
 attribution = 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 
-# base_rc_style_handle = assign("""function style3(feature) {
-#     return {
-#         weight: 2,
-#         opacity: 0.75,
-#         color: 'grey',
-#     };
-# }""", name='gw_base_rc_style_handle')
+time_periods = [5, 10, 20, 30]
+
+style = dict(weight=4, opacity=1, color='white')
+classes = [0, 20, 40, 60, 80]
+bins = classes.copy()
+bins.append(101)
+# colorscale = ['#808080', '#FED976', '#FEB24C', '#FC4E2A', '#BD0026', '#800026']
+colorscale = ['#808080', '#FED976', '#FD8D3C', '#E31A1C', '#800026']
+# reductions_colorscale = ['#edf8fb','#b2e2e2','#66c2a4','#2ca25f','#006d2c']
+# ctg = ["{}%+".format(cls, classes[i + 1]) for i, cls in enumerate(classes[1:-1])] + ["{}%+".format(classes[-1])]
+# ctg.insert(0, 'NA')
+ctg = ["{}%+".format(cls, classes[i + 1]) for i, cls in enumerate(classes[:-1])] + ["{}%+".format(classes[-1])]
+# ctg.insert(0, 'NA')
+
+site_point_radius = 6
+
+reduction_ratios = range(10, 101, 10)
+red_ratios = np.array(list(reduction_ratios), dtype='int8')
+
+gw_points_hideout = {'classes': [], 'colorscale': ['#808080'], 'circleOptions': dict(fillOpacity=1, stroke=False, radius=site_point_radius), 'colorProp': 'tooltip'}
+
+gw_freq_mapping = {1: 'Yearly', 4: 'Quarterly', 12: 'monthly', 26: 'fortnightly', 52: 'weekly'}
+
+gw_indicator_dict = {'Nitrate': 'Nitrate'}
+
+gw_reductions_values = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
+
+gw_reductions_options = [{'value': v, 'label': str(v)+'%'} for v in gw_reductions_values]
 
 rc_style_handle = assign("""function style(feature) {
     return {
@@ -118,49 +116,50 @@ gw_points_style_handle = assign("""function gw_points_style_handle(feature, latl
     return L.circleMarker(latlng, circleOptions);
 }""", name='gw_points_style_handle')
 
-point_radius = 6
+### Colorbar
+colorbar_base = dl.Colorbar(style={'opacity': 0})
+base_reach_style = dict(weight=4, opacity=1, color='white')
 
-gw_points_hideout = {'classes': [], 'colorscale': ['#808080'], 'circleOptions': dict(fillOpacity=1, stroke=False, radius=point_radius), 'colorProp': 'tooltip'}
-
-# freq_mapping = {12: 'once a month', 26: 'once a fortnight', 52: 'once a week', 104: 'twice a week', 364: 'once a day'}
-freq_mapping = {1: 'once a year', 4: 'once a quarter', 12: 'once a month', 26: 'once a fortnight', 52: 'once a week'}
-time_periods = [5, 10, 20, 30]
-
-# catch_style = {'fillColor': 'grey', 'weight': 2, 'opacity': 1, 'color': 'black', 'fillOpacity': 0.1}
-# gw_style = {'fillColor': '#A4DCCC', 'weight': 4, 'opacity': 1, 'color': 'black', 'fillOpacity': 1}
-# reach_style = {'weight': 2, 'opacity': 0.75, 'color': 'grey'}
-# gw_style2 = dict(weight=4, opacity=1, color='white', fillColor='#A4DCCC', fillOpacity=1)
-# style = dict(weight=4, opacity=1, color='white')
-classes = [0, 20, 40, 60, 80]
-bins = classes.copy()
-bins.append(101)
-# colorscale = ['#808080', '#FED976', '#FEB24C', '#FC4E2A', '#BD0026', '#800026']
-colorscale = ['#808080', '#FED976', '#FD8D3C', '#E31A1C', '#800026']
-# ctg = ["{}%+".format(cls, classes[i + 1]) for i, cls in enumerate(classes[1:-1])] + ["{}%+".format(classes[-1])]
-# ctg.insert(0, 'NA')
-ctg = ["{}%+".format(cls, classes[i + 1]) for i, cls in enumerate(classes[:-1])] + ["{}%+".format(classes[-1])]
-# ctg.insert(0, 'NA')
-# colorbar = dlx.categorical_colorbar(categories=ctg, colorscale=colorscale, width=300, height=30, position="bottomleft")
 indices = list(range(len(ctg) + 1))
-colorbar = dl.Colorbar(min=0, max=len(ctg), classes=indices, colorscale=colorscale, tooltip=True, tickValues=[item + 0.5 for item in indices[:-1]], tickText=ctg, width=300, height=30, position="bottomright")
-
-# base_reach_style = dict(weight=4, opacity=1, color='white')
-
-info = dcc.Markdown(id="gw_info", className="info", style={"position": "absolute", "top": "10px", "right": "10px", "z-index": "1000"})
-# info = html.Div(id="info", className="info", style={"position": "absolute", "top": "10px", "right": "10px", "z-index": "1000"})
-
-# indicator_dict = {'CHLA': 'Chlorophyll a', 'CYANOTOT': 'Total Cyanobacteria', 'ECOLI': 'E.coli', 'NH4N': 'Ammoniacal nitrogen', 'Secchi': 'Secchi depth', 'TN': 'Total nitrogen', 'TP': 'Total phosphorus', 'pH': 'pH'}
-
-indicator_dict = {'Nitrate': 'Nitrate'}
-
-reductions_values = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
-
-reductions_options = [{'value': v, 'label': str(v)+'%'} for v in reductions_values]
-
+colorbar_power = dl.Colorbar(min=0, max=len(ctg), classes=indices, colorscale=colorscale, tooltip=True, tickValues=[item + 0.5 for item in indices[:-1]], tickText=ctg, width=300, height=30, position="bottomright")
 
 
 ###############################################
 ### Helper Functions
+
+
+def read_pkl_zstd(obj, unpickle=False):
+    """
+    Deserializer from a pickled object compressed with zstandard.
+
+    Parameters
+    ----------
+    obj : bytes or str
+        Either a bytes object that has been pickled and compressed or a str path to the file object.
+    unpickle : bool
+        Should the bytes object be unpickled or left as bytes?
+
+    Returns
+    -------
+    Python object
+    """
+    if isinstance(obj, (str, pathlib.Path)):
+        with open(obj, 'rb') as p:
+            dctx = zstd.ZstdDecompressor()
+            with dctx.stream_reader(p) as reader:
+                obj1 = reader.read()
+
+    elif isinstance(obj, bytes):
+        dctx = zstd.ZstdDecompressor()
+        obj1 = dctx.decompress(obj)
+    else:
+        raise TypeError('obj must either be a str path or a bytes object')
+
+    if unpickle:
+        obj1 = pickle.loads(obj1)
+
+    return obj1
+
 
 def encode_obj(obj):
     """
@@ -239,50 +238,93 @@ def parse_gis_file(contents, filename):
     """
 
     """
-    if '.gpkg' in filename:
+    try:
         content_type, content_string = contents.split(',')
         decoded = base64.b64decode(content_string)
         plan1 = gpd.read_file(io.BytesIO(decoded))
 
         output = encode_obj(plan1)
-    elif contents is None:
-        output = None
-    else:
-        output = html.Div(['Wrong file type. It must be a GeoPackage (gpkg).'])
+    except:
+        output = ['Wrong file type. It must be a GeoPackage (gpkg).']
 
     return output
 
 
-# def calc_gw_reach_reductions(gw_id, plan_file, reduction_col='reduction'):
-#     """
-#     This assumes that the concentration is the same throughout the entire greater catchment. If it's meant to be different, then each small catchment must be set and multiplied by the area to weight the contribution downstream.
-#     """
-#     with booklet.open(gw_catches_minor_path, 'r') as f:
-#         c1 = f[str(gw_id)]
+def check_reductions_input(new_reductions, base_reductions):
+    """
 
-#     plan1 = plan_file[[reduction_col, 'geometry']].to_crs(2193)
+    """
+    base_typos = base_reductions.typology.unique()
+    try:
+        missing_typos = np.in1d(new_reductions.typology.unique(), base_typos).all()
+    except:
+        missing_typos = False
 
-#     c2 = plan1.overlay(c1)
-#     c2.loc[c2[reduction_col].isnull(), reduction_col] = 0
-#     c2['s_area'] = c2.area
+    return missing_typos
 
-#     c2['combo_area'] = c2.groupby('nzsegment')['s_area'].transform('sum')
 
-#     c2['prop'] = c2[reduction_col]*(c2['s_area']/c2['combo_area'])
+def diff_reductions(new_reductions, base_reductions, reduction_cols):
+    """
 
-#     c3 = c2.groupby('nzsegment')['prop'].sum()
-#     c4 = c1.merge(c3.reset_index(), on='nzsegment')
-#     area = c4.area
-#     c4['base_area'] = area * 100
-#     c4['prop_area'] = area * c4['prop']
+    """
+    new_reductions1 = new_reductions.set_index('typology').sort_index()[reduction_cols]
+    base_reductions1 = base_reductions.set_index('typology').sort_index()[reduction_cols]
+    temp1 = new_reductions1.compare(base_reductions1, align_axis=0)
 
-#     c5 = c4[['nzsegment', 'base_area', 'prop_area']].set_index('nzsegment').copy()
+    return list(temp1.columns)
 
-#     c6 = c5.sum()
-#     props = (np.round((c6.prop_area/c6.base_area)*100*0.5)*2).astype('int8')
 
-#     return props
+def xr_concat(datasets):
+    """
+    A much more efficient concat/combine of xarray datasets. It's also much safer on memory.
+    """
+    # Get variables for the creation of blank dataset
+    coords_list = []
+    chunk_dict = {}
 
+    for chunk in datasets:
+        coords_list.append(chunk.coords.to_dataset())
+        for var in chunk.data_vars:
+            if var not in chunk_dict:
+                dims = tuple(chunk[var].dims)
+                enc = chunk[var].encoding.copy()
+                dtype = chunk[var].dtype
+                _ = [enc.pop(d) for d in ['original_shape', 'source'] if d in enc]
+                var_dict = {'dims': dims, 'enc': enc, 'dtype': dtype, 'attrs': chunk[var].attrs}
+                chunk_dict[var] = var_dict
+
+    try:
+        xr3 = xr.combine_by_coords(coords_list, compat='override', data_vars='minimal', coords='all', combine_attrs='override')
+    except:
+        xr3 = xr.merge(coords_list, compat='override', combine_attrs='override')
+
+    # Create the blank dataset
+    for var, var_dict in chunk_dict.items():
+        dims = var_dict['dims']
+        shape = tuple(xr3[c].shape[0] for c in dims)
+        xr3[var] = (dims, np.full(shape, np.nan, var_dict['dtype']))
+        xr3[var].attrs = var_dict['attrs']
+        xr3[var].encoding = var_dict['enc']
+
+    # Update the attributes in the coords from the first ds
+    for coord in xr3.coords:
+        xr3[coord].encoding = datasets[0][coord].encoding
+        xr3[coord].attrs = datasets[0][coord].attrs
+
+    # Fill the dataset with data
+    for chunk in datasets:
+        for var in chunk.data_vars:
+            if isinstance(chunk[var].variable._data, np.ndarray):
+                xr3[var].loc[chunk[var].transpose(*chunk_dict[var]['dims']).coords.indexes] = chunk[var].transpose(*chunk_dict[var]['dims']).values
+            elif isinstance(chunk[var].variable._data, xr.core.indexing.MemoryCachedArray):
+                c1 = chunk[var].copy().load().transpose(*chunk_dict[var]['dims'])
+                xr3[var].loc[c1.coords.indexes] = c1.values
+                c1.close()
+                del c1
+            else:
+                raise TypeError('Dataset data should be either an ndarray or a MemoryCachedArray.')
+
+    return xr3
 
 
 ###############################################
@@ -317,125 +359,272 @@ rcs.sort()
 # x1.close()
 # del x1
 
-indicators = [{'value': k, 'label': v} for k, v in indicator_dict.items()]
+indicators = [{'value': k, 'label': v} for k, v in gw_indicator_dict.items()]
 
 ###############################################
 ### App layout
 
 
 def layout():
-    layout = html.Div(children=[
-        # html.Div([html.H2('Groundwater Quality')]),
-        html.Div([
-            html.H3('(1) Reductions'),
+    layout = dmc.Container(
+        fluid=True,
+        # size='xl',
+        px=0,
+        py=0,
+        my=0,
+        mx=0,
+        ml=0,
+        pl=0,
+        children=[
+            dmc.Grid(
+                columns=7,
+                children=[
+                    dmc.Col(
+                        span=3,
+                        children=dmc.Accordion(
+                            value="1",
+                            chevronPosition='left',
+                            children=[
+                            dmc.AccordionItem([
+                                dmc.AccordionControl('(1) Select a Regional Council'),
+                                dmc.AccordionPanel([
 
-            html.Label('Select a Regional Council on the map:'),
-            dcc.Dropdown(options=[{'label': d, 'value': d} for d in rcs], id='rc_id', optionHeight=40, clearable=False, style={'margin-bottom': 20}),
+                                    html.Label('(1a) Select a Regional Council on the map:'),
+                                    dcc.Dropdown(options=[{'label': d, 'value': d} for d in rcs], id='rc_id', optionHeight=40, clearable=False,
+                                                  style={'margin-top': 10}
+                                                  ),
+                                    ]
+                                    )
+                                ],
+                                value='1'
+                                ),
 
-            # dcc.Upload(
-            #     id='upload_data_gw',
-            #     children=html.Button('Upload reductions polygons gpkg'),
-            #     style={
-            #         'width': '100%',
-            #         'height': '60px',
-            #         'textAlign': 'center',
-            #         'margin-top': 40
-            #     },
-            #     multiple=False
-            # ),
-            # dcc.Markdown('''##### **Or**''', style={
-            #     'textAlign': 'center',
-            #                 }),
-            # html.Button('Use land cover for reductions', id='demo_data_lakes',
-            #             style={
-            #                 'width': '100%',
-            #                 'height': '50%',
-            #                 'textAlign': 'center',
-            #                 'margin-top': 20
-            #             }),
+                            dmc.AccordionItem([
+                                dmc.AccordionControl('(2) Select a reduction'),
+                                dmc.AccordionPanel([
+                                    html.Label('(2a) Select a reduction:'),
+                                    dmc.Slider(id='reductions_slider_gw',
+                                               value=25,
+                                               mb=35,
+                                               step=5,
+                                               min=5,
+                                               max=50,
+                                               showLabelOnHover=True,
+                                               disabled=False,
+                                               marks=gw_reductions_options
+                                               ),
+                                    # dcc.Dropdown(options=gw_reductions_options, id='reductions_gw', optionHeight=40, clearable=False,
+                                    #               style={'margin-top': 10}
+                                    #               ),
+                                    ]
+                                    )
+                                ],
+                                value='2'
+                                ),
 
-            html.Label('Select a reduction %:'),
-            dcc.Dropdown(options=reductions_options, id='gw_reductions', optionHeight=40, clearable=False),
+                            dmc.AccordionItem([
+                                dmc.AccordionControl('(3) Sampling Options'),
+                                dmc.AccordionPanel([
+                                    dmc.Text('(3a) Select Indicator:'),
+                                    dcc.Dropdown(options=indicators, id='indicator_gw', optionHeight=40, clearable=False),
+                                    dmc.Text('(3b) Select sampling length (years):', style={'margin-top': 20}),
+                                    dmc.SegmentedControl(data=[{'label': d, 'value': str(d)} for d in time_periods],
+                                                         id='time_period_gw',
+                                                         value='5',
+                                                         fullWidth=True,
+                                                         color=1,
+                                                         ),
+                                    dmc.Text('(3c) Select sampling frequency:', style={'margin-top': 20}),
+                                    dmc.SegmentedControl(data=[{'label': v, 'value': str(k)} for k, v in gw_freq_mapping.items()],
+                                                         id='freq_gw',
+                                                         value='12',
+                                                         fullWidth=True,
+                                                         color=1
+                                                         ),
+                                    ],
+                                    )
+                                ],
+                                value='3'
+                                ),
 
-        #     html.Label('Select a reductions column in the GIS file:', style={'margin-top': 20}),
-        #     dcc.Dropdown(options=[], id='col_name_lakes', optionHeight=40, clearable=False),
-        #     dcc.Loading(
-        #     id="loading-2",
-        #     type="default",
-        #     children=html.Div([html.Button('Process reductions', id='process_lakes', n_clicks=0),
-        #                        html.Div(id='process_text_lakes')],
-        #                       style={'margin-top': 20, 'margin-bottom': 100}
-        #                       )
-        # ),
+                            dmc.AccordionItem([
+                                dmc.AccordionControl('(4) Download Results'),
+                                dmc.AccordionPanel([
+                                    dmc.Text('(4a) Download power results given the prior sampling options (csv):'),
+                                    dcc.Loading(
+                                    type="default",
+                                    children=[html.Div(dmc.Button("Download power results", id='dl_btn_power_gw'), style={'margin-bottom': 20, 'margin-top': 10}),
+                            dcc.Download(id="dl_power_gw")],
+                                    ),
+                                    ],
+                                    )
+                                ],
+                                value='4'
+                                ),
 
-            # html.Label('Select Indicator:'),
-            # dcc.Dropdown(options=[{'label': d, 'value': d} for d in indicators], id='indicator', optionHeight=40, clearable=False, value='NH4'),
-            # html.Label('Select expected percent improvement:'),
-            # dcc.Dropdown(options=[{'label': d, 'value': d} for d in percent_changes], id='percent_change', clearable=False, value=10),
+                            ],
+                            # style={
+                            #     'margin': 0,
+                            #     'padding': 0
+                            #     },
+                            # className='four columns', style={'margin': 10}
+                            )
+                        ),
+                    dmc.Col(
+                        span=4,
+                        # style={
+                        #     'margin-top': 20
+                        #     },
+                        children=html.Div([
+                            dl.Map(center=center, zoom=6, children=[
+                                dl.LayersControl([
+                                    dl.BaseLayer(dl.TileLayer(attribution=attribution), checked=True, name='OpenStreetMap'),
+                                    dl.BaseLayer(dl.TileLayer(url='https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', attribution='Map data: © OpenStreetMap contributors, SRTM | Map style: © OpenTopoMap (CC-BY-SA)'), checked=False, name='OpenTopoMap'),
+                                    dl.Overlay(dl.LayerGroup(dl.GeoJSON(url=str(rc_bounds_gbuf), format="geobuf", id='rc_map', zoomToBoundsOnClick=True, options=dict(style=rc_style_handle),  hideout={})), name='Regional Councils', checked=True),
+                                    dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='gw_points', zoomToBounds=True, zoomToBoundsOnClick=True, cluster=False, options=dict(pointToLayer=gw_points_style_handle), hideout=gw_points_hideout)), name='GW wells', checked=True),
+                                    # dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='sites_points_gw', options=dict(pointToLayer=sites_points_handle), hideout=rivers_points_hideout)), name='Monitoring sites', checked=True),
+                                    ], id='layers_gw'),
+                                colorbar_power,
+                                # html.Div(id='colorbar', children=colorbar_base),
+                                # dmc.Group(id='colorbar', children=colorbar_base),
+                                dcc.Markdown(id="info_gw", className="info", style={"position": "absolute", "top": "10px", "right": "160px", "z-index": "1000"})
+                                                ], style={'width': '100%', 'height': 700, 'margin': "auto", "display": "block"}, id="map2"),
 
-            # dcc.Link(html.Img(src=str(app_base_path.joinpath('our-land-and-water-logo.svg'))), href='https://ourlandandwater.nz/')
-            ], className='two columns', style={'margin': 10}),
-
-    html.Div([
-        html.H3('(2) Sampling options'),
-        html.Label('Select Indicator:'),
-        dcc.Dropdown(options=indicators, id='gw_indicator', optionHeight=40, clearable=False, value='Nitrate'),
-        html.Label('Select sampling length (years):', style={'margin-top': 20}),
-        dcc.Dropdown(options=[{'label': d, 'value': d} for d in time_periods], id='gw_time_period', clearable=False, value=5),
-        html.Label('Select sampling frequency:'),
-        dcc.Dropdown(options=[{'label': v, 'value': k} for k, v in freq_mapping.items()], id='gw_freq', clearable=False, value=12, style={'margin-bottom': 460}),
-
-        # html.H4(children='Map Layers', style={'margin-top': 20}),
-        # dcc.Checklist(
-        #        options=[
-        #            {'label': 'Reductions polygons', 'value': 'reductions_poly'},
-        #             # {'label': 'Lake polygon', 'value': 'gw_poly'},
-        #            {'label': 'River reaches', 'value': 'reach_map'}
-        #        ],
-        #        value=['reductions_poly', 'reach_map'],
-        #        id='map_checkboxes_lakes',
-        #        style={'padding': 5, 'margin-bottom': 330}
-        #     ),
-        # dcc.Link(html.Img(src=str(app_base_path.joinpath('our-land-and-water-logo.svg'))), href='https://ourlandandwater.nz/')
-        ], className='two columns', style={'margin': 10}),
-
-    html.Div([
-        dl.Map(center=center, zoom=7, children=[
-            dl.TileLayer(id='gw_tile_layer', attribution=attribution),
-            dl.GeoJSON(url=str(rc_bounds_gbuf), format="geobuf", id='rc_map', zoomToBoundsOnClick=True, zoomToBounds=True, options=dict(style=rc_style_handle),  hideout={}),
-            dl.GeoJSON(data='', format="geobuf", id='gw_points', zoomToBounds=True, zoomToBoundsOnClick=True, cluster=False, options=dict(pointToLayer=gw_points_style_handle), hideout=gw_points_hideout),
-            # dl.GeoJSON(data='', format="geobuf", id='catch_map_lakes', zoomToBoundsOnClick=True, options=dict(style=catch_style)),
-            # dl.GeoJSON(url='', format="geobuf", id='base_reach_map', options=dict(style=base_reaches_style_handle)),
-            # dl.GeoJSON(data='', format="geobuf", id='reach_map_lakes', options=dict(style=reach_style), hideout={}),
-            # dl.GeoJSON(data='', format="geobuf", id='gw_poly', options=dict(style=gw_style_handle), hideout={'classes': [''], 'colorscale': ['#808080'], 'style': gw_style, 'colorProp': 'ref'}),
-            # dl.GeoJSON(data='', format="geobuf", id='reductions_poly_lakes'),
-            colorbar,
-            info
-                            ], style={'width': '100%', 'height': 700, 'margin': "auto", "display": "block"})
-    ], className='five columns', style={'margin': 10}),
-
-    # html.Div([
-    #     dcc.Loading(
-    #             id="loading-tabs",
-    #             type="default",
-    #             children=[dcc.Tabs(id='plot_tabs', value='info_tab', style=tabs_styles, children=[
-    #                         dcc.Tab(label='Info', value='info_tab', style=tab_style, selected_style=tab_selected_style),
-    #                         # dcc.Tab(label='Habitat Suitability', value='hs_tab', style=tab_style, selected_style=tab_selected_style),
-    #                         ]
-    #                     ),
-    #                 html.Div(id='plots')
-    #                 ]
-    #             ),
-
-    # ], className='three columns', style={'margin': 10}),
-
-    dcc.Store(id='gw_props_obj', data=None),
-    dcc.Store(id='gw_points_ids', data=None),
-    # dcc.Store(id='reaches_obj_lakes', data=''),
-    # dcc.Store(id='reductions_obj_lakes', data=''),
-], style={'margin':0})
+                            ],
+                            ),
+                        ),
+                    ]
+                    ),
+            dcc.Store(id='powers_obj_gw', data=None),
+            dcc.Store(id='gw_points_ids', data=None),
+            ]
+        )
 
     return layout
+
+
+# def layout():
+#     layout = html.Div(children=[
+#         # html.Div([html.H2('Groundwater Quality')]),
+#         html.Div([
+#             html.H3('(1) Reductions'),
+
+#             html.Label('Select a Regional Council on the map:'),
+#             dcc.Dropdown(options=[{'label': d, 'value': d} for d in rcs], id='rc_id', optionHeight=40, clearable=False, style={'margin-bottom': 20}),
+
+#             # dcc.Upload(
+#             #     id='upload_data_gw',
+#             #     children=html.Button('Upload reductions polygons gpkg'),
+#             #     style={
+#             #         'width': '100%',
+#             #         'height': '60px',
+#             #         'textAlign': 'center',
+#             #         'margin-top': 40
+#             #     },
+#             #     multiple=False
+#             # ),
+#             # dcc.Markdown('''##### **Or**''', style={
+#             #     'textAlign': 'center',
+#             #                 }),
+#             # html.Button('Use land cover for reductions', id='demo_data_gw',
+#             #             style={
+#             #                 'width': '100%',
+#             #                 'height': '50%',
+#             #                 'textAlign': 'center',
+#             #                 'margin-top': 20
+#             #             }),
+
+#             html.Label('Select a reduction %:'),
+#             dcc.Dropdown(options=reductions_options, id='gw_reductions', optionHeight=40, clearable=False),
+
+#         #     html.Label('Select a reductions column in the GIS file:', style={'margin-top': 20}),
+#         #     dcc.Dropdown(options=[], id='col_name_gw', optionHeight=40, clearable=False),
+#         #     dcc.Loading(
+#         #     id="loading-2",
+#         #     type="default",
+#         #     children=html.Div([html.Button('Process reductions', id='process_gw', n_clicks=0),
+#         #                        html.Div(id='process_text_gw')],
+#         #                       style={'margin-top': 20, 'margin-bottom': 100}
+#         #                       )
+#         # ),
+
+#             # html.Label('Select Indicator:'),
+#             # dcc.Dropdown(options=[{'label': d, 'value': d} for d in indicators], id='indicator', optionHeight=40, clearable=False, value='NH4'),
+#             # html.Label('Select expected percent improvement:'),
+#             # dcc.Dropdown(options=[{'label': d, 'value': d} for d in percent_changes], id='percent_change', clearable=False, value=10),
+
+#             # dcc.Link(html.Img(src=str(app_base_path.joinpath('our-land-and-water-logo.svg'))), href='https://ourlandandwater.nz/')
+#             ], className='two columns', style={'margin': 10}),
+
+#     html.Div([
+#         html.H3('(2) Sampling options'),
+#         html.Label('Select Indicator:'),
+#         dcc.Dropdown(options=indicators, id='gw_indicator', optionHeight=40, clearable=False, value='Nitrate'),
+#         html.Label('Select sampling lehtml.Label('(3d) Change the percent of the reductions applied (100% is the max realistic reduction):', style={'margin-top': 20}),
+                                    # dmc.Slider(id='reductions_slider_gw',
+                                    #            value=100,
+                                    #            mb=35,
+                                    #            step=10,
+                                    #            # min=10,
+                                    #            showLabelOnHover=True,
+                                    #            disabled=False,
+                                    #            marks=[{'label': str(d) + '%', 'value': d} for d in range(0, 101, 20)]
+                                    #            ),ngth (years):', style={'margin-top': 20}),
+#         dcc.Dropdown(options=[{'label': d, 'value': d} for d in time_periods], id='gw_time_period', clearable=False, value=5),
+#         html.Label('Select sampling frequency:'),
+#         dcc.Dropdown(options=[{'label': v, 'value': k} for k, v in freq_mapping.items()], id='gw_freq', clearable=False, value=12, style={'margin-bottom': 460}),
+
+#         # html.H4(children='Map Layers', style={'margin-top': 20}),
+#         # dcc.Checklist(
+#         #        options=[
+#         #            {'label': 'Reductions polygons', 'value': 'reductions_poly'},
+#         #             # {'label': 'Lake polygon', 'value': 'gw_poly'},
+#         #            {'label': 'River reaches', 'value': 'reach_map'}
+#         #        ],
+#         #        value=['reductions_poly', 'reach_map'],
+#         #        id='map_checkboxes_gw',
+#         #        style={'padding': 5, 'margin-bottom': 330}
+#         #     ),
+#         # dcc.Link(html.Img(src=str(app_base_path.joinpath('our-land-and-water-logo.svg'))), href='https://ourlandandwater.nz/')
+#         ], className='two columns', style={'margin': 10}),
+
+#     html.Div([
+#         dl.Map(center=center, zoom=7, children=[
+#             dl.TileLayer(id='gw_tile_layer', attribution=attribution),
+#             dl.GeoJSON(url=str(rc_bounds_gbuf), format="geobuf", id='rc_map', zoomToBoundsOnClick=True, zoomToBounds=True, options=dict(style=rc_style_handle),  hideout={}),
+#             dl.GeoJSON(data='', format="geobuf", id='gw_points', zoomToBounds=True, zoomToBoundsOnClick=True, cluster=False, options=dict(pointToLayer=gw_points_style_handle), hideout=gw_points_hideout),
+#             # dl.GeoJSON(data='', format="geobuf", id='catch_map_gw', zoomToBoundsOnClick=True, options=dict(style=catch_style)),
+#             # dl.GeoJSON(url='', format="geobuf", id='base_reach_map', options=dict(style=base_reaches_style_handle)),
+#             # dl.GeoJSON(data='', format="geobuf", id='reach_map_gw', options=dict(style=reach_style), hideout={}),
+#             # dl.GeoJSON(data='', format="geobuf", id='gw_poly', options=dict(style=gw_style_handle), hideout={'classes': [''], 'colorscale': ['#808080'], 'style': gw_style, 'colorProp': 'ref'}),
+#             # dl.GeoJSON(data='', format="geobuf", id='reductions_poly_gw'),
+#             colorbar,
+#             info
+#                             ], style={'width': '100%', 'height': 700, 'margin': "auto", "display": "block"})
+#     ], className='five columns', style={'margin': 10}),
+
+#     # html.Div([
+#     #     dcc.Loading(
+#     #             id="loading-tabs",
+#     #             type="default",
+#     #             children=[dcc.Tabs(id='plot_tabs', value='info_tab', style=tabs_styles, children=[
+#     #                         dcc.Tab(label='Info', value='info_tab', style=tab_style, selected_style=tab_selected_style),
+#     #                         # dcc.Tab(label='Habitat Suitability', value='hs_tab', style=tab_style, selected_style=tab_selected_style),
+#     #                         ]
+#     #                     ),
+#     #                 html.Div(id='plots')
+#     #                 ]
+#     #             ),
+
+#     # ], className='three columns', style={'margin': 10}),
+
+#     dcc.Store(id='gw_props_obj', data=None),
+#     dcc.Store(id='gw_points_ids', data=None),
+#     # dcc.Store(id='reaches_obj_gw', data=''),
+#     # dcc.Store(id='reductions_obj_gw', data=''),
+# ], style={'margin':0})
+
+#     return layout
 
 ###############################################
 ### Callbacks
@@ -452,7 +641,8 @@ def update_rc_id(feature):
     # print(ds_id)
 
     if feature is not None:
-        rc_id = feature['id']
+        if not feature['properties']['cluster']:
+            rc_id = feature['id']
     else:
         rc_id = None
 
@@ -480,54 +670,20 @@ def update_gw_points(rc_id):
     return data, gw_points_encode
 
 
-# @callback(
-#         Output('sites_points', 'data'),
-#         Input('catch_id', 'value'),
-#         # Input('map_checkboxes', 'value'),
-#         )
-# # @cache.memoize()
-# def update_monitor_sites(catch_id):
-#     if (catch_id is not None):
-#         with booklet.open(rivers_sites_path, 'r') as f:
-#             data = base64.b64encode(f[int(catch_id)]).decode()
-
-#     else:
-#         data = ''
-
-#     return data
-
-
-# @callback(
-#         Output('rc_map', 'options'),
-#         Input('rc_map', 'hideout'),
-#         Input('rc_id', 'value')
-#         )
-# # @cache.memoize()
-# def update_rcs_option(hideout, rc_id):
-#     trig = ctx.triggered_id
-
-#     if (len(hideout) == 0) or (trig == 'rc_id'):
-#         options = dict(style=base_rc_style_handle)
-#     else:
-#         options = dict(style=rc_style_handle)
-
-#     return options
-
-
 @callback(
-    Output('gw_props_obj', 'data'),
-    [Input('gw_reductions', 'value'), Input('gw_indicator', 'value'), Input('gw_time_period', 'value'), Input('gw_freq', 'value')],
+    Output('powers_obj_gw', 'data'),
+    [Input('reductions_slider_gw', 'value'), Input('indicator_gw', 'value'), Input('time_period_gw', 'value'), Input('freq_gw', 'value')],
     # [State('gw_id', 'value')]
     )
 def update_props_data_gw(reductions, indicator, n_years, n_samples_year):
     """
 
     """
-    if isinstance(reductions, int) and isinstance(n_years, int) and isinstance(n_samples_year, int) and isinstance(indicator, str):
-        n_samples = n_samples_year*n_years
+    if isinstance(reductions, (str, int)) and isinstance(n_years, str) and isinstance(n_samples_year, str) and isinstance(indicator, str):
+        n_samples = int(n_samples_year)*int(n_years)
 
         power_data = xr.open_dataset(gw_error_path, engine='h5netcdf')
-        power_data1 = power_data.sel(indicator=indicator, n_samples=n_samples, conc_perc=100-reductions, drop=True).to_dataframe().reset_index()
+        power_data1 = power_data.sel(indicator=indicator, n_samples=n_samples, conc_perc=100-int(reductions), drop=True).to_dataframe().reset_index()
         power_data.close()
         del power_data
 
@@ -537,39 +693,20 @@ def update_props_data_gw(reductions, indicator, n_years, n_samples_year):
         raise dash.exceptions.PreventUpdate
 
 
-# @callback(
-#         Output('gw_poly', 'options'),
-#         Input('gw_poly', 'hideout'),
-#         # State('gw_id', 'value')
-#         )
-# # @cache.memoize()
-# def update_gw_option(hideout):
-#     trig = ctx.triggered_id
-#     # print(trig)
-#     # print(len(hideout))
-
-#     if (len(hideout) == 1) or (trig == 'gw_id'):
-#         options = dict(style=gw_style)
-#     else:
-#         options = dict(style=gw_style_handle)
-
-#     return options
-
-
 @callback(
     Output('gw_points', 'hideout'),
-    Input('gw_props_obj', 'data'),
+    Input('powers_obj_gw', 'data'),
     Input('gw_points_ids', 'data'),
     prevent_initial_call=True
     )
-def update_hideout_gw_points(props_obj, gw_points_encode):
+def update_hideout_gw_points(powers_obj, gw_points_encode):
     """
 
     """
-    if (props_obj != '') and (props_obj is not None):
+    if (powers_obj != '') and (powers_obj is not None):
 
         # print('trigger')
-        props = decode_obj(props_obj)
+        props = decode_obj(powers_obj)
         # print(props)
         # print(type(gw_id))
 
@@ -577,12 +714,12 @@ def update_hideout_gw_points(props_obj, gw_points_encode):
         # print(color_arr)
         # print(props['gw_id'])
 
-        hideout = {'classes': props['ref'].values, 'colorscale': color_arr, 'circleOptions': dict(fillOpacity=1, stroke=False, radius=point_radius), 'colorProp': 'tooltip'}
+        hideout = {'classes': props['ref'].values, 'colorscale': color_arr, 'circleOptions': dict(fillOpacity=1, stroke=False, radius=site_point_radius), 'colorProp': 'tooltip'}
     elif (gw_points_encode is not None):
         # print('trigger')
         gw_refs = decode_obj(gw_points_encode)
 
-        hideout = {'classes': gw_refs, 'colorscale': ['#808080'] * len(gw_refs), 'circleOptions': dict(fillOpacity=1, stroke=False, radius=point_radius), 'colorProp': 'tooltip'}
+        hideout = {'classes': gw_refs, 'colorscale': ['#808080'] * len(gw_refs), 'circleOptions': dict(fillOpacity=1, stroke=False, radius=site_point_radius), 'colorProp': 'tooltip'}
     else:
         hideout = gw_points_hideout
 
@@ -590,28 +727,28 @@ def update_hideout_gw_points(props_obj, gw_points_encode):
 
 
 @callback(
-    Output("gw_info", "children"),
-    [Input('gw_props_obj', 'data'),
-      Input('gw_reductions', 'value'),
+    Output("info_gw", "children"),
+    [Input('powers_obj_gw', 'data'),
+      Input('reductions_slider_gw', 'value'),
       Input("gw_points", "click_feature")],
     State('gw_points_ids', 'data')
     )
-def update_map_info_gw(props_obj, reductions, feature, gw_points_encode):
+def update_map_info_gw(powers_obj, reductions, feature, gw_points_encode):
     """
 
     """
-    info = """###### Likelihood of observing a reduction (%)"""
-    info_str = """\n\nReduction: {red}%\n\nLikelihood of observing a reduction (power): {t_stat}%\n\nWell Depth (m): {depth:.1f}"""
+    info = """"""
+    info_str = """\n\n**Reduction**: {red}%\n\n**Likelihood of observing a reduction (power)**: {t_stat}%\n\n**Well Depth (m)**: {depth:.1f}"""
 
     # if (reductions_obj != '') and (reductions_obj is not None) and ('reductions_poly' in map_checkboxes):
     #     info = info + """\n\nHover over the polygons to see reduction %"""
 
-    if isinstance(reductions, int) and (props_obj != '') and (props_obj is not None):
+    if isinstance(reductions, int) and (powers_obj != '') and (powers_obj is not None):
         if feature is not None:
             # print(feature)
             gw_refs = decode_obj(gw_points_encode)
             if feature['id'] in gw_refs:
-                props = decode_obj(props_obj)
+                props = decode_obj(powers_obj)
 
                 info2 = info_str.format(red=int(reductions), t_stat=int(props[props.ref==feature['id']].iloc[0]['power']), depth=feature['properties']['bore_depth'])
 
@@ -623,7 +760,32 @@ def update_map_info_gw(props_obj, reductions, feature, gw_points_encode):
     return info
 
 
+@callback(
+    Output("dl_power_gw", "data"),
+    Input("dl_btn_power_gw", "n_clicks"),
+    State('powers_obj_gw', 'data'),
+    State('rc_id', 'value'),
+    State('indicator_gw', 'value'),
+    State('time_period_gw', 'value'),
+    State('freq_gw', 'value'),
+    State('reductions_slider_gw', 'value'),
+    prevent_initial_call=True,
+    )
+def download_power(n_clicks, powers_obj, rc_id, indicator, n_years, n_samples_year, reductions):
 
+    if (powers_obj != '') and (powers_obj is not None):
+        df1 = decode_obj(powers_obj)
+
+        df1['power'] = df1['power'].astype(int)
+
+        df1['indicator'] = gw_indicator_dict[indicator]
+        df1['n_years'] = n_years
+        df1['n_samples_per_year'] = n_samples_year
+        df1['reduction'] = reductions
+
+        df2 = df1.rename(columns={'ref': 'site_id'}).set_index(['indicator', 'n_years', 'n_samples_per_year', 'reduction', 'site_id']).sort_index()
+
+        return dcc.send_data_frame(df2.to_csv, f"gw_power_{rc_id}.csv")
 
 
 

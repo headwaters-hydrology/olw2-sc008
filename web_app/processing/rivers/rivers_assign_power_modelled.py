@@ -14,6 +14,10 @@ import numpy as np
 import hdf5tools
 import booklet
 
+import sys
+if '..' not in sys.path:
+    sys.path.append('..')
+
 import utils
 
 pd.options.display.max_columns = 10
@@ -23,14 +27,15 @@ pd.options.display.max_columns = 10
 
 # indicators = ['BD', 'DR', 'EC', 'NH', 'NO', 'TN', 'TP', 'TU']
 
-error_name = 'lm_se'
+error_name = '_new_gam_seRes'
 
 
 def rivers_process_power_modelled():
     # list1 = utils.log_error_cats(0.01, 2.72, 0.1)
     # list1 = utils.log_error_cats(0.01, 3.43, 0.1)
-    list1 = utils.log_error_cats(0.01, 3.05, 0.05)
-    list1 = [0.001] + list1
+    # list1 = utils.log_error_cats(0.01, 2.55, 0.05)
+    # list1 = [0.001] + list1
+    list1 = utils.log_error_cats(0.14, 1.55, 0.03)
 
     # conc0 = pd.read_csv(utils.conc_csv_path, usecols=['Indicator', 'nzsegment', 'lm1seRes']).dropna()
     # conc0.rename(columns={'lm1seRes': 'error', 'Indicator': 'indicator'}, inplace=True)
@@ -39,7 +44,7 @@ def rivers_process_power_modelled():
     conc0a = conc0.set_index('nzsegment').loc[:, [col for col in conc0.columns if error_name in col]].stack()
     conc0a.name = 'error'
     conc0b = conc0a.reset_index()
-    conc0b['indicator'] = conc0b['level_1'].str[:2]
+    conc0b['indicator'] = conc0b['level_1'].apply(lambda x: x.split(error_name)[0])
     conc0b = conc0b.drop('level_1', axis=1)
 
     conc1 = conc0b.groupby(['indicator', 'nzsegment']).mean().reset_index()
@@ -55,7 +60,7 @@ def rivers_process_power_modelled():
     ## Create rough values from all reaches per indicator
     grp1 = conc1.groupby('indicator')
 
-    median1 = grp1['error'].median().round(3)
+    median1 = grp1['error'].median().round(2)
 
     ## Assign init conc and errors to each catchment
     mapping = booklet.open(utils.river_reach_mapping_path)
@@ -111,6 +116,7 @@ def rivers_process_power_modelled():
         error_list.append(river_sims1)
 
     combo = utils.xr_concat(error_list)
+    combo['power'].encoding = {'scale_factor': 1, '_FillValue': -99, 'dtype': 'int8'}
 
     hdf5tools.xr_to_hdf5(combo, utils.river_power_model_path)
 

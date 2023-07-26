@@ -7,6 +7,11 @@ Created on Wed Nov 23 09:18:20 2022
 """
 import os
 import pathlib
+
+import sys
+if '..' not in sys.path:
+    sys.path.append('..')
+
 import utils
 
 from land_cover.lcdb_processing import lcdb_processing
@@ -56,8 +61,8 @@ rec_delin()
 rivers_land_cover()
 
 ## River flows
-process_flows_rec()
-# process_loads_rec()
+# process_flows_rec()
+process_loads_rec()
 
 ## River error/power sims
 
