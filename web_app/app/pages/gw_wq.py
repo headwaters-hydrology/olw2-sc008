@@ -369,12 +369,12 @@ def layout():
     layout = dmc.Container(
         fluid=True,
         # size='xl',
-        px=0,
-        py=0,
-        my=0,
-        mx=0,
-        ml=0,
-        pl=0,
+        # px=0,
+        # py=0,
+        # my=0,
+        # mx=0,
+        # ml=0,
+        # pl=0,
         children=[
             dmc.Grid(
                 columns=7,
@@ -386,7 +386,7 @@ def layout():
                             chevronPosition='left',
                             children=[
                             dmc.AccordionItem([
-                                dmc.AccordionControl('(1) Select a Regional Council'),
+                                dmc.AccordionControl('(1) Select a Regional Council', style={'font-size': 18}),
                                 dmc.AccordionPanel([
 
                                     html.Label('(1a) Select a Regional Council on the map:'),
@@ -400,7 +400,7 @@ def layout():
                                 ),
 
                             dmc.AccordionItem([
-                                dmc.AccordionControl('(2) Select a reduction'),
+                                dmc.AccordionControl('(2) Select a reduction', style={'font-size': 18}),
                                 dmc.AccordionPanel([
                                     html.Label('(2a) Select a reduction:'),
                                     dmc.Slider(id='reductions_slider_gw',
@@ -423,7 +423,7 @@ def layout():
                                 ),
 
                             dmc.AccordionItem([
-                                dmc.AccordionControl('(3) Sampling Options'),
+                                dmc.AccordionControl('(3) Sampling Options', style={'font-size': 18}),
                                 dmc.AccordionPanel([
                                     dmc.Text('(3a) Select Indicator:'),
                                     dcc.Dropdown(options=indicators, id='indicator_gw', optionHeight=40, clearable=False),
@@ -448,7 +448,7 @@ def layout():
                                 ),
 
                             dmc.AccordionItem([
-                                dmc.AccordionControl('(4) Download Results'),
+                                dmc.AccordionControl('(4) Download Results', style={'font-size': 18}),
                                 dmc.AccordionPanel([
                                     dmc.Text('(4a) Download power results given the prior sampling options (csv):'),
                                     dcc.Loading(
