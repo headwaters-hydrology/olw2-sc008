@@ -29,7 +29,8 @@ from rivers.rivers_assign_power_modelled import rivers_process_power_modelled
 from lakes.lakes_geo_processing import lakes_geo_process
 from lakes.lakes_delineation import lakes_catch_delin
 from lakes.lakes_land_cover_assignment import lakes_land_cover
-from lakes.lakes_conc_error import lakes_conc_error_processing
+from lakes.lakes_process_loads import process_loads_lakes
+from lakes.lakes_power_all import lakes_power_combo_processing
 
 from gw.gw_geo_processing import gw_geo_process
 from gw.gw_assign_errors import gw_process_errors_points
@@ -83,11 +84,18 @@ lakes_catch_delin()
 ## Lakes land cover processing
 lakes_land_cover()
 
+## Lakes/rivers loads
+process_loads_lakes()
+
+## Lakes reductions routing
+
+# lakes_route_reductions.py should be run via the terminal
+
 ## Lakes error/power sims
 
 # lakes_sims.py should be run via the terminal
 
-lakes_conc_error_processing()
+lakes_power_combo_processing()
 
 
 ###################################################

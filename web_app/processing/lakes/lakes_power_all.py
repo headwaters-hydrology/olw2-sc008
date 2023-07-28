@@ -93,7 +93,8 @@ def lakes_power_modelled_processing():
     list1 = utils.log_error_cats(start, end, 0.02)
 
     lakes0 = xr.open_dataset(utils.lakes_stdev_model_path, engine='h5netcdf')
-    lakes1 = lakes0.sel(model='BoostingRegressor', drop=True)
+    # lakes1 = lakes0.sel(model='BoostingRegressor', drop=True)
+    lakes1 = lakes0.sel(model='RandomForestRegressor', drop=True)
 
     lakes_poly = gpd.read_feather(utils.lakes_poly_path)
 
