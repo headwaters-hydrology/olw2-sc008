@@ -25,7 +25,7 @@ list1 = utils.error_cats(0.01, 15.31, 0.1)
 list1.insert(0, 0.001)
 
 if __name__ == '__main__':
-    with concurrent.futures.ProcessPoolExecutor(max_workers=16, mp_context=mp.get_context("spawn")) as executor:
+    with concurrent.futures.ProcessPoolExecutor(max_workers=8, mp_context=mp.get_context("spawn")) as executor:
         futures = []
         for error in list1[:-1]:
             f = executor.submit(utils.power_sims, error, n_years, n_samples_year, n_sims, utils.gw_sims_path)

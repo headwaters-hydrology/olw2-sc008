@@ -18,6 +18,10 @@ import multiprocessing as mp
 import concurrent.futures
 import geobuf
 
+import sys
+if '..' not in sys.path:
+    sys.path.append('..')
+
 import utils
 
 pd.options.display.max_columns = 10
@@ -35,9 +39,11 @@ def gw_geo_process():
     rc2 = rc1.to_crs(4326)
 
     # Point locations
-    gw_pts0 = pd.read_hdf(utils.gw_data_path, key='data')[['bore_depth', 'nztm_x', 'nztm_y']].reset_index()
+    gw_data = xr.open_dataset(utils.gw_monitoring_data_path)
+    gw_pts0 = gw_data[['lon', 'lat', 'depth']].to_dataframe().reset_index()
+    gw_data.close()
 
-    gw_pts1 = vector.xy_to_gpd(['ref', 'bore_depth'], 'nztm_x', 'nztm_y', gw_pts0, 2193).to_crs(4326)
+    gw_pts1 = vector.xy_to_gpd(['ref', 'depth'], 'lon', 'lat', gw_pts0, 4326)
     gw_pts1['geometry'] = gw_pts1['geometry'].simplify(0.00001)
     gw_pts1['tooltip'] = gw_pts1['ref']
 

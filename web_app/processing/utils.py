@@ -203,7 +203,7 @@ lakes_missing_3rd_path = output_path.joinpath('lakes_stdev_missing.gpkg')
 
 ## Source data
 # gw_data_path = base_path.joinpath('gw_points_data.hdf')
-gw_monitoring_data_path = base_path.joinpath('gw_monitoring_data_v03.nc')
+gw_monitoring_data_path = base_path.joinpath('gw_monitoring_data_v04.nc')
 
 ## Spatial data
 # gw_points_gbuf_path = assets_path.joinpath('gw_points.pbf')
