@@ -19,14 +19,12 @@ from land_cover.land_cover_extra_layers import process_extra_geo_layers
 from land_cover.land_cover_reductions import land_cover_reductions
 
 from rivers.rivers_delineate import rec_delin
-# from rivers_reach_mappings import reach_mapping
-# from rivers_catch import catch_agg
-# from rivers_make_app_assets import process_assets
 from rivers.rivers_land_cover_assignment import rivers_land_cover
-from rivers.rivers_assign_errors import process_errors
-from rivers.rivers_assign_flow import process_flows_rec
-# from rivers_assign_loads import process_loads_rec
+from rivers.rivers_process_loads import process_loads
 from rivers.rivers_monitoring_sites import rivers_monitoring_sites_processing
+from rivers.rivers_assign_reach_reductions import process_river_reach_reductions
+from rivers.rivers_assign_power_monitored import rivers_process_power_monitored
+from rivers.rivers_assign_power_modelled import rivers_process_power_modelled
 
 from lakes.lakes_geo_processing import lakes_geo_process
 from lakes.lakes_delineation import lakes_catch_delin
@@ -60,16 +58,18 @@ rec_delin()
 ## Land cover
 rivers_land_cover()
 
-## River flows
-# process_flows_rec()
-process_loads_rec()
+## River loads by indicator
+process_loads()
+
+## Route the reductions based on the default reductions
+process_river_reach_reductions()
 
 ## River error/power sims
 
 # rivers_sims.py should be run via the terminal
 
-process_errors()
-
+rivers_process_power_monitored()
+rivers_process_power_modelled()
 
 ###################################################
 ### Lakes

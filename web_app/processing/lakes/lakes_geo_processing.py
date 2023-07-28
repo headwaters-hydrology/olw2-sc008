@@ -29,10 +29,13 @@ pd.options.display.max_columns = 10
 
 
 def lakes_geo_process():
-    lakes0 = xr.open_dataset(utils.lakes_stdev_path, engine='h5netcdf')
-    lakes0['LFENZID'] = lakes0['LFENZID'].astype('int32')
+    # lakes0 = xr.open_dataset(utils.lakes_stdev_path, engine='h5netcdf')
+    # lakes0['LFENZID'] = lakes0['LFENZID'].astype('int32')
 
     # lakes1 = lakes0.sel(model='BoostingRegressor', drop=True)['stdev'].to_dataframe().reset_index()
+
+    missing = gpd.read_file(utils.lakes_missing_3rd_path)
+    missing_ids = missing.LFENZID.values
 
     ## Lakes catchments
     fenz_catch0 = gpd.read_file(utils.lakes_fenz_catch_path).rename(columns={'LID': 'LFENZID', 'Name': 'name'})
@@ -63,6 +66,9 @@ def lakes_geo_process():
     catch_so3 = catch_so2[catch_so2 >= 3].index.values
 
     fenz_catch2 = fenz_catch1[fenz_catch1.LFENZID.isin(catch_so3)].copy()
+
+    # Remove the lakes that don't have stdevs
+    fenz_catch2 = fenz_catch2[~fenz_catch2.LFENZID.isin(missing_ids)].copy()
 
     utils.gpd_to_feather(fenz_catch2, utils.lakes_catch_path)
 

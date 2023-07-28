@@ -92,26 +92,28 @@ def calc_river_reach_reductions(catch_id, reductions, reduction_cols):
 ############################################
 ### Processing
 
-reach_lu_list = []
-reach_red_list = []
-with booklet.open(utils.catch_lc_path) as f:
-    for catch_id in f:
-        print(catch_id)
-        reductions = f[catch_id]
-        results1, results2 = calc_river_reach_reductions(catch_id, reductions, params)
-        reach_red_list.append(results1)
-        reach_lu_list.append(results2)
 
-reach_red0 = pd.concat(reach_red_list).reset_index()
-reach_red1 = reach_red0.groupby('nzsegment')[params].mean().round(2)
-reach_red2 = reach_red0.groupby('nzsegment')[['typology', 'farm_type', 'land_cover']].first()
+def process_river_reach_reductions():
+    reach_lu_list = []
+    reach_red_list = []
+    with booklet.open(utils.catch_lc_path) as f:
+        for catch_id in f:
+            print(catch_id)
+            reductions = f[catch_id]
+            results1, results2 = calc_river_reach_reductions(catch_id, reductions, params)
+            reach_red_list.append(results1)
+            reach_lu_list.append(results2)
 
-reach_red3 = pd.concat([reach_red2, reach_red1], axis=1)
+    reach_red0 = pd.concat(reach_red_list).reset_index()
+    reach_red1 = reach_red0.groupby('nzsegment')[params].mean().round(2)
+    reach_red2 = reach_red0.groupby('nzsegment')[['typology', 'farm_type', 'land_cover']].first()
 
-reach_red3.to_csv(output_path1)
+    reach_red3 = pd.concat([reach_red2, reach_red1], axis=1)
 
-reach_lu0 = pd.concat(reach_lu_list)
-reach_lu0.to_csv(output_path2, index=False)
+    reach_red3.to_csv(output_path1)
+
+    reach_lu0 = pd.concat(reach_lu_list)
+    reach_lu0.to_csv(output_path2, index=False)
 
 
 

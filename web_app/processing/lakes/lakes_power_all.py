@@ -15,7 +15,6 @@ from shapely import intersection
 import hdf5tools
 import xarray as xr
 # import dbm
-import shelflet
 # import shelve
 import multiprocessing as mp
 import concurrent.futures
@@ -34,40 +33,45 @@ pd.options.display.max_columns = 10
 encodings = {'power': {'scale_factor': 1, '_FillValue': -99, 'dtype': 'int8'},
              }
 
+start = 0.02
+end = 1.4
+
 
 def lakes_power_monitored_processing():
-    start = 0.069
-    end = 4.299
+    # start = 0.069
+    # end = 4.299
 
-    list1 = utils.log_error_cats(start, end, 0.1)
+    list1 = utils.log_error_cats(start, end, 0.02)
 
-    lakes0 = xr.open_dataset(utils.lakes_stdev_moni_path, engine='h5netcdf')
+    # lakes0 = xr.open_dataset(utils.lakes_stdev_moni_path, engine='h5netcdf')
+    lakes0 = pd.read_csv(utils.lakes_stdev_moni_path)
+    lakes0 = lakes0.groupby(['indicator', 'LFENZID'])['stdev'].mean().reset_index()
 
     lakes_poly = gpd.read_feather(utils.lakes_poly_path)
 
-    lakes1 = lakes0.where(lakes0.LFENZID.isin(lakes_poly.LFENZID.values), drop=True)
+    lakes1 = lakes0[lakes0.LFENZID.isin(lakes_poly.LFENZID.values)].copy()
 
     ## Combine with sims
     lake_sims = xr.open_dataset(utils.lakes_sims_h5_path, engine='h5netcdf')
 
-    grp = lakes1.groupby('indicator', squeeze=True)
+    grp = lakes1.groupby('indicator')
 
     error_list = []
     for ind, data in grp:
-        data = data.squeeze(drop=True)
-        names = data.LFENZID.values.astype(int)
-        errors = data.stdev.copy()
-        nan_errors = errors[errors.isnull()].LFENZID.values.astype(int)
+        errors = data.drop('indicator', axis=1)
+        # names = data.LFENZID.values.astype(int)
+        # errors = data.stdev.copy()
+        nan_errors = errors[errors.stdev.isnull()].LFENZID.values.astype(int)
 
-        errors[errors <= list1[0]] = list1[0] *1.1
-        errors[errors > list1[-1]] = list1[-1]
-        errors[errors.isnull()] = list1[-1]
+        errors.loc[errors.stdev <= list1[0], 'stdev'] = list1[0] *1.1
+        errors.loc[errors.stdev > list1[-1], 'stdev'] = list1[-1]
+        errors.loc[errors.stdev.isnull(), 'stdev'] = list1[-1]
         # error_set.update(set((r_errors * 1000).round().tolist()))
 
-        errors1 = (pd.cut(errors, list1, labels=list1[:-1]).to_numpy() * 1000).astype(int)
+        errors1 = (pd.cut(errors.stdev, list1, labels=list1[:-1]).to_numpy() * 1000).astype(int)
 
         lake_sims1 = lake_sims.sel(error=errors1).copy()
-        lake_sims1['error'] = names
+        lake_sims1['error'] = errors.LFENZID.values
         lake_sims1 = lake_sims1.rename({'error': 'LFENZID', 'power': 'power_monitored'})
         lake_sims2 = xr.where(lake_sims1.LFENZID.isin(nan_errors), np.nan, lake_sims1)
         lake_sims2['conc_perc'] = lake_sims2['conc_perc'].astype('int8')
@@ -83,10 +87,10 @@ def lakes_power_monitored_processing():
 
 
 def lakes_power_modelled_processing():
-    start = 0.069
-    end = 4.299
+    # start = 0.069
+    # end = 4.299
 
-    list1 = utils.log_error_cats(start, end, 0.1)
+    list1 = utils.log_error_cats(start, end, 0.02)
 
     lakes0 = xr.open_dataset(utils.lakes_stdev_model_path, engine='h5netcdf')
     lakes1 = lakes0.sel(model='BoostingRegressor', drop=True)

@@ -18,6 +18,10 @@ import xarray as xr
 import multiprocessing as mp
 import concurrent.futures
 import geobuf
+import sys
+
+if '..' not in sys.path:
+    sys.path.append('..')
 
 import utils
 
@@ -36,10 +40,12 @@ pd.options.display.max_columns = 10
 # start = lakes1.stdev.min().round(3).values
 # end = lakes1.stdev.max().round(3).values
 
-start = 0.069
-end = 4.299
+# start = 0.069
+# end = 4.299
+start = 0.02
+end = 1.4
 
-errors = utils.log_error_cats(start, end, 0.1)
+errors = utils.log_error_cats(start, end, 0.02)
 
 n_samples_year = utils.n_samples_year
 n_years = utils.n_years
@@ -47,7 +53,7 @@ n_sims = 10000
 
 
 if __name__ == '__main__':
-    with concurrent.futures.ProcessPoolExecutor(max_workers=8, mp_context=mp.get_context("spawn")) as executor:
+    with concurrent.futures.ProcessPoolExecutor(max_workers=7, mp_context=mp.get_context("spawn")) as executor:
         futures = []
         for error in errors[:-1]:
             f = executor.submit(utils.power_sims, error, n_years, n_samples_year, n_sims, utils.lakes_sims_path)

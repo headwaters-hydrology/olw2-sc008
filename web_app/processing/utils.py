@@ -147,8 +147,17 @@ river_reductions_model_path = assets_path.joinpath('rivers_reductions_modelled.h
 
 
 ### Lakes
+## Source data processing
+lakes_source_path = base_path.joinpath('lakes')
+
+lakes_source_data_path = lakes_source_path.joinpath('lakes_source_data.csv')
+lakes_deseason_path = lakes_source_path.joinpath('lakes_deseason_data.csv')
+lakes_deseason_comp_path = lakes_source_path.joinpath('lakes_deseason_comparison.csv')
+
 lakes_fenz_catch_path = base_path.joinpath('lakes_catchments_fenz.gpkg')
 lakes_fenz_poly_path = base_path.joinpath('lakes_polygons_fenz.gpkg')
+
+## Geo processing
 lakes_points_path = output_path.joinpath('lakes_points.feather')
 lakes_poly_path = output_path.joinpath('lakes_poly.feather')
 lakes_catch_path = output_path.joinpath('lakes_catch.feather')
@@ -181,12 +190,14 @@ lakes_lc_path = assets_path.joinpath('lakes_catch_lc.blt')
 lakes_loads_rec_path = assets_path.joinpath('lakes_loads_rec.blt')
 
 ## Model data
+lakes_rupesh_stdev_path = base_path.joinpath('lakes_stdev_v04.csv')
 lakes_data_path = base_path.joinpath('lakes_wq_data.csv')
-lakes_data_clean_path = base_path.joinpath('lakes_wq_data_clean.feather')
+# lakes_data_clean_path = base_path.joinpath('lakes_wq_data_clean.feather')
 lakes_class_csv = base_path.joinpath('fenz_lakes_classification.csv')
-lakes_stdev_model_path = output_path.joinpath('lakes_stdev_modelled.h5')
-lakes_stdev_moni_path = output_path.joinpath('lakes_stdev_monitored.h5')
+lakes_stdev_model_path = output_path.joinpath('lakes_stdev_modelled_v05.h5')
+lakes_stdev_moni_path = output_path.joinpath('lakes_stdev_monitored_v05.csv')
 
+lakes_missing_3rd_path = output_path.joinpath('lakes_stdev_missing.gpkg')
 
 ### GW
 
@@ -673,6 +684,50 @@ def get_directly_upstream_ways(way_id, node_way, way, way_index):
 
     return new_ways
 
+
+def discrete_resample(df, freq_code, agg_fun, remove_inter=False, **kwargs):
+    """
+    Function to properly set up a resampling class for discrete data. This assumes a linear interpolation between data points.
+
+    Parameters
+    ----------
+    df: DataFrame or Series
+        DataFrame or Series with a time index.
+    freq_code: str
+        Pandas frequency code. e.g. 'D'.
+    agg_fun : str
+        The aggregation function to be applied on the resampling object.
+    **kwargs
+        Any keyword args passed to Pandas resample.
+
+    Returns
+    -------
+    Pandas DataFrame or Series
+    """
+    if isinstance(df, (pd.Series, pd.DataFrame)):
+        if isinstance(df.index, pd.DatetimeIndex):
+            reg1 = pd.date_range(df.index[0].ceil(freq_code), df.index[-1].floor(freq_code), freq=freq_code)
+            reg2 = reg1[~reg1.isin(df.index)]
+            if isinstance(df, pd.Series):
+                s1 = pd.Series(np.nan, index=reg2)
+            else:
+                s1 = pd.DataFrame(np.nan, index=reg2, columns=df.columns)
+            s2 = pd.concat([df, s1]).sort_index()
+            s3 = s2.interpolate('time')
+            s4 = (s3 + s3.shift(-1))/2
+            s5 = s4.resample(freq_code, **kwargs).agg(agg_fun).dropna()
+
+            if remove_inter:
+                index1 = df.index.floor(freq_code).unique()
+                s6 = s5[s5.index.isin(index1)].copy()
+            else:
+                s6 = s5
+        else:
+            raise ValueError('The index must be a datetimeindex')
+    else:
+        raise TypeError('The object must be either a DataFrame or a Series')
+
+    return s6
 
 
 # import matplotlib.pyplot as plt
