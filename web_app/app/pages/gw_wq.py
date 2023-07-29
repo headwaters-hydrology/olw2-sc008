@@ -750,7 +750,7 @@ def update_map_info_gw(powers_obj, reductions, feature, gw_points_encode):
             if feature['id'] in gw_refs:
                 props = decode_obj(powers_obj)
 
-                info2 = info_str.format(red=int(reductions), t_stat=int(props[props.ref==feature['id']].iloc[0]['power']), depth=feature['properties']['bore_depth'])
+                info2 = info_str.format(red=int(reductions), t_stat=int(props[props.ref==feature['id']].iloc[0]['power']), depth=feature['properties']['depth'])
 
                 info = info + info2
 

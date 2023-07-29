@@ -417,6 +417,52 @@ def power_sims(error, n_years, n_samples_year, n_sims, output_path):
     return output
 
 
+def power_sims_gw(error, n_years, n_samples_year, n_sims, output_path):
+    """
+    Power simulation function.
+    Given an error (float), a number of sampling years (list of int), a number of samples per year (list of int), and the conc percentages (list of int), run n simulations (int) on all possible combinations.
+    """
+    print(error)
+
+    conc_perc = np.arange(1, 101, 1, dtype='int8')
+
+    n_samples = np.prod(hdf5tools.utils.cartesian([n_samples_year, n_years]), axis=1)
+    n_samples = list(set(n_samples))
+    n_samples.sort()
+
+    filler = np.empty((1, len(n_samples), len(conc_perc)), dtype='int8')
+
+    rng = np.random.default_rng()
+
+    for ni, n in enumerate(n_samples):
+        # print(n)
+
+        for pi, perc in enumerate(conc_perc):
+            red1 = np.interp(np.arange(n), [0, n-1], [5, 5*perc*0.01])
+
+            rand_shape = (n_sims, n)
+            red2 = np.tile(red1, n_sims).reshape(rand_shape)
+            r2 = rng.normal(0, error, rand_shape)
+
+            p2 = power_test(np.arange(n), red2 + r2, min_p_value=0.05)
+
+            filler[0][ni][pi] = p2
+
+    error1 = int(error*1000)
+
+    props = xr.Dataset(data_vars={'power': (('error', 'n_samples', 'conc_perc'), filler)
+                                  },
+                       coords={'error': np.array([error1], dtype='int16'),
+                               'n_samples': np.array(n_samples, dtype='int16'),
+                               'conc_perc': conc_perc}
+                       )
+
+    output = os.path.join(output_path, str(error1) + '.h5')
+    hdf5tools.xr_to_hdf5(props, output)
+
+    return output
+
+
 def xr_concat(datasets):
     """
     A much more efficient concat/combine of xarray datasets. It's also much safer on memory.

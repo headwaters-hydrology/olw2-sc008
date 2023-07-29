@@ -27,7 +27,7 @@ pd.options.display.max_columns = 10
 
 
 def gw_process_power_monitored():
-    list1 = utils.error_cats(0.01, 15.31, 0.1)
+    list1 = utils.error_cats(0.01, 15.31, 0.2)
     list1.insert(0, 0.001)
 
     errors0 = xr.load_dataset(utils.gw_monitoring_data_path)
