@@ -38,6 +38,10 @@ Many datasets were used in the development of this app.
 * [River water quality: Escherichia coli, modelled, 2016 - 2020](https://data.mfe.govt.nz/layer/109886-river-water-quality-escherichia-coli-modelled-2016-2020/) - Data licensed by MfE under the [CC BY 4.0 licence](https://creativecommons.org/licenses/by/4.0/)
 * [River water quality: Clarity and turbidity, modelled, 2016 - 2020](https://data.mfe.govt.nz/layer/109887-river-water-quality-clarity-and-turbidity-modelled-2016-2020/) - Data licensed by MfE under the [CC BY 4.0 licence](https://creativecommons.org/licenses/by/4.0/)
 
+#### Research articles
+* [Quantifying contaminant losses to water from pastoral land uses in New Zealand III. What could be achieved by 2035?](https://doi.org/10.1080/00288233.2020.1844763)
+
+
 """
 
 layout = html.Div(children=[

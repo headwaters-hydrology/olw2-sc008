@@ -31,6 +31,20 @@ pd.options.display.max_columns = 10
 # way_id = 3076139
 # catch = catches[way_id]
 
+line_break = '<br />'
+bold_start = '<b>'
+bold_end = '</b>'
+
+
+def make_tooltip(x):
+    """
+
+    """
+    tt = '<b>Typology</b><br />{typo}<br /><b>Land Cover</b><br />{lc}'.format(typo=x['typology'], lc=x['land_cover'])
+
+    return tt
+
+
 def rivers_land_cover():
     ## Separate land cover into catchments
     catches = booklet.open(utils.river_catch_major_path)
@@ -94,17 +108,26 @@ def rivers_land_cover():
 
     with booklet.open(utils.catch_lc_pbf_path, 'n', value_serializer=None, key_serializer='uint4', n_buckets=1600) as lc_gbuf:
         for i, lc2 in lc_dict.items():
+            lc2['tooltip'] = lc2.apply(lambda x: make_tooltip(x), axis=1)
             gdf = lc2.to_crs(4326)
             gjson = orjson.loads(gdf.to_json())
             gbuf = geobuf.encode(gjson)
             lc_gbuf[i] = gbuf
 
+    # with booklet.open(utils.catch_lc_path) as lc:
+    for i, data in lc_dict.items():
+        path = utils.rivers_catch_lc_dir.joinpath(utils.rivers_catch_lc_gpkg_str.format(i))
+        data.to_file(path)
+
+    combo_list = []
     with booklet.open(utils.catch_lc_path) as lc:
         for i, data in lc.items():
-            path = utils.rivers_catch_lc_dir.joinpath(utils.rivers_catch_lc_gpkg_str.format(i))
-            data.to_file(path)
+            if not data.empty:
+                data.insert(0, 'catch_id', i)
+                combo_list.append(data)
 
-
+    combo1 = pd.concat(combo_list)
+    combo1.to_file(utils.rivers_catch_lc_gpkg_path)
 
 
 ##############################################

@@ -601,7 +601,7 @@ def layout():
                                 ),
 
                             dmc.AccordionItem([
-                                dmc.AccordionControl('(3) Sampling Options', style={'font-size': 18}),
+                                dmc.AccordionControl('(3) Query Options', style={'font-size': 18}),
                                 dmc.AccordionPanel([
                                     dmc.Text('(3a) Select Indicator:'),
                                     dcc.Dropdown(options=[{'label': rivers_indicator_dict[d], 'value': d} for d in indicators], id='indicator_rivers', optionHeight=40, clearable=False),
@@ -642,7 +642,7 @@ def layout():
                             dmc.AccordionItem([
                                 dmc.AccordionControl('(4) Download Results', style={'font-size': 18}),
                                 dmc.AccordionPanel([
-                                    dmc.Text('(4a) Download power results given the prior sampling options (csv):'),
+                                    dmc.Text('(4a) Download power results given the prior query options (csv):'),
                                     dcc.Loading(
                                     type="default",
                                     children=[html.Div(dmc.Button("Download power results", id='dl_btn_power_rivers'), style={'margin-bottom': 20, 'margin-top': 10}),

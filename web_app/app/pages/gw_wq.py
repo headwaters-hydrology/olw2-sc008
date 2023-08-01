@@ -342,23 +342,6 @@ with booklet.open(gw_points_rc_blt, 'r') as f:
 
 rcs.sort()
 
-# with open(assets_path.joinpath('gw_points.pbf'), 'rb') as f:
-#     geodict = geobuf.decode(f.read())
-
-# lakes = [{'value': f['id'], 'label': ' '.join(f['properties']['name'].split())} for f in geodict['features']]
-# lakes = [{'value': f['id'], 'label': f['id']} for f in geodict['features']]
-# gw_refs = [f['id'] for f in geodict['features']]
-# freqs = sel1['frequency'].values
-# x1 = xr.open_dataset(gw_error_path, engine='h5netcdf')
-# indicators = x1.indicator.values
-# indicators.sort()
-# nzsegments = sel1['nzsegment'].values
-# percent_changes = sel1['percent_change'].values
-# time_periods = sel1['time_period'].values
-
-# x1.close()
-# del x1
-
 indicators = [{'value': k, 'label': v} for k, v in gw_indicator_dict.items()]
 
 ###############################################
@@ -423,7 +406,7 @@ def layout():
                                 ),
 
                             dmc.AccordionItem([
-                                dmc.AccordionControl('(3) Sampling Options', style={'font-size': 18}),
+                                dmc.AccordionControl('(3) Query Options', style={'font-size': 18}),
                                 dmc.AccordionPanel([
                                     dmc.Text('(3a) Select Indicator:'),
                                     dcc.Dropdown(options=indicators, id='indicator_gw', optionHeight=40, clearable=False),
@@ -450,7 +433,7 @@ def layout():
                             dmc.AccordionItem([
                                 dmc.AccordionControl('(4) Download Results', style={'font-size': 18}),
                                 dmc.AccordionPanel([
-                                    dmc.Text('(4a) Download power results given the prior sampling options (csv):'),
+                                    dmc.Text('(4a) Download power results given the prior query options (csv):'),
                                     dcc.Loading(
                                     type="default",
                                     children=[html.Div(dmc.Button("Download power results", id='dl_btn_power_gw'), style={'margin-bottom': 20, 'margin-top': 10}),

@@ -63,3 +63,49 @@ if __name__ == '__main__':
     # h5 = hdf5tools.H5(files)
     # h5.to_hdf5(utils.river_reductions_model_path)
 
+    ## Combine into csv
+    combo1['nzsegment'] = combo1['nzsegment'].astype('int32')
+    combo1['reduction_perc'] = combo1['reduction_perc'].astype('int8')
+    for p in combo1.data_vars:
+        combo1[p] = combo1[p].astype('int8')
+
+    combo2 = combo1.to_dataframe()
+    combo2.to_csv(utils.rivers_red_csv_path)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+

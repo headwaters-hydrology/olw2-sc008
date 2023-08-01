@@ -113,6 +113,8 @@ rivers_catch_lc_dir = assets_path.joinpath('rivers_land_cover_gpkg')
 rivers_catch_lc_dir.mkdir(parents=True, exist_ok=True)
 
 rivers_catch_lc_gpkg_str = '{}_rivers_land_cover_reductions.gpkg'
+rivers_catch_lc_gpkg_path = output_path.joinpath('olw_land_cover_reductions.gpkg')
+rivers_red_csv_path = output_path.joinpath('olw_rivers_reductions.csv')
 
 river_sites_catch_path = assets_path.joinpath('rivers_sites_catchments.blt')
 river_reach_mapping_path = assets_path.joinpath('rivers_reaches_mapping.blt')
