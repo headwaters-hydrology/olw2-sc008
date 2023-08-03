@@ -35,13 +35,14 @@ encodings = {'power': {'scale_factor': 1, '_FillValue': -99, 'dtype': 'int8'},
 
 start = 0.02
 end = 1.4
+step = 0.03
 
 
 def lakes_power_monitored_processing():
     # start = 0.069
     # end = 4.299
 
-    list1 = utils.log_error_cats(start, end, 0.02)
+    list1 = utils.log_error_cats(start, end, step)
 
     # lakes0 = xr.open_dataset(utils.lakes_stdev_moni_path, engine='h5netcdf')
     lakes0 = pd.read_csv(utils.lakes_stdev_moni_path)
@@ -90,7 +91,7 @@ def lakes_power_modelled_processing():
     # start = 0.069
     # end = 4.299
 
-    list1 = utils.log_error_cats(start, end, 0.02)
+    list1 = utils.log_error_cats(start, end, step)
 
     lakes0 = xr.open_dataset(utils.lakes_stdev_model_path, engine='h5netcdf')
     # lakes1 = lakes0.sel(model='BoostingRegressor', drop=True)

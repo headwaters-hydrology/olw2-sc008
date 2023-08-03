@@ -53,6 +53,8 @@ assets_path = pathlib.Path(os.path.realpath(os.path.dirname(__file__))).parent.j
 
 app_base_path = pathlib.Path('/assets')
 
+base_data_url = 'https://b2.tethys-ts.xyz/file/'
+
 lakes_power_combo_path = assets_path.joinpath('lakes_power_combo.h5')
 # lakes_power_moni_path = assets_path.joinpath('lakes_power_monitored.h5')
 lakes_reductions_model_path = assets_path.joinpath('lakes_reductions_modelled.h5')
@@ -65,8 +67,9 @@ lakes_lc_path = assets_path.joinpath('lakes_catch_lc.blt')
 lakes_reaches_mapping_path = assets_path.joinpath('lakes_reaches_mapping.blt')
 lakes_catches_minor_path = assets_path.joinpath('lakes_catchments_minor.blt')
 
-lakes_catch_lc_dir = assets_path.joinpath('lakes_land_cover_gpkg')
-lakes_catch_lc_gpkg_str = '{}_lakes_land_cover_reductions.gpkg'
+# lakes_catch_lc_dir = assets_path.joinpath('lakes_land_cover_gpkg')
+# lakes_catch_lc_gpkg_str = '{}_lakes_land_cover_reductions.gpkg'
+lakes_catch_lc_gpkg_str = '{base_url}olw-data/olw-sc008/lakes_land_cover_gpkg/{lake_id}_lakes_land_cover_reductions.gpkg'
 
 lakes_loads_rec_path = assets_path.joinpath('lakes_loads_rec.blt')
 
@@ -76,7 +79,7 @@ center = [-41.1157, 172.4759]
 
 attribution = 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 
-freq_mapping = {12: 'monthly', 26: 'fortnightly', 52: 'weekly', 104: 'twice weekly', 364: 'daily'}
+freq_mapping = {4: 'quarterly', 12: 'monthly', 26: 'fortnightly', 52: 'weekly', 104: 'biweekly', 364: 'daily'}
 time_periods = [5, 10, 20, 30]
 
 style = dict(weight=4, opacity=1, color='white')
@@ -135,8 +138,12 @@ base_reach_style = dict(weight=4, opacity=1, color='white')
 indices = list(range(len(ctg) + 1))
 colorbar_power = dl.Colorbar(min=0, max=len(ctg), classes=indices, colorscale=colorscale, tooltip=True, tickValues=[item + 0.5 for item in indices[:-1]], tickText=ctg, width=300, height=30, position="bottomright")
 
-
-# base_reach_style = dict(weight=4, opacity=1, color='white')
+marks = []
+for i in range(0, 101, 10):
+    if (i % 20) == 0:
+        marks.append({'label': str(i) + '%', 'value': i})
+    else:
+        marks.append({'value': i})
 
 # lake_id = 48177
 
@@ -492,11 +499,7 @@ def layout():
                                     html.Label('(2a) Download reductions polygons as GPKG:'),
                                     dcc.Loading(
                                     type="default",
-                                    children=[html.Div(dmc.Button("Download reductions",
-                                                                  id='dl_btn_lakes',
-                                                                  ),
-                                                       style={'margin-top': 10}),
-                            dcc.Download(id="dl_poly_lakes")],
+                                    children=[dmc.Anchor(dmc.Button('Download land cover'), href='', id='dl_poly_lakes', style={'margin-top': 10})],
                                     ),
                                     html.Label('NOTE: Only modify existing values. Do not add additional columns; they will be ignored.', style={
                                         'margin-top': 10
@@ -568,7 +571,7 @@ def layout():
                                                # min=10,
                                                showLabelOnHover=True,
                                                disabled=False,
-                                               marks=[{'label': str(d) + '%', 'value': d} for d in range(0, 101, 20)]
+                                               marks=marks
                                                ),
                                     ],
                                     )
@@ -635,106 +638,6 @@ def layout():
 
     return layout
 
-
-# def layout():
-#     layout = html.Div(children=[
-#         # html.Div([html.H1('Lake/Lagoon Water Quality')]),
-#         html.Div([
-#             html.H3('(1) Reductions routing'),
-
-#             html.Label('Select a lake/lagoon on the map:'),
-#             dcc.Dropdown(options=lakes_options, id='lake_id', optionHeight=40, clearable=False),
-
-#             dcc.Upload(
-#                 id='upload_data_lakes',
-#                 children=html.Button('Upload reductions polygons gpkg', style={
-#                     'width': '100%',
-#                 }),
-#                 style={
-#                     'width': '100%',
-#                     'height': '50%',
-#                     'textAlign': 'left',
-#                     'margin-top': 20
-#                 },
-#                 multiple=False
-#             ),
-#             dcc.Markdown('''###### **Or**''', style={
-#                 'textAlign': 'center',
-#                             }),
-#             html.Button('Use land cover for reductions', id='demo_data_lakes',
-#                         style={
-#                             'width': '100%',
-#                             'height': '50%',
-#                             'textAlign': 'left',
-#                             'margin-top': 20
-#                         }),
-
-#             html.Label('Select a reductions column in the GIS file:', style={'margin-top': 20}),
-#             dcc.Dropdown(options=[], id='col_name_lakes', optionHeight=40, clearable=False),
-#             dcc.Loading(
-#             type="default",
-#             children=[html.Div(html.Button("Download reductions polygons", id='dl_btn_lakes'), style={'margin-top': 10}),
-#     dcc.Download(id="dl_poly_lakes")],
-#             ),
-#             dcc.Loading(
-#             type="default",
-#             children=html.Div([html.Button('Process reductions', id='process_lakes', n_clicks=0),
-#                                html.Div(id='process_text_lakes')],
-#                               style={'margin-top': 20, 'margin-bottom': 10}
-#                               )
-#         ),
-#             ], className='two columns', style={'margin': 10}),
-
-#     html.Div([
-#         html.H3('(2) Sampling options'),
-#         html.Label('Select Indicator:'),
-#         dcc.Dropdown(options=indicators, id='indicator_lakes', optionHeight=40, clearable=False),
-#         html.Label('Select sampling length (years):', style={'margin-top': 20}),
-#         dcc.Dropdown(options=[{'label': d, 'value': d} for d in time_periods], id='time_period_lakes', clearable=False, value=5),
-#         html.Label('Select sampling frequency:'),
-#         dcc.Dropdown(options=[{'label': v, 'value': k} for k, v in freq_mapping.items()], id='freq_lakes', clearable=False, value=12),
-
-#         html.H4(children='Map Layers', style={'margin-top': 20}),
-#         dcc.Checklist(
-#                options=[
-#                    {'label': 'Reductions polygons', 'value': 'reductions_poly'},
-#                     # {'label': 'Lake polygon', 'value': 'lake_poly'},
-#                    {'label': 'River reaches', 'value': 'reach_map'}
-#                ],
-#                value=['reductions_poly', 'reach_map'],
-#                id='map_checkboxes_lakes',
-#                style={'padding': 5, 'margin-bottom': 50}
-#             ),
-#         dcc.Loading(
-#         type="default",
-#         children=[html.Div(html.Button("Download power results csv", id='dl_btn_power_lakes'), style={'margin-bottom': 20}),
-# dcc.Download(id="dl_power_lakes")],
-#         ),
-#         dcc.Markdown('', style={
-#             'textAlign': 'left',
-#                         }, id='red_disclaimer_lakes'),
-
-#         ], className='two columns', style={'margin': 10}),
-
-#     html.Div([
-#         dl.Map(center=center, zoom=7, children=[
-#             dl.TileLayer(id='tile_layer_lakes', attribution=attribution),
-#             dl.GeoJSON(url=str(lakes_pbf_path), format="geobuf", id='lake_points', zoomToBoundsOnClick=True, zoomToBounds=True, cluster=True),
-#             dl.GeoJSON(data='', format="geobuf", id='catch_map_lakes', zoomToBoundsOnClick=True, options=dict(style=catch_style)),
-#             dl.GeoJSON(data='', format="geobuf", id='reach_map_lakes', options=dict(style=reach_style)),
-#             dl.GeoJSON(data='', format="geobuf", id='lake_poly', options=dict(style=lake_style_handle), hideout={'classes': [''], 'colorscale': ['#808080'], 'style': lake_style, 'colorProp': 'name'}),
-#             dl.GeoJSON(data='', format="geobuf", id='reductions_poly_lakes'),
-#             colorbar_power,
-#             info
-#                             ], style={'width': '100%', 'height': 700, 'margin': "auto", "display": "block"})
-#     ], className='five columns', style={'margin': 10}),
-
-#     dcc.Store(id='props_obj_lakes', data=''),
-#     dcc.Store(id='reaches_obj_lakes', data=''),
-#     dcc.Store(id='reductions_obj_lakes', data=''),
-# ], style={'margin':0})
-
-#     return layout
 
 ###############################################
 ### Callbacks
@@ -835,17 +738,31 @@ def update_base_reductions_obj(lake_id):
     return data
 
 
+# @callback(
+#     Output("dl_poly_lakes", "data"),
+#     Input("dl_btn_lakes", "n_clicks"),
+#     State('lake_id', 'value'),
+#     prevent_initial_call=True,
+#     )
+# def download_lc(n_clicks, lake_id):
+#     if isinstance(lake_id, str):
+#         path = lakes_catch_lc_dir.joinpath(lakes_catch_lc_gpkg_str.format(lake_id))
+
+#         return dcc.send_file(path)
+
+
 @callback(
-    Output("dl_poly_lakes", "data"),
-    Input("dl_btn_lakes", "n_clicks"),
-    State('lake_id', 'value'),
+    Output("dl_poly_lakes", "href"),
+    # Input('indicator_lc', 'value'),
+    Input('lake_id', 'value'),
     prevent_initial_call=True,
     )
-def download_lc(n_clicks, lake_id):
-    if isinstance(lake_id, str):
-        path = lakes_catch_lc_dir.joinpath(lakes_catch_lc_gpkg_str.format(lake_id))
+def download_catch_lc(lake_id):
 
-        return dcc.send_file(path)
+    if isinstance(lake_id, str):
+        url = lakes_catch_lc_gpkg_str.format(base_url=base_data_url, lake_id=lake_id)
+
+        return url
 
 
 @callback(

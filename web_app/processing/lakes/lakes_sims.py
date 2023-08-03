@@ -45,7 +45,7 @@ pd.options.display.max_columns = 10
 start = 0.02
 end = 1.4
 
-errors = utils.log_error_cats(start, end, 0.02)
+errors = utils.log_error_cats(start, end, 0.03)
 
 n_samples_year = utils.n_samples_year
 n_years = utils.n_years

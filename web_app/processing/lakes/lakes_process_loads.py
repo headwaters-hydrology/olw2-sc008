@@ -25,19 +25,6 @@ pd.options.display.max_columns = 10
 #################################################
 ### Process loads
 
-indicator_dict = {
-    'Black disk': 'Clarity',
-    'E.coli': 'e.coli',
-    'Dissolved reactive phosporus': 'DRP',
-    'Ammoniacal nitrogen': 'NNN',
-    'Nitrate': 'NNN',
-    'Total nitrogen': 'TN',
-    'Total phosphorus': 'TP',
-    'Chlorophyll a': 'e.coli',
-    'Total Cyanobacteria': 'e.coli',
-    'Secchi Depth': 'Clarity',
-    }
-
 # way_id = 11018765
 
 
@@ -81,12 +68,11 @@ def process_loads_lakes():
     loads2 = loads2.drop('flow', axis=1).set_index('nzsegment')
 
     ## Calc set 3 - clarity and turbidity
-    conc0 = pd.read_csv(utils.rivers_conc_csv_path3, usecols=['measure', 'nzsgmnt', 'value'])
-    conc1 = conc0.rename(columns={'nzsgmnt': 'nzsegment'}).set_index(['nzsegment', 'measure'])['value'].unstack(1).copy()
-    loads3 = pd.merge(flows, conc1, on='nzsegment', how='left').set_index('nzsegment')
-    loads3.loc[loads3[loads3.columns[0]].isnull(), loads3.columns] = 0
-    for col in loads3.columns:
-        loads3[col] = loads3[col] * loads3['flow']
+    conc0 = pd.read_csv(utils.rivers_conc_csv_path3, usecols=['nzsegment', 'cumArea', 'CurrCor_cu'])
+    conc0['sediment'] = conc0.CurrCor_cu/conc0.cumArea
+    loads3 = pd.merge(flows, conc0[['nzsegment', 'sediment']], on='nzsegment', how='left').set_index('nzsegment')
+    loads3.loc[loads3.sediment.isnull(), 'sediment'] = 0
+    # loads3['sediment'] = loads3['sediment'] * loads3['flow']
 
     loads3 = loads3.drop('flow', axis=1)
 
@@ -110,7 +96,7 @@ def process_loads_lakes():
 
     ## Convert to web app parameter
     cols2 = combo1.columns
-    for param, col in indicator_dict.items():
+    for param, col in utils.indicator_dict.items():
         combo1[param] = combo1[col].copy()
 
     combo1 = combo1.drop(cols2, axis=1)

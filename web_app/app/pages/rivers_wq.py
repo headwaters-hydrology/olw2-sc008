@@ -56,6 +56,11 @@ assets_path = pathlib.Path(os.path.realpath(os.path.dirname(__file__))).parent.j
 
 app_base_path = pathlib.Path('/assets')
 
+base_data_url = 'https://b2.tethys-ts.xyz/file/'
+
+# lc_url = '{}olw-data/olw-sc008/olw_land_cover_reductions.gpkg'.format(base_data_url)
+# rivers_red_url = '{}olw-data/olw-sc008/olw_rivers_reductions.csv.zip'.format(base_data_url)
+
 river_power_model_path = assets_path.joinpath('rivers_reaches_power_modelled.h5')
 river_power_moni_path = assets_path.joinpath('rivers_reaches_power_monitored.h5')
 rivers_reductions_model_path = assets_path.joinpath('rivers_reductions_modelled.h5')
@@ -70,8 +75,9 @@ rivers_reach_mapping_path = assets_path.joinpath('rivers_reaches_mapping.blt')
 rivers_sites_path = assets_path.joinpath('rivers_sites_catchments.blt')
 river_loads_rec_path = assets_path.joinpath('rivers_loads_rec.blt')
 
-rivers_catch_lc_dir = assets_path.joinpath('rivers_land_cover_gpkg')
-rivers_catch_lc_gpkg_str = '{}_rivers_land_cover_reductions.gpkg'
+# rivers_catch_lc_dir = assets_path.joinpath('rivers_land_cover_gpkg')
+# rivers_catch_lc_gpkg_str = '{}_rivers_land_cover_reductions.gpkg'
+rivers_catch_lc_gpkg_str = '{base_url}olw-data/olw-sc008/rivers_land_cover_gpkg/{catch_id}_rivers_land_cover_reductions.gpkg'
 
 ### Layout
 map_height = 700
@@ -79,7 +85,7 @@ center = [-41.1157, 172.4759]
 
 attribution = 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 
-freq_mapping = {12: 'monthly', 26: 'fortnightly', 52: 'weekly', 104: 'twice weekly', 364: 'daily'}
+freq_mapping = {4: 'quarterly', 12: 'monthly', 26: 'fortnightly', 52: 'weekly', 104: 'biweekly', 364: 'daily'}
 time_periods = [5, 10, 20, 30]
 
 style = dict(weight=4, opacity=1, color='white')
@@ -101,7 +107,7 @@ red_ratios = np.array(list(reduction_ratios), dtype='int8')
 
 rivers_points_hideout = {'classes': [], 'colorscale': ['#232323'], 'circleOptions': dict(fillOpacity=1, stroke=True, weight=1, color='black', radius=site_point_radius), 'colorProp': 'nzsegment'}
 
-rivers_indicator_dict = {'BD': 'Black disk', 'EC': 'E.coli', 'DRP': 'Dissolved reactive phosporus', 'NH': 'Ammoniacal nitrogen', 'NO': 'Nitrate', 'TN': 'Total nitrogen', 'TP': 'Total phosphorus'}
+rivers_indicator_dict = {'BD': 'Visual Clarity', 'EC': 'E.coli', 'DRP': 'Dissolved reactive phosporus', 'NH': 'Ammoniacal nitrogen', 'NO': 'Nitrate', 'TN': 'Total nitrogen', 'TP': 'Total phosphorus'}
 
 rivers_reduction_cols = list(rivers_indicator_dict.values())
 
@@ -154,6 +160,12 @@ base_reach_style = dict(weight=4, opacity=1, color='white')
 indices = list(range(len(ctg) + 1))
 colorbar_power = dl.Colorbar(min=0, max=len(ctg), classes=indices, colorscale=colorscale, tooltip=True, tickValues=[item + 0.5 for item in indices[:-1]], tickText=ctg, width=300, height=30, position="bottomright")
 
+marks = []
+for i in range(0, 101, 10):
+    if (i % 20) == 0:
+        marks.append({'label': str(i) + '%', 'value': i})
+    else:
+        marks.append({'value': i})
 
 # catch_id = 3076139
 
@@ -544,13 +556,7 @@ def layout():
                                     dcc.Loading(
                                     id="loading-2",
                                     type="default",
-                                    children=[html.Div(dmc.Button("Download reductions",
-                                                                  id='dl_btn',
-                                                                  # className='btn btn-primary'
-                                                                  ),
-                                                       # className="me-1",
-                                                       style={'margin-top': 10}),
-                            dcc.Download(id="dl_poly")],
+                                    children=[dmc.Anchor(dmc.Button('Download land cover'), href='', id='dl_poly', style={'margin-top': 10})],
                                     ),
                                     html.Label('NOTE: Only modify existing values. Do not add additional columns; they will be ignored.', style={
                                         'margin-top': 10
@@ -627,7 +633,7 @@ def layout():
                                                # min=10,
                                                showLabelOnHover=True,
                                                disabled=False,
-                                               marks=[{'label': str(d) + '%', 'value': d} for d in range(0, 101, 20)]
+                                               marks=marks
                                                ),
                                     # dcc.Dropdown(options=[{'label': d, 'value': d} for d in time_periods], id='time_period', clearable=False, value=5),
                                     # html.Label('Select sampling frequency:'),
@@ -787,17 +793,31 @@ def update_base_reductions_obj(catch_id):
     return data
 
 
+# @callback(
+#     Output("dl_poly", "data"),
+#     Input("dl_btn", "n_clicks"),
+#     State('catch_id', 'value'),
+#     prevent_initial_call=True,
+#     )
+# def download_lc(n_clicks, catch_id):
+#     if isinstance(catch_id, str):
+#         path = rivers_catch_lc_dir.joinpath(rivers_catch_lc_gpkg_str.format(catch_id))
+
+#         return dcc.send_file(path)
+
+
 @callback(
-    Output("dl_poly", "data"),
-    Input("dl_btn", "n_clicks"),
-    State('catch_id', 'value'),
+    Output("dl_poly", "href"),
+    # Input('indicator_lc', 'value'),
+    Input('catch_id', 'value'),
     prevent_initial_call=True,
     )
-def download_lc(n_clicks, catch_id):
-    if isinstance(catch_id, str):
-        path = rivers_catch_lc_dir.joinpath(rivers_catch_lc_gpkg_str.format(catch_id))
+def download_catch_lc(catch_id):
 
-        return dcc.send_file(path)
+    if isinstance(catch_id, str):
+        url = rivers_catch_lc_gpkg_str.format(base_url=base_data_url, catch_id=catch_id)
+
+        return url
 
 
 @callback(
@@ -913,6 +933,9 @@ def update_powers_data(reaches_obj, indicator, n_years, n_samples_year, prop_red
         del power_data
 
         conc_perc = 100 - props.reduction
+
+        if indicator in ['BD']:
+            conc_perc = (((conc_perc*0.01)**0.76) * 100).astype('int8')
 
         new_powers = props.assign(power_modelled=(('nzsegment'), power_data1.sel(conc_perc=conc_perc).power.values.astype('int8')))
         new_powers['nzsegment'] = new_powers['nzsegment'].astype('int32')

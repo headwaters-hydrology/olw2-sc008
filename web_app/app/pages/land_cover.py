@@ -81,8 +81,8 @@ center = [-41.1157, 172.4759]
 
 attribution = 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 
-freq_mapping = {12: 'monthly', 26: 'fortnightly', 52: 'weekly', 104: 'twice weekly', 364: 'daily'}
-time_periods = [5, 10, 20, 30]
+# freq_mapping = {12: 'monthly', 26: 'fortnightly', 52: 'weekly', 104: 'twice weekly', 364: 'daily'}
+# time_periods = [5, 10, 20, 30]
 
 reach_style = dict(weight=4, opacity=1, color='white')
 lc_style = dict(weight=1, opacity=0.7, color='white', dashArray='3', fillOpacity=0.7)
@@ -90,7 +90,8 @@ classes = [0, 20, 40, 60, 80]
 bins = classes.copy()
 bins.append(101)
 # colorscale = ['#808080', '#FED976', '#FEB24C', '#FC4E2A', '#BD0026', '#800026']
-colorscale = ['#808080', '#FED976', '#FD8D3C', '#E31A1C', '#800026']
+# colorscale = ['#808080', '#FED976', '#FD8D3C', '#E31A1C', '#800026']
+colorscale = ['#ffffd4','#fed98e','#fe9929','#d95f0e','#993404']
 # reductions_colorscale = ['#edf8fb','#b2e2e2','#66c2a4','#2ca25f','#006d2c']
 # ctg = ["{}%+".format(cls, classes[i + 1]) for i, cls in enumerate(classes[1:-1])] + ["{}%+".format(classes[-1])]
 # ctg.insert(0, 'NA')
@@ -104,7 +105,7 @@ red_ratios = np.array(list(reduction_ratios), dtype='int8')
 
 rivers_points_hideout = {'classes': [], 'colorscale': ['#232323'], 'circleOptions': dict(fillOpacity=1, stroke=True, weight=1, color='black', radius=site_point_radius), 'colorProp': 'nzsegment'}
 
-rivers_indicator_dict = {'BD': 'Black disk', 'EC': 'E.coli', 'DRP': 'Dissolved reactive phosporus', 'NH': 'Ammoniacal nitrogen', 'NO': 'Nitrate', 'TN': 'Total nitrogen', 'TP': 'Total phosphorus'}
+rivers_indicator_dict = {'BD': 'Visual Clarity', 'EC': 'E.coli', 'DRP': 'Dissolved reactive phosporus', 'NH': 'Ammoniacal nitrogen', 'NO': 'Nitrate', 'TN': 'Total nitrogen', 'TP': 'Total phosphorus'}
 
 rivers_reduction_cols = list(rivers_indicator_dict.values())
 
@@ -170,6 +171,14 @@ colorbar_power = dl.Colorbar(min=0, max=len(ctg), classes=indices, colorscale=co
 
 reach_hideout = {'colorscale': colorscale, 'classes': classes, 'style': reach_style, 'colorProp': 'nzsegment'}
 lc_hideout = {'colorscale': colorscale, 'classes': classes, 'style': lc_style, 'colorProp': 'Nitrate'}
+
+marks = []
+for i in range(0, 101, 10):
+    if (i % 20) == 0:
+        marks.append({'label': str(i) + '%', 'value': i})
+    else:
+        marks.append({'value': i})
+
 
 # catch_id = 3076139
 
@@ -430,7 +439,7 @@ def layout():
                                                 # min=10,
                                                 showLabelOnHover=True,
                                                 disabled=False,
-                                                marks=[{'label': str(d) + '%', 'value': d} for d in range(0, 101, 20)]
+                                                marks=marks
                                                 ),
                                     dmc.Text('NOTE', weight=700, underline=True, style={'margin-top': 20}),
                                     dmc.Text('The river segments can be added to the map via the layer button on the top right corner of the map.')

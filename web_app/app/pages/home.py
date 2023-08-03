@@ -36,7 +36,7 @@ Many datasets were used in the development of this app.
 * [River water quality: Nitrogen, modelled, 2016 - 2020](https://data.mfe.govt.nz/layer/109888-river-water-quality-nitrogen-modelled-2016-2020/) - Data licensed by MfE under the [CC BY 4.0 licence](https://creativecommons.org/licenses/by/4.0/)
 * [River water quality: Phosphorus, modelled, 2016 - 2020](https://data.mfe.govt.nz/layer/109934-river-water-quality-phosphorus-modelled-2016-2020/) - Data licensed by MfE under the [CC BY 4.0 licence](https://creativecommons.org/licenses/by/4.0/)
 * [River water quality: Escherichia coli, modelled, 2016 - 2020](https://data.mfe.govt.nz/layer/109886-river-water-quality-escherichia-coli-modelled-2016-2020/) - Data licensed by MfE under the [CC BY 4.0 licence](https://creativecommons.org/licenses/by/4.0/)
-* [River water quality: Clarity and turbidity, modelled, 2016 - 2020](https://data.mfe.govt.nz/layer/109887-river-water-quality-clarity-and-turbidity-modelled-2016-2020/) - Data licensed by MfE under the [CC BY 4.0 licence](https://creativecommons.org/licenses/by/4.0/)
+* [Updated suspended sediment yield estimator and estuarine trap efficiency model results 2019](https://data.mfe.govt.nz/layer/103686-updated-suspended-sediment-yield-estimator-and-estuarine-trap-efficiency-model-results-2019/) - Data licensed by MfE under the [CC BY 4.0 licence](https://creativecommons.org/licenses/by/4.0/)
 
 #### Research articles
 * [Quantifying contaminant losses to water from pastoral land uses in New Zealand III. What could be achieved by 2035?](https://doi.org/10.1080/00288233.2020.1844763)

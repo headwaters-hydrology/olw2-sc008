@@ -63,7 +63,8 @@ rivers_land_cover()
 process_loads()
 
 ## Route the reductions based on the default reductions
-process_river_reach_reductions()
+# process_river_reach_reductions()
+# rivers_route_reductions.py should be run via the terminal
 
 ## River error/power sims
 

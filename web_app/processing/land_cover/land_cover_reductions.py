@@ -86,7 +86,7 @@ dairy_reductions = {'sediment': 65,
 
 features_cols = ['Climate', 'Slope', 'Drainage', 'Wetness']
 
-param_mapping = {'Black disk': 'sediment',
+param_mapping = {'Visual Clarity': 'sediment',
                  'E.coli': 'e.coli',
                  'Dissolved reactive phosporus': 'phosphorus',
                  'Ammoniacal nitrogen': 'nitrogen',

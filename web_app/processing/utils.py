@@ -48,9 +48,22 @@ output_path.mkdir(parents=True, exist_ok=True)
 assets_path = output_path.joinpath('assets')
 assets_path.mkdir(parents=True, exist_ok=True)
 
-indicators = {'rivers': ['Black disk', 'E.coli', 'Dissolved reactive phosporus', 'Ammoniacal nitrogen', 'Nitrate', 'Total nitrogen', 'Total phosphorus'],
+indicators = {'rivers': ['Visual Clarity', 'E.coli', 'Dissolved reactive phosporus', 'Ammoniacal nitrogen', 'Nitrate', 'Total nitrogen', 'Total phosphorus'],
               'lakes': ['E.coli', 'Ammoniacal nitrogen', 'Total nitrogen', 'Total phosphorus', 'Chlorophyll a', 'Total Cyanobacteria', 'Secchi Depth']
               }
+
+indicator_dict = {
+    'Visual Clarity': 'sediment',
+    'E.coli': 'e.coli',
+    'Dissolved reactive phosporus': 'DRP',
+    'Ammoniacal nitrogen': 'NNN',
+    'Nitrate': 'NNN',
+    'Total nitrogen': 'TN',
+    'Total phosphorus': 'TP',
+    'Chlorophyll a': 'e.coli',
+    'Total Cyanobacteria': 'e.coli',
+    'Secchi Depth': 'sediment',
+    }
 
 ### RC boundaries
 rc_bounds_gbuf = assets_path.joinpath('rc_bounds.pbf')
@@ -90,7 +103,9 @@ sites_names_csv = base_path.joinpath('LAWARiverSiteswithRCIDs.csv')
 rivers_conc_base_path = base_path.joinpath('rivers')
 rivers_conc_csv_path1 = rivers_conc_base_path.joinpath('NutrientConcsYields.csv')
 rivers_conc_csv_path2 = rivers_conc_base_path.joinpath('EcoliConcsYields.csv')
-rivers_conc_csv_path3 = rivers_conc_base_path.joinpath('river-water-quality-clarity-and-turbidity-modelled-2016-2020.csv')
+rivers_conc_csv_path3 = rivers_conc_base_path.joinpath('updated-suspended-sediment-yield-estimator-and-estuarine-tra.csv')
+
+# catch_break_points_gpkg = rivers_conc_base_path.joinpath('catch_management_points.gpkg')
 
 ## Errors and powers
 river_errors_model_path = base_path.joinpath('rivers_errors_modelled_v02.csv')
@@ -137,7 +152,7 @@ river_power_model_path = assets_path.joinpath('rivers_reaches_power_modelled.h5'
 ## Sims params
 # conc_perc = np.arange(2, 101, 2, dtype='int8')
 conc_perc = np.arange(1, 101, 1, dtype='int8')
-n_samples_year = [12, 26, 52, 104, 364]
+n_samples_year = [4, 12, 26, 52, 104, 364]
 n_years = [5, 10, 20, 30]
 
 ## Reductions

@@ -21,7 +21,7 @@ pd.options.display.max_columns = 10
 
 # catch_id = 3076139
 
-params = ['Total nitrogen', 'Total phosphorus']
+params = list(utils.indicator_dict.keys())
 
 output_path1 = '/home/mike/data/OLW/web_app/output/rec_segment_reductions.csv'
 output_path2 = '/home/mike/data/OLW/web_app/output/rec_segment_typology_area_ratios.csv'
