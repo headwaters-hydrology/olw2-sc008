@@ -217,6 +217,9 @@ def land_cover_reductions():
 
     utils.gpd_to_feather(combo2, utils.snb_dairy_red_path)
 
+    combo3 = combo2.drop('geometry', axis=1).drop_duplicates(subset=['typology'])
+    lcdb_extras = combo3.drop(['farm_type', 'typology'], axis=1).groupby('land_cover').mean().round().astype('int8')
+
     ### LCDB
     lcdb0 = gpd.read_feather(utils.lcdb_clean_path)
 
@@ -235,7 +238,19 @@ def land_cover_reductions():
 
     lcdb2 = lcdb1.drop(set(param_mapping.values()), axis=1).reset_index(drop=True)
 
+    lcdb2.loc[lcdb2.land_cover == 'Low Producing Grassland', lcdb_extras.columns] = lcdb_extras.loc['Sheep and Beef'].values
+    lcdb2.loc[lcdb2.land_cover == 'High Producing Exotic Grassland', lcdb_extras.columns] = lcdb_extras.loc['Dairy'].values
+
     utils.gpd_to_feather(lcdb2, utils.lcdb_red_path)
+
+    ## Save the reductions only
+    combo3 = combo2.drop('geometry', axis=1).drop_duplicates(subset=['typology'])
+
+    lcdb3 = lcdb2.drop('geometry', axis=1).drop_duplicates(subset=['typology'])
+
+    lc_red = pd.concat([combo3, lcdb3])
+
+    lc_red.to_csv(utils.lc_red_csv_path, index=False)
 
 
 

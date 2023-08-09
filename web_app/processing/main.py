@@ -22,7 +22,6 @@ from rivers.rivers_delineate import rec_delin
 from rivers.rivers_land_cover_assignment import rivers_land_cover
 from rivers.rivers_process_loads import process_loads
 from rivers.rivers_monitoring_sites import rivers_monitoring_sites_processing
-from rivers.rivers_assign_reach_reductions import process_river_reach_reductions
 from rivers.rivers_assign_power_monitored import rivers_process_power_monitored
 from rivers.rivers_assign_power_modelled import rivers_process_power_modelled
 
@@ -63,7 +62,7 @@ rivers_land_cover()
 process_loads()
 
 ## Route the reductions based on the default reductions
-# process_river_reach_reductions()
+
 # rivers_route_reductions.py should be run via the terminal
 
 ## River error/power sims

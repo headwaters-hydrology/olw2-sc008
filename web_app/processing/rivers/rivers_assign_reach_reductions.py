@@ -23,8 +23,8 @@ pd.options.display.max_columns = 10
 
 params = list(utils.indicator_dict.keys())
 
-output_path1 = '/home/mike/data/OLW/web_app/output/rec_segment_reductions.csv'
-output_path2 = '/home/mike/data/OLW/web_app/output/rec_segment_typology_area_ratios.csv'
+output_path1 = '/home/mike/data/OLW/web_app/output/rec_segment_reductions_v02.csv'
+output_path2 = '/home/mike/data/OLW/web_app/output/rec_segment_typology_area_ratios_v02.csv'
 
 #############################################
 ### Functions
@@ -35,7 +35,7 @@ def calc_river_reach_reductions(catch_id, reductions, reduction_cols):
 
     """
     with booklet.open(utils.river_catch_path) as f:
-        c1 = f[int(catch_id)]
+        catches1 = f[int(catch_id)]
 
     with booklet.open(utils.river_reach_mapping_path) as f:
         branches = f[int(catch_id)]
@@ -54,38 +54,49 @@ def calc_river_reach_reductions(catch_id, reductions, reduction_cols):
     # plan1 = plan0.to_crs(2193)
 
     ## Calc reductions per nzsegment given sparse geometry input
-    c2 = plan1.overlay(c1)
-    c2['typology_area'] = c2.area
+    c2 = plan1.overlay(catches1)
+    c2['sub_area'] = c2.area
 
-    c2['catch_area'] = c2.groupby('nzsegment')['typology_area'].transform('sum')
-    c2['area_ratio'] = c2['typology_area']/c2['catch_area']
+    catches1['total_area'] = catches1.area
+    catches2 = catches1.drop('geometry', axis=1)
+    c3 = pd.merge(c2.drop('geometry', axis=1), catches2, on='nzsegment')
 
-    c2b = c2.copy()
+    c_list = []
+    for grp, data in c3.groupby('nzsegment'):
+        tot_sub_area = data.sub_area.sum()
+        tot_area = data.total_area.iloc[0]
+
+        if (tot_sub_area / tot_area) < 0.99:
+            diff_area = tot_area - tot_sub_area
+            val = ['Native Forest', 'NA', 'Native Forest'] + [0]*len(reduction_cols) + [grp, diff_area, tot_area]
+            c_list.append(val)
+
+    extra1 = pd.DataFrame(c_list, columns=c3.columns)
+    c3b = pd.concat([c3, extra1])
+
+    # c2.loc[c2.typology.isnull(), ['typology', 'land_cover']] = 'Native Forest'
+    # c2.loc[c2[reduction_cols[0]].isnull(), reduction_cols] = 0
+
+    # c2['total_area'] = c2.groupby('nzsegment')['sub_area'].transform('sum')
+
+    c3c = c3b.copy()
 
     results_list = []
     for col in reduction_cols:
-        c2b['prop_reductions'] = c2b[col]*c2b['area_ratio']
-        c3 = c2b.groupby('nzsegment')[['prop_reductions', 'typology_area']].sum()
-
-        ## Add in missing areas and assume that they are 0 reductions
-        c1['tot_area'] = c1.area
-
-        c4 = pd.merge(c1.drop('geometry', axis=1), c3, on='nzsegment', how='left')
-        c4.loc[c4['prop_reductions'].isnull(), ['prop_reductions', 'typology_area']] = 0
-
-        c4['reduction'] = (c4['prop_reductions'] * c4['typology_area'])/c4['tot_area']
+        c3c['reduction'] = c3c[col]*(c3c['sub_area']/c3c['total_area'])
+        c4 = c3c.groupby('nzsegment')['reduction'].sum().reset_index()
 
         c5 = c4[['nzsegment', 'reduction']].rename(columns={'reduction': col}).groupby('nzsegment').sum().round(2)
         results_list.append(c5)
 
     results = pd.concat(results_list, axis=1)
 
-    lc0 = c2.sort_values('catch_area').groupby('nzsegment')[['typology', 'farm_type', 'land_cover']].last()
+    lc0 = c2.sort_values('sub_area').groupby('nzsegment')[['typology', 'farm_type', 'land_cover']].last()
 
     results2 = pd.concat([lc0, results], axis=1)
-    results2.loc[results2.typology.isnull(), ['typology', 'farm_type', 'land_cover']] = 'Native Forest'
+    # results2.loc[results2.typology.isnull(), ['typology', 'farm_type', 'land_cover']] = 'Native Forest'
 
-    return results2, pd.DataFrame(c2.drop(['Total nitrogen', 'Total phosphorus', 'geometry'], axis=1))
+    return results2, c3b
 
 
 

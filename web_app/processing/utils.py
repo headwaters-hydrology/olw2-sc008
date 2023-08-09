@@ -93,6 +93,7 @@ lc_clean_gpkg_path = base_path.joinpath('land_cover_clean.gpkg')
 lc_red_gpkg_path = base_path.joinpath('land_cover_reductions.gpkg')
 lc_red_feather_path = base_path.joinpath('land_cover_reductions.feather')
 
+lc_red_csv_path = lc_base_path.joinpath('typology_reductions.csv')
 
 ### Rivers
 sites_loc_csv = base_path.joinpath('olw_river_sites_locations.csv')

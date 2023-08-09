@@ -203,6 +203,16 @@ def rec_delin():
     #         catches1 = rec_catch0[rec_catch0.nzsegment.isin(segs)].copy()
     #         f[way_id] = catches1
 
+    # catch_list = []
+    # with booklet.open(utils.river_catch_path) as c1:
+    #     for catch in c1.values():
+    #         catch_list.append(catch)
+
+    # catch1 = pd.concat(catch_list)
+    # catch1.to_file('/home/mike/data/OLW/web_app/rivers/agg_3rd_order_catches.gpkg')
+
+
+
 
 
 
