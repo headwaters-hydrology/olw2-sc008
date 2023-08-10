@@ -84,6 +84,20 @@ def process_loads():
     ## Combine
     combo1 = pd.concat([loads1, loads2, loads3], axis=1)
 
+    ## Convert to web app parameter
+    cols2 = combo1.columns
+    for param, col in utils.indicator_dict.items():
+        combo1[param] = combo1[col].copy()
+
+    combo1 = combo1.drop(cols2, axis=1)
+
+    ## Split by catchment
+    with booklet.open(utils.river_loads_rec_path, 'n', value_serializer='pickle_zstd', key_serializer='uint4', n_buckets=1600) as blt:
+        with booklet.open(utils.river_reach_mapping_path) as f:
+            for catch_id, reaches in f.items():
+                combo2 = combo1.loc[reaches[catch_id]].copy()
+                blt[catch_id] = combo2
+
     ### Reference conc - crazy...
     w0 = nzrec.Water(utils.nzrec_data_path)
 
@@ -148,24 +162,20 @@ def process_loads():
     for col in cols1:
         ref_load0[col] = ref_load0[col] * ref_load0['flow']
 
-    ref_load0.drop('flow', axis=1).to_csv(utils.rivers_ref_load_csv_path, index=False)
-
-    ## Convert to web app parameter
-    cols2 = combo1.columns
-    for param, col in utils.indicator_dict.items():
-        combo1[param] = combo1[col].copy()
-
-    combo1 = combo1.drop(cols2, axis=1)
-
-    ## Split by catchment
-    with booklet.open(utils.river_loads_rec_path, 'n', value_serializer='pickle_zstd', key_serializer='uint4', n_buckets=1600) as blt:
-        with booklet.open(utils.river_reach_mapping_path) as f:
-            for catch_id, reaches in f.items():
-                combo2 = combo1.loc[reaches[catch_id]].copy()
-                blt[catch_id] = combo2
+    ref_load1 = ref_load0.drop('flow', axis=1).set_index('nzsegment')
+    ref_load1.to_csv(utils.rivers_ref_load_csv_path)
 
 
 
+
+### Testing
+# combo2 = pd.merge(combo1, ref_load1, on='nzsegment')
+
+# res_dict = {}
+# for col in combo1.columns:
+#     c1 = combo2[col+'_x']/combo2[col+'_y']
+#     c2 = (c1 < 1).sum()
+#     res_dict[col] = c2
 
 
 
