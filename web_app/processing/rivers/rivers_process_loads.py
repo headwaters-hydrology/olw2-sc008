@@ -30,6 +30,8 @@ pd.options.display.max_columns = 10
 segs = [3087421, 3087553, 3088075, 3088017, 3088076, 3095138]
 # way_id = 11018765
 
+tags = ['Climate class', 'Geology class', 'Topography class']
+
 
 def process_loads():
     """
@@ -82,20 +84,71 @@ def process_loads():
     ## Combine
     combo1 = pd.concat([loads1, loads2, loads3], axis=1)
 
-    ## Remove upstream loads - Not needed because flows are already processed this way
-    # ways = set(combo1.index.values)
+    ### Reference conc - crazy...
+    w0 = nzrec.Water(utils.nzrec_data_path)
 
-    # w0 = nzrec.Water(utils.nzrec_data_path)
-    # way = {k: v for k, v in w0._way.items()}
-    # way_index = {k: v for k, v in w0._way_index.items()}
-    # node_way = {k: v for k, v in w0._node_way_index.items()}
+    class_list = []
+    for seg in flows.nzsegment:
+        data = w0._way_tag[seg]
+        data1 = {'nzsegment': seg}
+        data1.update({tag.split(' ')[0]: val for tag, val in data.items() if (tag in tags)})
+        class_list.append(data1)
 
-    # load_diff_list = []
-    # for way_id in ways:
-    #     up_ways1 = utils.get_directly_upstream_ways(way_id, node_way, way, way_index)
-    #     up_ways2 = ways.intersection(up_ways1)
-    #     data1 = combo1.loc[list(up_ways2)].sum()
-    #     load_diff = combo1.loc[way_id] - data1
+    seg_class0 = pd.DataFrame(class_list)
+    seg_class0.loc[seg_class0['Climate'].isnull(), ['Climate', 'Topography', 'Geology']] = 'Other'
+
+    ref_conc30 = pd.read_csv(utils.rivers_ref_conc3_csv_path)
+
+    ref_conc30['Climate'] = ref_conc30.REC.str[:2]
+    ref_conc30['Topography'] = ref_conc30.REC.str[2:]
+
+    ref_conc31 = ref_conc30.set_index(['param', 'Climate', 'Topography']).drop('REC', axis=1).stack()
+    cols = list(ref_conc31.index.names)
+    cols[-1] = 'Geology'
+    ref_conc31.index.names = cols
+    ref_conc31.name = 'conc'
+    ref_conc32 = ref_conc31.unstack(0).reset_index()
+
+    ref_conc00 = pd.merge(seg_class0, ref_conc32, on=['Climate', 'Topography', 'Geology'], how='left')
+    ref_conc000 = ref_conc00.loc[~ref_conc00['DRP'].isnull()]
+
+    ref_conc20 = pd.read_csv(utils.rivers_ref_conc2_csv_path)
+    ref_conc20['Climate'] = ref_conc20.REC.str[:2]
+    ref_conc20['Topography'] = ref_conc20.REC.str[2:]
+
+    ref_conc21 = ref_conc20.set_index(['param', 'Climate', 'Topography']).drop('REC', axis=1)['conc']
+    ref_conc22 = ref_conc21.unstack(0).reset_index()
+
+    ref_conc01 = pd.merge(ref_conc00.loc[ref_conc00['DRP'].isnull(), ['nzsegment', 'Climate', 'Topography', 'Geology']], ref_conc22, on=['Climate', 'Topography'], how='left')
+
+    ref_conc23 = ref_conc22.groupby('Climate').mean()
+    ref_conc23.loc['Other'] = ref_conc23.mean()
+
+    ref_conc02 = pd.merge(ref_conc01.loc[ref_conc01['DRP'].isnull(), ['nzsegment', 'Climate', 'Topography', 'Geology']], ref_conc23, on=['Climate'], how='left')
+
+    ref_conc000 = ref_conc00.loc[~ref_conc00['DRP'].isnull()]
+    ref_conc010 = ref_conc01.loc[~ref_conc01['DRP'].isnull()]
+
+    ref_conc0 = pd.concat([ref_conc000, ref_conc010, ref_conc02]).drop(['Climate', 'Topography', 'Geology'], axis=1).set_index('nzsegment')
+
+    ref_conc0.round(4).to_csv(utils.rivers_ref_conc_csv_path)
+
+    ref_conc0 = ref_conc0.rename(columns={'NO3N': 'NNN', 'SS': 'sediment', 'ECOLI': 'e.coli'})
+
+    cols2 = ref_conc0.columns
+    for param, col in utils.indicator_dict.items():
+        ref_conc0[param] = ref_conc0[col].copy()
+
+    ref_conc0['Ammoniacal nitrogen'] = ref_conc0['NH4N'].copy()
+
+    ref_conc1 = ref_conc0.drop(cols2, axis=1)
+
+    ref_load0 = pd.merge(flows, ref_conc1, on='nzsegment')
+    cols1 = [col for col in ref_load0.columns if col not in ['nzsegment', 'flow']]
+    for col in cols1:
+        ref_load0[col] = ref_load0[col] * ref_load0['flow']
+
+    ref_load0.drop('flow', axis=1).to_csv(utils.rivers_ref_load_csv_path, index=False)
 
     ## Convert to web app parameter
     cols2 = combo1.columns

@@ -106,6 +106,11 @@ rivers_conc_csv_path1 = rivers_conc_base_path.joinpath('NutrientConcsYields.csv'
 rivers_conc_csv_path2 = rivers_conc_base_path.joinpath('EcoliConcsYields.csv')
 rivers_conc_csv_path3 = rivers_conc_base_path.joinpath('updated-suspended-sediment-yield-estimator-and-estuarine-tra.csv')
 
+rivers_ref_conc3_csv_path = rivers_conc_base_path.joinpath('reference_conc_rec_level_3.csv')
+rivers_ref_conc2_csv_path = rivers_conc_base_path.joinpath('reference_conc_rec_level_2.csv')
+rivers_ref_conc_csv_path = rivers_conc_base_path.joinpath('reference_conc_rec_clean.csv')
+rivers_ref_load_csv_path = rivers_conc_base_path.joinpath('reference_load_rec_clean.csv')
+
 # catch_break_points_gpkg = rivers_conc_base_path.joinpath('catch_management_points.gpkg')
 
 ## Errors and powers
