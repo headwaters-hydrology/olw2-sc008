@@ -159,6 +159,7 @@ river_power_model_path = assets_path.joinpath('rivers_reaches_power_modelled.h5'
 # conc_perc = np.arange(2, 101, 2, dtype='int8')
 conc_perc = np.arange(1, 101, 1, dtype='int8')
 n_samples_year = [4, 12, 26, 52, 104, 364]
+n_samples_year_eco = [1, 12]
 n_years = [5, 10, 20, 30]
 
 ## Reductions
@@ -168,6 +169,79 @@ river_reductions_model_path = assets_path.joinpath('rivers_reductions_modelled.h
 
 # catch_lc_clean_path = assets_path.joinpath('rivers_catch_lc.blt')
 
+### Ecology
+eco_data_path = base_path.joinpath('ecology')
+eco_moni_data_dict = {
+    'mci': {
+        'file_name': 'MCI_variability_within_site.csv',
+        'site_id': 'site_name',
+        'nzsegment': 'NZSegment',
+        'nztmx': 'NZTM_Easting',
+        'nztmy': 'NZTM_Northing',
+        'stdev': 'MCI_score_sd',
+        'mean': 'mean',
+        'n_sites': 'n'
+        },
+    'sediment': {
+        'file_name': 'Sediment_variability_within_site.csv',
+        'site_id': 'site_name',
+        'nzsegment': 'NZSegment',
+        'nztmx': 'NZTM_Easting',
+        'nztmy': 'NZTM_Northing',
+        'stdev': 'percent_sediment_sd',
+        'mean': 'mean',
+        'n_sites': 'n'
+        },
+    'peri': {
+        'file_name': 'Periphyton_variability_within_site.csv',
+        'site_id': 'SiteName',
+        'nzsegment': 'NZSegment',
+        'nztmx': 'NZTM_Easting',
+        'nztmy': 'NZTM_Northing',
+        'stdev': 'detrended_Chla_gam2_sd',
+        'mean': 'mean',
+        'n_sites': 'n'
+        },
+    }
+
+eco_catch_data_dict = {
+    'mci': {
+        'file_name': 'mci_by_catchment.csv',
+        'nzsegment': 'nzsegment',
+        'stdev': 'MCI_score_catchment_sd',
+        'mean': 'mean_catchmentmci',
+        },
+    'sediment': {
+        'file_name': 'sed_by_catchment.csv',
+        'nzsegment': 'nzsegment',
+        'stdev': 'percent_sediment_catchment_sd',
+        'mean': 'mean_catchment_percent_sediment',
+        },
+    'peri': {
+        'file_name': 'peri_by_catchment.csv',
+        'nzsegment': 'nzsegment.y',
+        'stdev': 'Chla_catchment_sd',
+        'mean': 'mean_catchment_Chla',
+        }
+    }
+
+eco_catch_stdev_defaults = {
+    'mci': 18.5/104.5,
+    'peri': 85.7/31.5,
+    'sediment': 31/21.2
+    }
+
+
+
+eco_sites_gpkg_path = eco_data_path.joinpath('olw_eco_sites.gpkg')
+eco_sites_catch_path = assets_path.joinpath('eco_sites_catchments.blt')
+eco_moni_stdev_path = eco_data_path.joinpath('eco_moni_stdev.csv')
+eco_catch_stdev_path = eco_data_path.joinpath('eco_catch_stdev.csv')
+
+eco_sims_path = output_path.joinpath('eco_sims')
+eco_sims_path.mkdir(parents=True, exist_ok=True)
+
+eco_sims_h5_path = eco_sims_path.joinpath('eco_sims.h5')
 
 ### Lakes
 ## Source data processing
@@ -394,7 +468,7 @@ def power_test(x, Y, min_p_value=0.05):
     return power
 
 
-def power_sims(error, n_years, n_samples_year, n_sims, output_path):
+def power_sims_rivers(error, n_years, n_samples_year, n_sims, output_path):
     """
     Power simulation function.
     Given an error (float), a number of sampling years (list of int), a number of samples per year (list of int), and the conc percentages (list of int), run n simulations (int) on all possible combinations.
@@ -462,6 +536,52 @@ def power_sims_gw(error, n_years, n_samples_year, n_sims, output_path):
 
         for pi, perc in enumerate(conc_perc):
             red1 = np.interp(np.arange(n), [0, n-1], [5, 5*perc*0.01])
+
+            rand_shape = (n_sims, n)
+            red2 = np.tile(red1, n_sims).reshape(rand_shape)
+            r2 = rng.normal(0, error, rand_shape)
+
+            p2 = power_test(np.arange(n), red2 + r2, min_p_value=0.05)
+
+            filler[0][ni][pi] = p2
+
+    error1 = int(error*1000)
+
+    props = xr.Dataset(data_vars={'power': (('error', 'n_samples', 'conc_perc'), filler)
+                                  },
+                       coords={'error': np.array([error1], dtype='int16'),
+                               'n_samples': np.array(n_samples, dtype='int16'),
+                               'conc_perc': conc_perc}
+                       )
+
+    output = os.path.join(output_path, str(error1) + '.h5')
+    hdf5tools.xr_to_hdf5(props, output)
+
+    return output
+
+
+def power_sims_ecology(error, n_years, n_samples_year, n_sims, output_path):
+    """
+    Power simulation function.
+    Given an error (float), a number of sampling years (list of int), a number of samples per year (list of int), and the conc percentages (list of int), run n simulations (int) on all possible combinations.
+    """
+    print(error)
+
+    conc_perc = np.arange(1, 101, 1, dtype='int8')
+
+    n_samples = np.prod(hdf5tools.utils.cartesian([n_samples_year, n_years]), axis=1)
+    n_samples = list(set(n_samples))
+    n_samples.sort()
+
+    filler = np.empty((1, len(n_samples), len(conc_perc)), dtype='int8')
+
+    rng = np.random.default_rng()
+
+    for ni, n in enumerate(n_samples):
+        # print(n)
+
+        for pi, perc in enumerate(conc_perc):
+            red1 = np.interp(np.arange(n), [0, n-1], [1, 1*perc*0.01])
 
             rand_shape = (n_sims, n)
             red2 = np.tile(red1, n_sims).reshape(rand_shape)
