@@ -8,6 +8,7 @@ Created on Fri Aug 11 09:14:11 2023
 import pathlib
 from tethysts import Tethys
 import pandas as pd
+import timeit
 
 pd.options.display.max_columns = 10
 
@@ -24,6 +25,7 @@ station_ids = ['fe62bb02032e8e916648eb89', '292f77d85eae60a73014abf8',
 output_path = '/home/mike/data/OLW/web_app/rivers/Horizons_streamflow_high_res.csv'
 
 cache_path = '/media/data01/cache/temp'
+# cache_path = '/home/mike/cache/temp'
 version_date = '2022-07-01T00:00:00'
 
 ############################################
