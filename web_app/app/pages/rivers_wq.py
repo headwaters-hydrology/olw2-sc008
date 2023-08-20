@@ -1024,8 +1024,9 @@ def update_hideout(powers_obj):
       # Input('map_checkboxes_rivers', 'value'),
       Input("reach_map", "click_feature"),
       Input('sites_points', 'click_feature')],
+    State("info", "children")
     )
-def update_map_info(powers_obj, reach_feature, sites_feature):
+def update_map_info(powers_obj, reach_feature, sites_feature, old_info):
     """
 
     """
@@ -1069,7 +1070,7 @@ def update_map_info(powers_obj, reach_feature, sites_feature):
                 info = info + info_str
 
         else:
-            info = info + """\n\nClick on a reach to see info"""
+            info = old_info
 
     return info
 

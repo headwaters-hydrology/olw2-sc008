@@ -159,7 +159,7 @@ river_power_model_path = assets_path.joinpath('rivers_reaches_power_modelled.h5'
 # conc_perc = np.arange(2, 101, 2, dtype='int8')
 conc_perc = np.arange(1, 101, 1, dtype='int8')
 n_samples_year = [4, 12, 26, 52, 104, 364]
-n_samples_year_eco = [1, 12]
+n_samples_year_eco = [1, 4, 12]
 n_years = [5, 10, 20, 30]
 
 ## Reductions
@@ -244,6 +244,10 @@ eco_sims_path = output_path.joinpath('eco_sims')
 eco_sims_path.mkdir(parents=True, exist_ok=True)
 
 eco_sims_h5_path = eco_sims_path.joinpath('eco_sims.h5')
+eco_sims_catch_h5_path = eco_sims_path.joinpath('eco_sims_catch.h5')
+
+eco_power_moni_path = assets_path.joinpath('eco_reaches_power_monitored.h5')
+eco_power_model_path = assets_path.joinpath('eco_reaches_power_modelled.h5')
 
 ### Lakes
 ## Source data processing
