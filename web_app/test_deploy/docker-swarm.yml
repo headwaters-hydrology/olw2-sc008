@@ -45,10 +45,10 @@ services:
         - traefik.enable=true
         - traefik.docker.network=traefik-public
         - traefik.constraint-label=traefik-public
-        - traefik.http.routers.olw-vis-test-http.rule=Host(`olw.monitoringfreshwater.co.nz`)
+        - traefik.http.routers.olw-vis-test-http.rule=Host(`monitoringfreshwater.co.nz`)
         - traefik.http.routers.olw-vis-test-http.entrypoints=http
         - traefik.http.routers.olw-vis-test-http.middlewares=https-redirect
-        - traefik.http.routers.olw-vis-test-https.rule=Host(`olw.monitoringfreshwater.co.nz`)
+        - traefik.http.routers.olw-vis-test-https.rule=Host(`monitoringfreshwater.co.nz`)
         - traefik.http.routers.olw-vis-test-https.entrypoints=https
         - traefik.http.routers.olw-vis-test-https.tls=true
         # - traefik.http.routers.olw-vis-test-https.tls.certresolver=le
