@@ -51,5 +51,5 @@ services:
         - traefik.http.routers.olw-vis-test-https.rule=Host(`www.monitoringfreshwater.co.nz`)
         - traefik.http.routers.olw-vis-test-https.entrypoints=https
         - traefik.http.routers.olw-vis-test-https.tls=true
-        # - traefik.http.routers.es-dash-https.tls.certresolver=le
+        - traefik.http.routers.olw-vis-test-https.tls.certresolver=le
         - traefik.http.services.olw-vis-test.loadbalancer.server.port=80
