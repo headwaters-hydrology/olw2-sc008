@@ -37,31 +37,25 @@ def rivers_process_power_monitored():
     median1 = grp1['stdev'].median().round(3)
 
     ## Assign init conc and errors to each catchment
-    mapping = booklet.open(utils.river_reach_mapping_path)
-
-    starts = list(mapping.keys())
     indicators = stdev0.indicator.unique()
 
     # error_set = set()
     error_dict = {ind: {} for ind in indicators}
     for ind, grp in grp1:
         miss_error = median1.loc[ind]
-        for catch_id in starts:
-            c_reaches = mapping[catch_id][catch_id]
-            df1 = pd.DataFrame(c_reaches, columns=['nzsegment'])
-            r_errors = pd.merge(df1, grp, on='nzsegment').set_index('nzsegment')['stdev']
-            if not r_errors.empty:
-                null_rows = r_errors.isnull()
-                r_errors.loc[null_rows] = miss_error
-                r_errors[r_errors <= list1[0]] = list1[0] *1.1
-                r_errors[r_errors > list1[-1]] = list1[-1]
-                # error_set.update(set((r_errors * 1000).round().tolist()))
+        r_errors = grp.set_index('nzsegment')['stdev']
+        if not r_errors.empty:
+            null_rows = r_errors.isnull()
+            r_errors.loc[null_rows] = miss_error
+            r_errors[r_errors <= list1[0]] = list1[0] *1.1
+            r_errors[r_errors > list1[-1]] = list1[-1]
+            # error_set.update(set((r_errors * 1000).round().tolist()))
 
-                r_errors1 = pd.cut(r_errors, list1, labels=list1[:-1])
-                na_len = r_errors1.isnull().sum()
-                if na_len > 0:
-                    raise ValueError('What the heck!')
-                error_dict[ind].update(r_errors1.to_dict())
+            r_errors1 = pd.cut(r_errors, list1, labels=list1[:-1])
+            na_len = r_errors1.isnull().sum()
+            if na_len > 0:
+                raise ValueError('What the heck!')
+            error_dict[ind].update(r_errors1.to_dict())
 
     river_sims = xr.open_dataset(utils.eco_sims_h5_path, engine='h5netcdf')
     river_sims['n_samples'] = river_sims.n_samples.astype('int16')

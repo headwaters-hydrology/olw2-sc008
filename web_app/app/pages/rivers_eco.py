@@ -101,7 +101,7 @@ eco_reductions_values = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
 
 eco_reductions_options = [{'value': v, 'label': str(v)+'%'} for v in eco_reductions_values]
 
-eco_freq_dict = {'mci': 1, 'peri': 4, 'sediment': 4}
+eco_freq_dict = {'mci': 1, 'peri': 12, 'sediment': 12}
 
 rivers_points_hideout = {'classes': [], 'colorscale': ['#232323'], 'circleOptions': dict(fillOpacity=1, stroke=True, weight=1, color='black', radius=site_point_radius), 'colorProp': 'nzsegment'}
 
@@ -791,7 +791,7 @@ def update_sites_powers_obj(reductions, indicator, n_years, n_samples_year):
         n_samples = int(n_samples_year)*int(n_years)
 
         power_data = xr.open_dataset(eco_power_moni_path, engine='h5netcdf')
-        power_data1 = power_data.sel(indicator=indicator, n_samples=n_samples, conc_perc=100-int(reductions), drop=True).dropna('nzsegment').to_dataframe().reset_index()
+        power_data1 = power_data.sel(indicator=indicator, n_samples=n_samples, conc_perc=100-int(reductions), drop=True).dropna('nzsegment').load().copy()
         # print(power_data1)
         power_data.close()
         del power_data
@@ -815,7 +815,7 @@ def update_reaches_obj(reductions, indicator):
     """
     if isinstance(reductions, (str, int)) and isinstance(indicator, str):
         power_data = xr.open_dataset(eco_reach_weights_path, engine='h5netcdf')
-        power_data1 = power_data.sel(reduction_perc=int(reductions), drop=True).rename({indicator: 'weights'}).to_dataframe().reset_index()
+        power_data1 = power_data.sel(reduction_perc=int(reductions), drop=True).rename({indicator: 'weights'}).load().copy()
         power_data.close()
         del power_data
 
@@ -936,13 +936,15 @@ def update_map_info(sites_powers_obj, catch_power_obj, sites_feature, old_info, 
         # print(props.nzsegment)
         # print(feature_id)
 
-        # if feature_id in props.nzsegment:
+        if feature_id in props.nzsegment:
+            reach_data = props.sel(nzsegment=feature_id)
+            power = reach_data.power.values
 
-        reach_data = props[props.nzsegment == feature_id]
+        # reach_data = props[props.nzsegment == feature_id]
 
-        if not reach_data.empty:
+        # if not reach_data.empty:
 
-            power = reach_data.power.values[0]
+            # power = reach_data.power.values[0]
 
             if np.isnan(power):
                 power = 'NA'

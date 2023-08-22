@@ -53,9 +53,11 @@ def eco_monitoring_sites_processing():
     ## Organise by catchment
     catches0 = booklet.open(utils.river_catch_major_path)
 
+    sites2['catch_id'] = 0
     with booklet.open(utils.eco_sites_catch_path, 'n', key_serializer='uint4', value_serializer='zstd', n_buckets=1600) as f:
         for k, v in catches0.items():
             sites5 = sites4[sites4.within(v)]
+            sites2.loc[sites2.nzsegment.isin(sites5.nzsegment), 'catch_id'] = k
             sites6 = sites5.set_index('site_id', drop=False).rename(columns={'site_id': 'tooltip'}).__geo_interface__
             gbuf = geobuf.encode(sites6)
             f[k] = gbuf
@@ -63,7 +65,7 @@ def eco_monitoring_sites_processing():
     catches0.close()
 
     ### Sites stdev processing
-    stdev0 = sites2.drop(['site_id', 'nztmx', 'nztmy'], axis=1).copy()
+    stdev0 = sites2[sites2.catch_id > 0].drop(['site_id', 'nztmx', 'nztmy'], axis=1).copy()
     stdev0['nzsegment'] = stdev0['nzsegment'].astype('int32')
     stdev0['stdev'] = stdev0['stdev']/stdev0['mean']
     stdev1 = stdev0.drop('mean', axis=1)
