@@ -128,6 +128,47 @@ for ds_id, stn_ids in ds_stn_ids_dict.items():
 with open(ds_json_path, 'wb') as f:
     f.write(orjson.dumps(ds_dict))
 
+## All overlapping turb/flow
+for turb_ds_id in turb_dss:
+    results_list = []
+    print('-- dataset_id: ' + turb_ds_id)
+    turb_ds = t1._datasets[turb_ds_id]
+    turb_stns = t1.get_stations(turb_ds_id)
+
+    flow_ds = [ds for ds in t1.datasets if (ds['parameter'] == 'streamflow') and (ds['owner'] == turb_ds['owner']) and (ds['method'] == 'sensor_recording') and (ds['aggregation_statistic'] == 'continuous') and (ds['product_code'] == 'quality_controlled_data')][0]
+    flow_ds_id = flow_ds['dataset_id']
+    version_date = t1.get_versions(flow_ds_id)[-1]['version_date']
+    _ = t1.get_stations(flow_ds_id)
+    flow_stns = t1._stations[flow_ds_id][version_date]
+
+    for turb_stn in turb_stns:
+        turb_stn_id = turb_stn['station_id']
+
+        if turb_stn_id in flow_stns:
+            flow_stn = flow_stns[turb_stn_id]
+            max_from_date = max([flow_stn['time_range']['from_date'], turb_stn['time_range']['from_date']])
+            min_to_date = min([flow_stn['time_range']['to_date'], turb_stn['time_range']['to_date']])
+
+            if min_to_date > max_from_date:
+                flow_results0 = t1.get_results(flow_ds_id, turb_stn_id, from_date=max_from_date, to_date=min_to_date, squeeze_dims=True)
+                flow_results1 = flow_results0.drop(['height', 'geometry'])[['station_id', 'streamflow']].to_dataframe().reset_index()
+                flow_results2 = misc.grp_ts_agg(flow_results1, 'station_id', 'time', '15T', 'mean', True)
+                flow_results2['streamflow'] = flow_results2['streamflow'].round(3)
+
+                turb_results0 = t1.get_results(turb_ds_id, turb_stn_id, from_date=max_from_date, to_date=min_to_date, squeeze_dims=True)
+                turb_results1 = turb_results0.drop(['height', 'geometry'])[['station_id', 'turbidity']].to_dataframe().reset_index()
+                turb_results2 = misc.grp_ts_agg(turb_results1, 'station_id', 'time', '15T', 'mean', True)
+                turb_results2['turbidity'] = turb_results2['turbidity'].round(3)
+
+                results1 = pd.merge(flow_results2, turb_results2, on=['station_id', 'time'], how='inner')
+                results_list.append(results1)
+
+    results = pd.concat(results_list).sort_index()
+    output_file_path = output_path.joinpath('{}.csv'.format(turb_ds_id))
+    results.to_csv(output_file_path)
+
+
+
 
 
 

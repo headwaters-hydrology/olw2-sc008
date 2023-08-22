@@ -43,7 +43,7 @@ import booklet
 dash.register_page(
     __name__,
     path='/lakes-wq',
-    title='Lakes Water Quality',
+    title='Water Quality',
     name='lakes_wq',
     description='Lakes and Lagoons Water Quality'
 )
@@ -449,7 +449,18 @@ def xr_concat(datasets):
 with open(assets_path.joinpath('lakes_points.pbf'), 'rb') as f:
     geodict = geobuf.decode(f.read())
 
-lakes_options = [{'value': int(f['id']), 'label': ' '.join(f['properties']['name'].split())} for f in geodict['features']]
+lakes1 = []
+for f in geodict['features']:
+    label = ' '.join(f['properties']['name'].split())
+    if label.startswith('Lake'):
+        sort_name = label.split('Lake ')[1]
+    else:
+        sort_name = label
+    lakes1.append({'value': int(f['id']), 'label': label, 'sort': sort_name})
+
+lakes2 = pd.DataFrame(lakes1).sort_values('sort')
+
+lakes_options = lakes2.drop('sort', axis=1).to_dict('records')
 
 lakes_data = {int(f['id']): f['properties'] for f in geodict['features']}
 

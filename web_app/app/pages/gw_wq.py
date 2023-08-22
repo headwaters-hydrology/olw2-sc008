@@ -43,7 +43,7 @@ import booklet
 dash.register_page(
     __name__,
     path='/gw-wq',
-    title='Groundwater Quality',
+    title='Water Quality',
     name='gw_wq',
     description='Groundwater Quality'
 )

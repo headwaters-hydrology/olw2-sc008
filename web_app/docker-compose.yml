@@ -10,7 +10,7 @@ volumes:
 
 services:
   assets:
-    image: mullenkamp/olw-monitoring-app-assets:1.6
+    image: mullenkamp/olw-monitoring-app-assets:1.7
     volumes:
       - olw-assets:/app/assets
     networks:
@@ -20,7 +20,7 @@ services:
         condition: none
 
   olw-app:
-    image: mullenkamp/olw-monitoring-app:1.30
+    image: mullenkamp/olw-monitoring-app:1.31
     volumes:
       - olw-assets:/app/assets
     networks:

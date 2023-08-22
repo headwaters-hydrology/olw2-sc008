@@ -92,7 +92,7 @@ def create_sidebar_children(pages):
             label="User Guides", style={"marginBottom": 20, "marginTop": 20}
             ),
         dmc.Divider(
-            label="Main Tools", style={"marginBottom": 20, "marginTop": 20}
+            label="Rivers", style={"marginBottom": 20, "marginTop": 20}
             ),
         dmc.Group(
             children=[
@@ -104,19 +104,9 @@ def create_sidebar_children(pages):
         dmc.Group(
             children=[
                 create_nav_link(
-                    label=pages["pages.lakes_wq"]['title'], href=pages["pages.lakes_wq"]["path"]
+                    label=pages["pages.rivers_eco"]['title'], href=pages["pages.rivers_eco"]["path"]
                     )
                 ], style={"marginBottom": 10}
-            ),
-        dmc.Group(
-            children=[
-                create_nav_link(
-                    label=pages["pages.gw_wq"]['title'], href=pages["pages.gw_wq"]["path"]
-                    )
-                ], style={"marginBottom": 10}
-            ),
-        dmc.Divider(
-            label="Auxiliary Tools", style={"marginBottom": 20, "marginTop": 20}
             ),
         dmc.Group(
             children=[
@@ -125,8 +115,26 @@ def create_sidebar_children(pages):
                     )
                 ], style={"marginBottom": 10}
             ),
-
-
+        dmc.Divider(
+            label="Lakes", style={"marginBottom": 20, "marginTop": 20}
+            ),
+        dmc.Group(
+            children=[
+                create_nav_link(
+                    label=pages["pages.lakes_wq"]['title'], href=pages["pages.lakes_wq"]["path"]
+                    )
+                ], style={"marginBottom": 10}
+            ),
+        dmc.Divider(
+            label="Groundwater", style={"marginBottom": 20, "marginTop": 20}
+            ),
+        dmc.Group(
+            children=[
+                create_nav_link(
+                    label=pages["pages.gw_wq"]['title'], href=pages["pages.gw_wq"]["path"]
+                    )
+                ], style={"marginBottom": 10}
+            ),
         ]
 
     # dmc.Group(

@@ -46,7 +46,7 @@ import hdf5tools
 dash.register_page(
     __name__,
     path='/rivers-eco',
-    title='Rivers Ecology',
+    title='Ecology',
     name='rivers_eco',
     description='Rivers Ecology'
 )
@@ -61,9 +61,10 @@ base_data_url = 'https://b2.tethys-ts.xyz/file/'
 # lc_url = '{}olw-data/olw-sc008/olw_land_cover_reductions.gpkg'.format(base_data_url)
 # rivers_red_url = '{}olw-data/olw-sc008/olw_eco_reductions.csv.zip'.format(base_data_url)
 
-eco_power_model_path = assets_path.joinpath('eco_reaches_power_modelled.h5')
+eco_power_catch_path = assets_path.joinpath('eco_reaches_power_modelled.h5')
 eco_power_moni_path = assets_path.joinpath('eco_reaches_power_monitored.h5')
-eco_reductions_model_path = assets_path.joinpath('eco_reductions_modelled.h5')
+eco_reach_weights_path = assets_path.joinpath('eco_reach_weights.h5')
+
 rivers_catch_pbf_path = app_base_path.joinpath('rivers_catchments.pbf')
 
 rivers_reach_gbuf_path = assets_path.joinpath('rivers_reaches.blt')
@@ -90,17 +91,6 @@ time_periods = [5, 10, 20, 30]
 n_sites = [5, 10, 20, 30]
 
 style = dict(weight=4, opacity=1, color='white')
-classes = [0, 20, 50]
-bins = classes.copy()
-bins.append(101)
-# colorscale = ['#808080', '#FED976', '#FEB24C', '#FC4E2A', '#BD0026', '#800026']
-# colorscale = ['#808080', '#FED976', '#FD8D3C', '#E31A1C', '#800026']
-colorscale = ['#edf8b1','#7fcdbb','#2c7fb8']
-# reductions_colorscale = ['#edf8fb','#b2e2e2','#66c2a4','#2ca25f','#006d2c']
-# ctg = ["{}%+".format(cls, classes[i + 1]) for i, cls in enumerate(classes[1:-1])] + ["{}%+".format(classes[-1])]
-# ctg.insert(0, 'NA')
-ctg = ["{}%+".format(cls, classes[i + 1]) for i, cls in enumerate(classes[:-1])] + ["{}%+".format(classes[-1])]
-# ctg.insert(0, 'NA')
 
 site_point_radius = 6
 
@@ -161,9 +151,24 @@ sites_points_handle = assign("""function rivers_sites_points_handle(feature, lat
 }""", name='eco_sites_points_handle')
 
 
-### Colorbar
+### Colorbars
 colorbar_base = dl.Colorbar(style={'opacity': 0})
 base_reach_style = dict(weight=4, opacity=1, color='white')
+
+classes_weights = [0, 10, 30]
+bins_weights = classes_weights.copy()
+bins_weights.append(101)
+colorscale_weights = ['#edf8b1','#7fcdbb','#2c7fb8']
+ctg_weights = ['Low', 'Moderate', 'High']
+
+indices = list(range(len(ctg_weights) + 1))
+colorbar_weights = dl.Colorbar(min=0, max=len(ctg_weights), classes=indices, colorscale=colorscale_weights, tooltip=True, tickValues=[item + 0.5 for item in indices[:-1]], tickText=ctg_weights, width=300, height=30, position="bottomright")
+
+classes = [0, 20, 40, 60, 80]
+bins = classes.copy()
+bins.append(101)
+colorscale = ['#808080', '#FED976', '#FD8D3C', '#E31A1C', '#800026']
+ctg = ["{}%+".format(cls, classes[i + 1]) for i, cls in enumerate(classes[:-1])] + ["{}%+".format(classes[-1])]
 
 indices = list(range(len(ctg) + 1))
 colorbar_power = dl.Colorbar(min=0, max=len(ctg), classes=indices, colorscale=colorscale, tooltip=True, tickValues=[item + 0.5 for item in indices[:-1]], tickText=ctg, width=300, height=30, position="bottomright")
@@ -537,7 +542,7 @@ def layout():
                         #     'margin': 0,
                         #     'padding': 0,
                         #     },
-                        children=dmc.Accordion(
+                        children=[dmc.Accordion(
                             value="1",
                             chevronPosition='left',
                             children=[
@@ -646,7 +651,8 @@ def layout():
                             #     'padding': 0
                             #     },
                             # className='four columns', style={'margin': 10}
-                            )
+                            ),
+                        dcc.Markdown("""* The rivers colored with *Low*, *Moderate*, and *High* are the qualitative monitoring priorities as there  is too much uncertainty in estimating the powers per reach.""")]
                         ),
                     dmc.Col(
                         span=4,
@@ -663,10 +669,11 @@ def layout():
 
                                     # dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='sites_points', options=dict(pointToLayer=sites_points_handle), hideout={'circleOptions': dict(fillOpacity=1, stroke=False, radius=5, color='black')})), name='Monitoring sites', checked=True),
                                     # dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='reductions_poly')), name='Land use reductions', checked=False),
-                                    dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='reach_map_eco', options={}, hideout={}, hoverStyle=arrow_function(dict(weight=10, color='black', dashArray='')))), name='Rivers', checked=True),
+                                    dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='reach_map_eco', options={}, hideout={})), name='Rivers', checked=True),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='sites_points_eco', options=dict(pointToLayer=sites_points_handle), hideout=rivers_points_hideout)), name='Monitoring sites', checked=True),
                                     ], id='layers_eco'),
                                 colorbar_power,
+                                colorbar_weights,
                                 # html.Div(id='colorbar', children=colorbar_base),
                                 # dmc.Group(id='colorbar', children=colorbar_base),
                                 dcc.Markdown(id="info_eco", className="info", style={"position": "absolute", "top": "10px", "right": "160px", "z-index": "1000"})
@@ -678,8 +685,8 @@ def layout():
                         ),
                     ]
                     ),
-            dcc.Store(id='powers_obj_eco', data=''),
-            # dcc.Store(id='reaches_obj_eco', data=''),
+            dcc.Store(id='sites_powers_obj_eco', data=''),
+            dcc.Store(id='reaches_obj_eco', data=''),
             dcc.Store(id='catch_power_obj_eco', data=''),
             ]
         )
@@ -756,148 +763,36 @@ def update_reaches_option(hideout, catch_id):
     return options
 
 
-# @callback(
-#         Output('base_reductions_obj', 'data'),
-#         Input('catch_id', 'value'),
-#         prevent_initial_call=True
-#         )
-# # @cache.memoize()
-# def update_base_reductions_obj(catch_id):
-#     data = ''
-
-#     if catch_id is not None:
-#         with booklet.open(rivers_lc_clean_path, 'r') as f:
-#             data = encode_obj(f[int(catch_id)])
-
-#     return data
-
-
-# @callback(
-#     Output("dl_poly", "data"),
-#     Input("dl_btn", "n_clicks"),
-#     State('catch_id', 'value'),
-#     prevent_initial_call=True,
-#     )
-# def download_lc(n_clicks, catch_id):
-#     if isinstance(catch_id, str):
-#         path = rivers_catch_lc_dir.joinpath(rivers_catch_lc_gpkg_str.format(catch_id))
-
-#         return dcc.send_file(path)
-
-
 @callback(
-    Output("dl_poly_eco", "href"),
-    # Input('indicator_lc', 'value'),
-    Input('catch_id_eco', 'value'),
+    Output("freq_eco", "value"),
+    Input('indicator_eco', 'value'),
     prevent_initial_call=True,
     )
-def download_catch_lc(catch_id):
+def update_freq(indicator):
 
-    if isinstance(catch_id, str):
-        url = rivers_catch_lc_gpkg_str.format(base_url=base_data_url, catch_id=catch_id)
+    if isinstance(indicator, str):
+        n_samples_year = eco_freq_dict[indicator]
 
-        return url
-
-
-# @callback(
-#         Output('custom_reductions_obj', 'data'), Output('upload_error_text', 'children'),
-#         Input('upload_data_eco', 'contents'),
-#         State('upload_data_eco', 'filename'),
-#         State('catch_id', 'value'),
-#         prevent_initial_call=True
-#         )
-# # @cache.memoize()
-# def update_land_reductions(contents, filename, catch_id):
-#     data = None
-#     error_text = ''
-
-#     if catch_id is not None:
-#         if contents is not None:
-#             data = parse_gis_file(contents, filename)
-
-#             if isinstance(data, list):
-#                 error_text = data[0]
-#                 data = None
-
-#     return data, error_text
-
-
-# @callback(
-#     Output('reaches_obj', 'data'), Output('process_text', 'children'),
-#     Input('process_reductions_eco', 'n_clicks'),
-#     Input('base_reductions_obj', 'data'),
-#     [
-#       State('catch_id', 'value'),
-#       State('custom_reductions_obj', 'data'),
-#       ],
-#     prevent_initial_call=True)
-# def update_reach_reductions(click, base_reductions_obj, catch_id, reductions_obj):
-#     """
-
-#     """
-#     trig = ctx.triggered_id
-
-#     if (trig == 'process_reductions_eco'):
-#         if isinstance(catch_id, str) and (reductions_obj != '') and (reductions_obj is not None):
-#             red1 = xr.open_dataset(rivers_reductions_model_path)
-
-#             with booklet.open(rivers_reach_mapping_path) as f:
-#                 branches = f[int(catch_id)][int(catch_id)]
-
-#             base_props = red1.sel(nzsegment=branches)
-
-#             new_reductions = decode_obj(reductions_obj)
-#             base_reductions = decode_obj(base_reductions_obj)
-
-#             new_props = calc_eco_reach_reductions(catch_id, new_reductions, base_reductions)
-#             new_props1 = new_props.combine_first(base_props).sortby('nzsegment').load().copy()
-#             red1.close()
-#             del red1
-#             base_props.close()
-#             del base_props
-
-#             data = encode_obj(new_props1)
-#             text_out = 'Routing complete'
-#         else:
-#             data = ''
-#             text_out = 'Not all inputs have been selected'
-#     else:
-#         if isinstance(catch_id, str):
-#             # print('trigger')
-#             red1 = xr.open_dataset(rivers_reductions_model_path)
-
-#             with booklet.open(rivers_reach_mapping_path) as f:
-#                 branches = f[int(catch_id)][int(catch_id)]
-
-#             base_props = red1.sel(nzsegment=branches).sortby('nzsegment').load().copy()
-#             red1.close()
-#             del red1
-#             # print(base_props)
-
-#             data = encode_obj(base_props)
-#             text_out = ''
-#         else:
-#             data = ''
-#             text_out = ''
-
-#     return data, text_out
+        return str(n_samples_year)
 
 
 @callback(
-    Output('powers_obj_eco', 'data'), Output('reach_map_eco', 'hideout'), Output('catch_power_obj_eco', 'data'),
-    [Input('reductions_slider_eco', 'value'), Input('indicator_eco', 'value'), Input('time_period_eco', 'value')],
+    Output('sites_powers_obj_eco', 'data'),
+    [Input('reductions_slider_eco', 'value'), Input('indicator_eco', 'value'), Input('time_period_eco', 'value'), Input('freq_eco', 'value')],
     # [State('gw_id', 'value')]
+    prevent_initial_call=True
     )
-def update_props_data_gw(reductions, indicator, n_years):
+def update_sites_powers_obj(reductions, indicator, n_years, n_samples_year):
     """
 
     """
-    if isinstance(reductions, (str, int)) and isinstance(n_years, str) and isinstance(indicator, str):
-        n_samples_year = eco_freq_dict[indicator]
+    if isinstance(reductions, (str, int)) and isinstance(n_years, str) and isinstance(indicator, str) and isinstance(n_samples_year, str):
+        # n_samples_year = eco_freq_dict[indicator]
         n_samples = int(n_samples_year)*int(n_years)
 
         power_data = xr.open_dataset(eco_power_moni_path, engine='h5netcdf')
-        power_data1 = power_data.sel(indicator=indicator, n_samples=n_samples, conc_perc=100-int(reductions), drop=True).to_dataframe().reset_index()
+        power_data1 = power_data.sel(indicator=indicator, n_samples=n_samples, conc_perc=100-int(reductions), drop=True).dropna('nzsegment').to_dataframe().reset_index()
+        # print(power_data1)
         power_data.close()
         del power_data
 
@@ -907,86 +802,56 @@ def update_props_data_gw(reductions, indicator, n_years):
         raise dash.exceptions.PreventUpdate
 
 
-# @callback(
-#     Output('powers_obj', 'data'),
-#     [Input('reaches_obj', 'data'), Input('indicator_eco', 'value'), Input('time_period', 'value'), Input('freq', 'value'), Input('Reductions_slider', 'value')],
-#     [State('catch_id', 'value')]
-#     )
-# def update_powers_data(reaches_obj, indicator, n_years, n_samples_year, prop_red, catch_id):
-#     """
+@callback(
+    Output('reaches_obj_eco', 'data'),
+    [Input('reductions_slider_eco', 'value'),
+     Input('indicator_eco', 'value')],
+    # [State('gw_id', 'value')]
+    prevent_initial_call=True
+    )
+def update_reaches_obj(reductions, indicator):
+    """
 
-#     """
-#     if (reaches_obj != '') and (reaches_obj is not None) and isinstance(indicator, str):
-#         # print('triggered')
+    """
+    if isinstance(reductions, (str, int)) and isinstance(indicator, str):
+        power_data = xr.open_dataset(eco_reach_weights_path, engine='h5netcdf')
+        power_data1 = power_data.sel(reduction_perc=int(reductions), drop=True).rename({indicator: 'weights'}).to_dataframe().reset_index()
+        power_data.close()
+        del power_data
 
-#         ind_name = rivers_indicator_dict[indicator]
-
-#         ## Modelled
-#         props = decode_obj(reaches_obj)[[ind_name]].sel(reduction_perc=prop_red, drop=True).rename({ind_name: 'reduction'})
-
-#         n_samples = int(n_samples_year)*int(n_years)
-
-#         power_data = xr.open_dataset(eco_power_model_path, engine='h5netcdf')
-
-#         with booklet.open(rivers_reach_mapping_path) as f:
-#             branches = f[int(catch_id)][int(catch_id)]
-
-#         power_data1 = power_data.sel(indicator=indicator, nzsegment=branches, n_samples=n_samples, drop=True).load().sortby('nzsegment').copy()
-#         power_data.close()
-#         del power_data
-
-#         conc_perc = 100 - props.reduction
-
-#         if indicator in ['BD']:
-#             conc_perc = (((conc_perc*0.01)**0.76) * 100).astype('int8')
-
-#         new_powers = props.assign(power_modelled=(('nzsegment'), power_data1.sel(conc_perc=conc_perc).power.values.astype('int8')))
-#         new_powers['nzsegment'] = new_powers['nzsegment'].astype('int32')
-#         new_powers['reduction'] = new_powers['reduction'].astype('int8')
-
-#         ## Monitored
-#         power_data = xr.open_dataset(eco_power_moni_path, engine='h5netcdf')
-#         sites = power_data.nzsegment.values[power_data.nzsegment.isin(branches)].astype('int32')
-#         sites.sort()
-#         if len(sites) > 0:
-#             conc_perc1 = conc_perc.sel(nzsegment=sites)
-#             power_data1 = power_data.sel(indicator=indicator, nzsegment=sites, n_samples=n_samples, drop=True).load().sortby('nzsegment').copy()
-#             power_data1 = power_data1.rename({'power': 'power_monitored'})
-#             power_data.close()
-#             del power_data
-
-#             power_data2 = power_data1.sel(conc_perc=conc_perc1).drop('conc_perc')
-
-#             new_powers = xr_concat([new_powers, power_data2])
-#         else:
-#             new_powers = new_powers.assign(power_monitored=(('nzsegment'), xr.full_like(new_powers.reduction, np.nan, dtype='float32').values))
-
-#         data = encode_obj(new_powers)
-#     else:
-#         data = ''
-
-#     return data
+        data = encode_obj(power_data1)
+        return data
+    else:
+        raise dash.exceptions.PreventUpdate
 
 
-# @callback(
-#     Output('colorbar', 'children'),
-#     Input('powers_obj', 'data'),
-#     prevent_initial_call=True
-#     )
-# def update_colorbar(powers_obj):
-#     """
+@callback(
+    Output('catch_power_obj_eco', 'data'),
+    [Input('reductions_slider_eco', 'value'), Input('indicator_eco', 'value'), Input('time_period_eco', 'value'), Input('n_sites_eco', 'value')],
+    [State('catch_id_eco', 'value')],
+    prevent_initial_call=True
+    )
+def update_catch_power_obj(reductions, indicator, n_years, n_sites, catch_id):
+    """
 
-#     """
-#     if (powers_obj != '') and (powers_obj is not None):
-#         # print('trigger')
-#         return colorbar_power
-#     else:
-#         return colorbar_base
+    """
+    if isinstance(reductions, (str, int)) and isinstance(n_years, str) and isinstance(indicator, str) and isinstance(n_sites, str) and (catch_id is not None):
+        n_samples = int(n_sites)*int(n_years)
+
+        power_data = xr.open_dataset(eco_power_catch_path, engine='h5netcdf')
+        power_data1 = int(power_data.sel(nzsegment=int(catch_id), indicator=indicator, n_samples=n_samples, conc_perc=100-int(reductions), drop=True).power.values)
+        power_data.close()
+        del power_data
+
+        data = str(power_data1)
+        return data
+    else:
+        raise dash.exceptions.PreventUpdate
 
 
 @callback(
     Output('sites_points_eco', 'hideout'),
-    [Input('powers_obj_eco', 'data')],
+    [Input('sites_powers_obj_eco', 'data')],
     prevent_initial_call=True
     )
 def update_sites_hideout(powers_obj):
@@ -997,14 +862,13 @@ def update_sites_hideout(powers_obj):
         props = decode_obj(powers_obj)
 
         ## Monitored
-        props_moni = props.dropna('nzsegment')
+        props_moni = props
         if len(props_moni.nzsegment) > 0:
             # print(props_moni)
-            color_arr2 = pd.cut(props_moni.power_monitored.values, bins, labels=colorscale, right=False).tolist()
+            color_arr2 = pd.cut(props_moni.power.values, bins, labels=colorscale, right=False).tolist()
 
             hideout_moni = {'classes': props_moni.nzsegment.values.astype(int), 'colorscale': color_arr2, 'circleOptions': dict(fillOpacity=1, stroke=True, color='black', weight=1, radius=site_point_radius), 'colorProp': 'nzsegment'}
 
-            # hideout_moni = {'colorscale': color_arr2, 'classes': props_moni.nzsegment.values.astype(int).tolist(), 'style': style, 'colorProp': 'nzsegment'}
         else:
             hideout_moni = rivers_points_hideout
     else:
@@ -1013,54 +877,39 @@ def update_sites_hideout(powers_obj):
     return hideout_moni
 
 
-
 @callback(
     Output('reach_map_eco', 'hideout'),
-    Input('process_reductions_eco', 'n_clicks'),
-    State('catch_id', 'value'),
+    Input('reaches_obj_eco', 'data'),
     prevent_initial_call=True
     )
-def update_reach_hideout(powers_obj):
+def update_reach_hideout(reaches_obj):
     """
 
     """
-    if (reaches_obj != '') and (reaches_obj is not None) and isinstance(indicator, str):
-        props = decode_obj(powers_obj)
+    if (reaches_obj != '') and (reaches_obj is not None):
+        props = decode_obj(reaches_obj)
 
         ## Modelled
-        color_arr = pd.cut(props.power_modelled.values, bins, labels=colorscale, right=False).tolist()
+        color_arr = pd.cut(props.weights.values, bins_weights, labels=colorscale_weights, right=False).tolist()
 
-        hideout_model = {'colorscale': color_arr, 'classes': props.nzsegment.values.tolist(), 'style': style, 'colorProp': 'nzsegment'}
+        hideout_model = {'colorscale': color_arr, 'classes': props.nzsegment.values.astype(int), 'style': style, 'colorProp': 'nzsegment'}
 
-        ## Monitored
-        props_moni = props.dropna('nzsegment')
-        if len(props_moni.nzsegment) > 0:
-            # print(props_moni)
-            color_arr2 = pd.cut(props_moni.power_monitored.values, bins, labels=colorscale, right=False).tolist()
-
-            hideout_moni = {'classes': props_moni.nzsegment.values.astype(int), 'colorscale': color_arr2, 'circleOptions': dict(fillOpacity=1, stroke=True, color='black', weight=1, radius=site_point_radius), 'colorProp': 'nzsegment'}
-
-            # hideout_moni = {'colorscale': color_arr2, 'classes': props_moni.nzsegment.values.astype(int).tolist(), 'style': style, 'colorProp': 'nzsegment'}
-        else:
-            hideout_moni = rivers_points_hideout
     else:
         hideout_model = {}
-        hideout_moni = rivers_points_hideout
 
-    return hideout_model, hideout_moni
+    return hideout_model
 
 
 @callback(
     Output("info_eco", "children"),
-    [Input('powers_obj_eco', 'data'),
-      # Input('reductions_obj', 'data'),
-      # Input('map_checkboxes_eco', 'value'),
+    [Input('sites_powers_obj_eco', 'data'),
+      Input('catch_power_obj_eco', 'data'),
       Input('sites_points_eco', 'click_feature')],
     [State("info_eco", "children"),
-     State('catch_power_obj_eco', 'data')
+     State('n_sites_eco', 'value')
      ]
     )
-def update_map_info(powers_obj, sites_feature, old_info, catch_power_obj):
+def update_map_info(sites_powers_obj, catch_power_obj, sites_feature, old_info, n_sites):
     """
 
     """
@@ -1073,27 +922,43 @@ def update_map_info(powers_obj, sites_feature, old_info, catch_power_obj):
     # trig = ctx.triggered_id
     # print(trig)
 
-    if (powers_obj != '') and (powers_obj is not None):
+    if (catch_power_obj != '') and (catch_power_obj is not None):
 
-        catch_power = decode_obj(catch_power_obj)
+        catch_power = int(catch_power_obj)
 
-        info = """Catchment"""
+        info += """***Catchment***:\n\n**Likelihood of observing a reduction (power)**: {power}%\n\n**Number of sites**: {n_sites}""".format(power = catch_power, n_sites=n_sites)
 
-        props = decode_obj(powers_obj)
+    if (sites_powers_obj != '') and (sites_powers_obj is not None) and (sites_feature is not None):
+        props = decode_obj(sites_powers_obj)
 
         feature_id = int(sites_feature['properties']['nzsegment'])
         # print(sites_feature)
+        # print(props.nzsegment)
+        # print(feature_id)
 
-        if feature_id in props.nzsegment:
+        # if feature_id in props.nzsegment:
 
-            reach_data = props.sel(nzsegment=feature_id)
+        reach_data = props[props.nzsegment == feature_id]
 
-            info_str = """\n\n**nzsegment**: {seg}\n\n**Site name**: {site}\n\n**Reduction**: {red}%\n\n**Likelihood of observing a reduction (power)**: {t_stat}%""".format(red=int(reach_data.reduction), t_stat=int(reach_data.power_monitored), seg=feature_id, site=sites_feature['id'])
+        if not reach_data.empty:
 
-            info = info + info_str
+            power = reach_data.power.values[0]
 
+            if np.isnan(power):
+                power = 'NA'
+
+                info += """\n\n***Monitoring Site***:\n\n**nzsegment**: {seg}\n\n**Site name**: {site}\n\n**Likelihood of observing a reduction (power)**: {t_stat}""".format(t_stat=power, seg=feature_id, site=sites_feature['id'])
+            else:
+                power = int(power)
+
+                info += """\n\n***Monitoring Site***:\n\n**nzsegment**: {seg}\n\n**Site name**: {site}\n\n**Likelihood of observing a reduction (power)**: {t_stat}%""".format(t_stat=power, seg=feature_id, site=sites_feature['id'])
         else:
-            info = old_info
+            power = 'NA'
+
+            info += """\n\n***Monitoring Site***:\n\n**nzsegment**: {seg}\n\n**Site name**: {site}\n\n**Likelihood of observing a reduction (power)**: {t_stat}""".format(t_stat=power, seg=feature_id, site=sites_feature['id'])
+
+    if info == """""":
+        info = old_info
 
     return info
 
@@ -1102,15 +967,15 @@ def update_map_info(powers_obj, sites_feature, old_info, catch_power_obj):
     Output("dl_power_eco", "data"),
     Input("dl_btn_power_eco", "n_clicks"),
     State('catch_id_eco', 'value'),
-    State('powers_obj_eco', 'data'),
+    State('sites_powers_obj_eco', 'data'),
     State('indicator_eco', 'value'),
     State('time_period_eco', 'value'),
+    State('freq_eco', 'value'),
     prevent_initial_call=True,
     )
-def download_power(n_clicks, catch_id, powers_obj, indicator, n_years):
+def download_power(n_clicks, catch_id, powers_obj, indicator, n_years, n_samples_year):
 
-    if isinstance(catch_id, str) and (powers_obj != '') and (powers_obj is not None):
-        n_samples_year = eco_freq_dict[indicator]
+    if isinstance(catch_id, str) and (powers_obj != '') and (powers_obj is not None) and isinstance(n_samples_year, str):
         power_data = decode_obj(powers_obj)
 
         df1 = power_data.to_dataframe().reset_index()
@@ -1120,4 +985,4 @@ def download_power(n_clicks, catch_id, powers_obj, indicator, n_years):
 
         df2 = df1.set_index(['indicator', 'n_years', 'n_samples_per_year', 'nzsegment']).sort_index()
 
-        return dcc.send_data_frame(df2.to_csv, f"eco_power_{catch_id}.csv")
+        return dcc.send_data_frame(df2.to_csv, f"ecoology_sites_power_{catch_id}.csv")
