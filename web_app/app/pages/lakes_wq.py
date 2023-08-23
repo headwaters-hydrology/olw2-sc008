@@ -449,18 +449,15 @@ def xr_concat(datasets):
 with open(assets_path.joinpath('lakes_points.pbf'), 'rb') as f:
     geodict = geobuf.decode(f.read())
 
-lakes1 = []
+lakes_names = {}
 for f in geodict['features']:
-    label = ' '.join(f['properties']['name'].split())
-    if label.startswith('Lake'):
-        sort_name = label.split('Lake ')[1]
-    else:
-        sort_name = label
-    lakes1.append({'value': int(f['id']), 'label': label, 'sort': sort_name})
+    label0 = ' '.join(f['properties']['name'].split())
+    label = str(f['id']) + ' - ' + label0
+    lakes_names[int(f['id'])] = label
 
-lakes2 = pd.DataFrame(lakes1).sort_values('sort')
+# lakes2 = pd.DataFrame(lakes1)
 
-lakes_options = lakes2.drop('sort', axis=1).to_dict('records')
+# lakes_options = lakes2.drop('sort', axis=1).to_dict('records')
 
 lakes_data = {int(f['id']): f['properties'] for f in geodict['features']}
 
@@ -495,9 +492,10 @@ def layout():
                                 dmc.AccordionPanel([
 
                                     html.Label('(1a) Select a lake/lagoon on the map:'),
-                                    dcc.Dropdown(options=[v for v in lakes_options], id='lake_id', optionHeight=40, clearable=False,
-                                                  style={'margin-top': 10}
-                                                  ),
+                                    # dcc.Dropdown(options=[v for v in lakes_options], id='lake_id', optionHeight=40, clearable=False,
+                                    #               style={'margin-top': 10}
+                                    #               ),
+                                    dmc.Text(id='lake_name', weight=700, style={'margin-top': 10}),
                                     ]
                                     )
                                 ],
@@ -624,7 +622,7 @@ def layout():
                                     dl.BaseLayer(dl.TileLayer(attribution=attribution, opacity=0.7), checked=True, name='OpenStreetMap'),
                                     dl.BaseLayer(dl.TileLayer(url='https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', attribution='Map data: © OpenStreetMap contributors, SRTM | Map style: © OpenTopoMap (CC-BY-SA)', opacity=0.6), checked=False, name='OpenTopoMap'),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(url=str(lakes_pbf_path), format="geobuf", id='lake_points', zoomToBoundsOnClick=True, cluster=True)), name='Lake points', checked=True),
-                                    dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='catch_map_lakes', zoomToBoundsOnClick=True, zoomToBounds=False, options=dict(style=catch_style_handle))), name='Catchments', checked=True),
+                                    dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='catch_map_lakes', zoomToBoundsOnClick=True, zoomToBounds=True, options=dict(style=catch_style_handle))), name='Catchments', checked=True),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='reach_map_lakes', options=dict(style=reach_style))), name='Rivers', checked=True),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='lake_poly', options=dict(style=lake_style_handle), hideout={'classes': [''], 'colorscale': ['#808080'], 'style': lake_style, 'colorProp': 'name'})), name='Lakes', checked=True),
                                     # dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='sites_points_lakes', options=dict(pointToLayer=sites_points_handle), hideout=rivers_points_hideout)), name='Monitoring sites', checked=True),
@@ -640,6 +638,7 @@ def layout():
                         ),
                     ]
                     ),
+            dcc.Store(id='lake_id', data=''),
             dcc.Store(id='powers_obj_lakes', data=''),
             dcc.Store(id='reaches_obj_lakes', data=''),
             dcc.Store(id='custom_reductions_obj_lakes', data=''),
@@ -654,7 +653,7 @@ def layout():
 ### Callbacks
 
 @callback(
-    Output('lake_id', 'value'),
+    Output('lake_id', 'data'),
     [Input('lake_points', 'click_feature')]
     )
 def update_lake_id(feature):
@@ -662,22 +661,37 @@ def update_lake_id(feature):
 
     """
     # print(ds_id)
-    lake_id = None
+    lake_id = ''
     if feature is not None:
         # print(feature)
         if not feature['properties']['cluster']:
-            lake_id = feature['id']
+            lake_id = str(feature['id'])
 
     return lake_id
 
 
 @callback(
+    Output('lake_name', 'children'),
+    [Input('lake_id', 'data')]
+    )
+def update_catch_name(lake_id):
+    """
+
+    """
+    # print(ds_id)
+    if lake_id != '':
+        lake_name = lakes_names[int(lake_id)]
+
+        return lake_name
+
+
+@callback(
         Output('reach_map_lakes', 'data'),
-        Input('lake_id', 'value'),
+        Input('lake_id', 'data'),
         )
 # @cache.memoize()
 def update_reaches_lakes(lake_id):
-    if (lake_id is not None):
+    if lake_id != '':
         with booklet.open(lakes_reach_gbuf_path, 'r') as f:
             data = base64.b64encode(f[int(lake_id)]).decode()
 
@@ -705,11 +719,11 @@ def update_reaches_lakes(lake_id):
 
 @callback(
         Output('catch_map_lakes', 'data'),
-        Input('lake_id', 'value'),
+        Input('lake_id', 'data'),
         )
 # @cache.memoize()
 def update_catch_lakes(lake_id):
-    if isinstance(lake_id, str):
+    if lake_id != '':
         with booklet.open(lakes_catches_major_path, 'r') as f:
             data = base64.b64encode(f[int(lake_id)]).decode()
     else:
@@ -720,11 +734,11 @@ def update_catch_lakes(lake_id):
 
 @callback(
         Output('lake_poly', 'data'),
-        Input('lake_id', 'value'),
+        Input('lake_id', 'data'),
         )
 # @cache.memoize()
 def update_lake(lake_id):
-    if isinstance(lake_id, str):
+    if lake_id != '':
         with booklet.open(lakes_poly_gbuf_path, 'r') as f:
             data = base64.b64encode(f[int(lake_id)]).decode()
     else:
@@ -735,14 +749,14 @@ def update_lake(lake_id):
 
 @callback(
         Output('base_reductions_obj_lakes', 'data'),
-        Input('lake_id', 'value'),
+        Input('lake_id', 'data'),
         prevent_initial_call=True
         )
 # @cache.memoize()
 def update_base_reductions_obj(lake_id):
     data = ''
 
-    if lake_id is not None:
+    if lake_id != '':
         with booklet.open(lakes_lc_path, 'r') as f:
             data = encode_obj(f[int(lake_id)])
 
@@ -765,12 +779,12 @@ def update_base_reductions_obj(lake_id):
 @callback(
     Output("dl_poly_lakes", "href"),
     # Input('indicator_lc', 'value'),
-    Input('lake_id', 'value'),
+    Input('lake_id', 'data'),
     prevent_initial_call=True,
     )
 def download_catch_lc(lake_id):
 
-    if isinstance(lake_id, str):
+    if lake_id != '':
         url = lakes_catch_lc_gpkg_str.format(base_url=base_data_url, lake_id=lake_id)
 
         return url
@@ -780,7 +794,7 @@ def download_catch_lc(lake_id):
         Output('custom_reductions_obj_lakes', 'data'), Output('upload_error_text_lakes', 'children'),
         Input('upload_data_lakes', 'contents'),
         State('upload_data_lakes', 'filename'),
-        State('lake_id', 'value'),
+        State('lake_id', 'data'),
         prevent_initial_call=True
         )
 # @cache.memoize()
@@ -788,7 +802,7 @@ def update_land_reductions(contents, filename, lake_id):
     data = None
     error_text = ''
 
-    if lake_id is not None:
+    if lake_id != '':
         if contents is not None:
             data = parse_gis_file(contents, filename)
 
@@ -804,7 +818,7 @@ def update_land_reductions(contents, filename, lake_id):
     Input('process_reductions_lakes', 'n_clicks'),
     Input('base_reductions_obj_lakes', 'data'),
     [
-      State('lake_id', 'value'),
+      State('lake_id', 'data'),
       State('custom_reductions_obj_lakes', 'data'),
       ],
     prevent_initial_call=True)
@@ -815,7 +829,7 @@ def update_reach_reductions(click, base_reductions_obj, lake_id, reductions_obj)
     trig = ctx.triggered_id
 
     if (trig == 'process_reductions_lakes'):
-        if isinstance(lake_id, str) and (reductions_obj != '') and (reductions_obj is not None):
+        if (lake_id != '') and (reductions_obj != '') and (reductions_obj is not None):
             red1 = xr.open_dataset(lakes_reductions_model_path)
 
             base_props = red1.sel(LFENZID=int(lake_id), drop=True)
@@ -836,7 +850,7 @@ def update_reach_reductions(click, base_reductions_obj, lake_id, reductions_obj)
             data = ''
             text_out = 'Not all inputs have been selected'
     else:
-        if isinstance(lake_id, str):
+        if lake_id != '':
             red1 = xr.open_dataset(lakes_reductions_model_path)
 
             base_props = red1.sel(LFENZID=int(lake_id), drop=True).load().copy()
@@ -895,7 +909,7 @@ def update_reach_reductions(click, base_reductions_obj, lake_id, reductions_obj)
 @callback(
     Output('powers_obj_lakes', 'data'),
     [Input('reaches_obj_lakes', 'data'), Input('indicator_lakes', 'value'), Input('time_period_lakes', 'value'), Input('freq_lakes', 'value'), Input('reductions_slider_lakes', 'value')],
-    [State('lake_id', 'value')]
+    [State('lake_id', 'data')]
     )
 def update_powers_data_lakes(reaches_obj, indicator, n_years, n_samples_year, prop_red, lake_id):
     """
@@ -973,7 +987,7 @@ def update_powers_data_lakes(reaches_obj, indicator, n_years, n_samples_year, pr
 @callback(
     Output('lake_poly', 'hideout'),
     [Input('powers_obj_lakes', 'data')],
-    Input('lake_id', 'value'),
+    Input('lake_id', 'data'),
     prevent_initial_call=True
     )
 def update_hideout_lakes(powers_obj, lake_id):
@@ -1056,7 +1070,7 @@ def update_map_info_lakes(powers_obj, feature):
 @callback(
     Output("dl_power_lakes", "data"),
     Input("dl_btn_power_lakes", "n_clicks"),
-    State('lake_id', 'value'),
+    State('lake_id', 'data'),
     State('powers_obj_lakes', 'data'),
     State('indicator_lakes', 'value'),
     State('time_period_lakes', 'value'),
@@ -1065,14 +1079,14 @@ def update_map_info_lakes(powers_obj, feature):
     )
 def download_power(n_clicks, lake_id, powers_obj, indicator, n_years, n_samples_year):
 
-    if isinstance(lake_id, str) and (powers_obj != '') and (powers_obj is not None):
+    if (lake_id != '') and (powers_obj != '') and (powers_obj is not None):
         power_data = decode_obj(powers_obj)
 
         df1 = pd.DataFrame([power_data['power']], columns=['modelled', 'monitored'])
         df1['indicator'] = lakes_indicator_dict[indicator]
         df1['n_years'] = n_years
         df1['n_samples_per_year'] = n_samples_year
-        df1['LFENZID'] = lake_id
+        df1['LFENZID'] = int(lake_id)
         df1['reduction'] = power_data['reduction']
 
         df2 = df1.set_index(['indicator', 'n_years', 'n_samples_per_year', 'reduction', 'LFENZID']).sort_index()

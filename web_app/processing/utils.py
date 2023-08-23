@@ -142,6 +142,7 @@ river_reach_mapping_path = assets_path.joinpath('rivers_reaches_mapping.blt')
 river_reach_gbuf_path = assets_path.joinpath('rivers_reaches.blt')
 river_catch_path = assets_path.joinpath('rivers_catchments_minor.blt')
 river_catch_major_path = assets_path.joinpath('rivers_catchments_major.blt')
+river_catch_name_path = assets_path.joinpath('rivers_catchments_names.blt')
 
 river_sims_path = output_path.joinpath('rivers_sims')
 river_sims_path.mkdir(parents=True, exist_ok=True)

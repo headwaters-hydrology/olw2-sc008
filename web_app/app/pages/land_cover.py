@@ -71,6 +71,7 @@ rivers_reach_gbuf_path = assets_path.joinpath('rivers_reaches.blt')
 rivers_lc_clean_path = assets_path.joinpath('rivers_catch_lc.blt')
 rivers_reach_mapping_path = assets_path.joinpath('rivers_reaches_mapping.blt')
 rivers_sites_path = assets_path.joinpath('rivers_sites_catchments.blt')
+river_catch_name_path = assets_path.joinpath('rivers_catchments_names.blt')
 
 # rivers_catch_lc_dir = assets_path.joinpath('rivers_land_cover_gpkg')
 rivers_catch_lc_gpkg_str = '{base_url}olw-data/olw-sc008/rivers_land_cover_gpkg/{catch_id}_rivers_land_cover_reductions.gpkg'
@@ -416,9 +417,7 @@ def layout():
                                 dmc.AccordionPanel([
 
                                     html.Label('(1a) Select a catchment on the map:'),
-                                    dcc.Dropdown(options=[{'label': d, 'value': d} for d in catches], id='catch_id_lc', optionHeight=40, clearable=False,
-                                                  style={'margin-top': 10}
-                                                  ),
+                                    dmc.Text(id='catch_name_lc', weight=700, style={'margin-top': 10}),
                                     ]
                                     )
                                 ],
@@ -530,6 +529,7 @@ def layout():
                         ),
                     ]
                     ),
+            dcc.Store(id='catch_id_lc', data=''),
             dcc.Store(id='powers_obj_lc', data=''),
             dcc.Store(id='reaches_obj_lc', data=''),
             dcc.Store(id='base_reductions_obj_lc', data=''),
@@ -543,7 +543,7 @@ def layout():
 ### Callbacks
 
 @callback(
-    Output('catch_id_lc', 'value'),
+    Output('catch_id_lc', 'data'),
     [Input('catch_map_lc', 'click_feature')]
     )
 def update_catch_id(feature):
@@ -551,21 +551,37 @@ def update_catch_id(feature):
 
     """
     # print(ds_id)
-    catch_id = None
+    catch_id = ''
     if feature is not None:
         if not feature['properties']['cluster']:
-            catch_id = feature['id']
+            catch_id = str(feature['id'])
 
     return catch_id
 
 
 @callback(
+    Output('catch_name_lc', 'children'),
+    [Input('catch_id_lc', 'data')]
+    )
+def update_catch_name(catch_id):
+    """
+
+    """
+    # print(ds_id)
+    if catch_id != '':
+        with booklet.open(river_catch_name_path) as f:
+            catch_name = f[int(catch_id)]
+
+        return catch_name
+
+
+@callback(
         Output('reach_map_lc', 'data'),
-        Input('catch_id_lc', 'value'),
+        Input('catch_id_lc', 'data'),
         )
 # @cache.memoize()
 def update_reaches(catch_id):
-    if (catch_id is not None):
+    if catch_id != '':
         with booklet.open(rivers_reach_gbuf_path, 'r') as f:
             data = base64.b64encode(f[int(catch_id)]).decode()
 
@@ -577,11 +593,11 @@ def update_reaches(catch_id):
 
 @callback(
         Output('reductions_poly_lc', 'data'),
-        Input('catch_id_lc', 'value'),
+        Input('catch_id_lc', 'data'),
         )
 # @cache.memoize()
 def update_lc_map(catch_id):
-    if (catch_id is not None):
+    if catch_id != '':
         with booklet.open(catch_lc_pbf_path, 'r') as f:
             data = base64.b64encode(f[int(catch_id)]).decode()
 
@@ -593,11 +609,11 @@ def update_lc_map(catch_id):
 
 @callback(
         Output('sites_points_lc', 'data'),
-        Input('catch_id_lc', 'value'),
+        Input('catch_id_lc', 'data'),
         )
 # @cache.memoize()
 def update_monitor_sites(catch_id):
-    if (catch_id is not None):
+    if catch_id != '':
         with booklet.open(rivers_sites_path, 'r') as f:
             data = base64.b64encode(f[int(catch_id)]).decode()
 
@@ -610,7 +626,7 @@ def update_monitor_sites(catch_id):
 @callback(
         Output('reach_map_lc', 'options'),
         Input('reach_map_lc', 'hideout'),
-        Input('catch_id_lc', 'value')
+        Input('catch_id_lc', 'data')
         )
 # @cache.memoize()
 def update_reaches_option(hideout, catch_id):
@@ -626,14 +642,14 @@ def update_reaches_option(hideout, catch_id):
 
 @callback(
         Output('base_reductions_obj_lc', 'data'),
-        Input('catch_id_lc', 'value'),
+        Input('catch_id_lc', 'data'),
         prevent_initial_call=True
         )
 # @cache.memoize()
 def update_base_reductions_obj(catch_id):
     data = ''
 
-    if catch_id is not None:
+    if catch_id != '':
         with booklet.open(rivers_lc_clean_path, 'r') as f:
             data = encode_obj(f[int(catch_id)])
 
@@ -644,14 +660,14 @@ def update_base_reductions_obj(catch_id):
     Output('reaches_obj_lc', 'data'),
     Input('base_reductions_obj_lc', 'data'),
     [
-      State('catch_id_lc', 'value'),
+      State('catch_id_lc', 'data'),
       ],
     prevent_initial_call=True)
 def update_reach_reductions(base_reductions_obj, catch_id):
     """
 
     """
-    if isinstance(catch_id, str):
+    if catch_id != '':
         # print('trigger')
         red1 = xr.open_dataset(rivers_reductions_model_path)
 
@@ -772,12 +788,12 @@ def update_map_info(reaches_obj, reach_feature, lc_feature, indicator, prop_red)
 @callback(
     Output("lc_dl1", "href"),
     # Input('indicator_lc', 'value'),
-    Input('catch_id_lc', 'value'),
+    Input('catch_id_lc', 'data'),
     prevent_initial_call=True,
     )
 def download_catch_lc(catch_id):
 
-    if isinstance(catch_id, str):
+    if catch_id != '':
         url = rivers_catch_lc_gpkg_str.format(base_url=base_data_url, catch_id=catch_id)
 
         return url
@@ -786,13 +802,13 @@ def download_catch_lc(catch_id):
 @callback(
     Output("reach_dl1", "data"),
     Input("reach_dl_btn", "n_clicks"),
-    State('catch_id_lc', 'value'),
+    State('catch_id_lc', 'data'),
     State('reaches_obj_lc', 'data'),
     prevent_initial_call=True,
     )
 def download_power(n_clicks, catch_id, reaches_obj):
 
-    if isinstance(catch_id, str):
+    if catch_id != '':
         props = decode_obj(reaches_obj)
 
         df1 = props.to_dataframe().reset_index()

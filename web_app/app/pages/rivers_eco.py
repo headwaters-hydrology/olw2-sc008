@@ -68,11 +68,8 @@ eco_reach_weights_path = assets_path.joinpath('eco_reach_weights.h5')
 rivers_catch_pbf_path = app_base_path.joinpath('rivers_catchments.pbf')
 
 rivers_reach_gbuf_path = assets_path.joinpath('rivers_reaches.blt')
-# rivers_loads_path = assets_path.joinpath('rivers_reaches_loads.h5')
-# rivers_flows_path = assets_path.joinpath('rivers_flows_rec.blt')
-# rivers_lc_clean_path = assets_path.joinpath('rivers_catch_lc.blt')
-# rivers_catch_path = assets_path.joinpath('rivers_catchments_minor.blt')
-# rivers_reach_mapping_path = assets_path.joinpath('rivers_reaches_mapping.blt')
+river_catch_name_path = assets_path.joinpath('rivers_catchments_names.blt')
+
 eco_sites_path = assets_path.joinpath('eco_sites_catchments.blt')
 # eco_loads_rec_path = assets_path.joinpath('rivers_loads_rec.blt')
 
@@ -552,9 +549,7 @@ def layout():
                                 dmc.AccordionPanel([
 
                                     html.Label('(1a) Select a catchment on the map:'),
-                                    dcc.Dropdown(options=[{'label': d, 'value': d} for d in catches], id='catch_id_eco', optionHeight=40, clearable=False,
-                                                  style={'margin-top': 10}
-                                                  ),
+                                    dmc.Text(id='catch_name_eco', weight=700, style={'margin-top': 10}),
                                     ]
                                     )
                                 ],
@@ -685,6 +680,7 @@ def layout():
                         ),
                     ]
                     ),
+            dcc.Store(id='catch_id_eco', data=''),
             dcc.Store(id='sites_powers_obj_eco', data=''),
             dcc.Store(id='reaches_obj_eco', data=''),
             dcc.Store(id='catch_power_obj_eco', data=''),
@@ -698,7 +694,7 @@ def layout():
 ### Callbacks
 
 @callback(
-    Output('catch_id_eco', 'value'),
+    Output('catch_id_eco', 'data'),
     [Input('catch_map_eco', 'click_feature')]
     )
 def update_catch_id(feature):
@@ -706,21 +702,37 @@ def update_catch_id(feature):
 
     """
     # print(ds_id)
-    catch_id = None
+    catch_id = ''
     if feature is not None:
         if not feature['properties']['cluster']:
-            catch_id = feature['id']
+            catch_id = str(feature['id'])
 
     return catch_id
 
 
 @callback(
+    Output('catch_name_eco', 'children'),
+    [Input('catch_id_eco', 'data')]
+    )
+def update_catch_name(catch_id):
+    """
+
+    """
+    # print(ds_id)
+    if catch_id != '':
+        with booklet.open(river_catch_name_path) as f:
+            catch_name = f[int(catch_id)]
+
+        return catch_name
+
+
+@callback(
         Output('reach_map_eco', 'data'),
-        Input('catch_id_eco', 'value'),
+        Input('catch_id_eco', 'data'),
         )
 # @cache.memoize()
 def update_reaches(catch_id):
-    if (catch_id is not None):
+    if catch_id != '':
         with booklet.open(rivers_reach_gbuf_path, 'r') as f:
             data = base64.b64encode(f[int(catch_id)]).decode()
 
@@ -732,11 +744,11 @@ def update_reaches(catch_id):
 
 @callback(
         Output('sites_points_eco', 'data'),
-        Input('catch_id_eco', 'value'),
+        Input('catch_id_eco', 'data'),
         )
 # @cache.memoize()
 def update_monitor_sites(catch_id):
-    if (catch_id is not None):
+    if catch_id != '':
         with booklet.open(eco_sites_path, 'r') as f:
             data = base64.b64encode(f[int(catch_id)]).decode()
 
@@ -749,13 +761,13 @@ def update_monitor_sites(catch_id):
 @callback(
         Output('reach_map_eco', 'options'),
         Input('reach_map_eco', 'hideout'),
-        Input('catch_id_eco', 'value')
+        Input('catch_id_eco', 'data')
         )
 # @cache.memoize()
 def update_reaches_option(hideout, catch_id):
     trig = ctx.triggered_id
 
-    if (len(hideout) == 0) or (trig == 'catch_id'):
+    if (len(hideout) == 0) or (trig == 'catch_id_eco'):
         options = dict(style=base_reach_style_handle)
     else:
         options = dict(style=reach_style_handle)
@@ -828,14 +840,14 @@ def update_reaches_obj(reductions, indicator):
 @callback(
     Output('catch_power_obj_eco', 'data'),
     [Input('reductions_slider_eco', 'value'), Input('indicator_eco', 'value'), Input('time_period_eco', 'value'), Input('n_sites_eco', 'value')],
-    [State('catch_id_eco', 'value')],
+    [State('catch_id_eco', 'data')],
     prevent_initial_call=True
     )
 def update_catch_power_obj(reductions, indicator, n_years, n_sites, catch_id):
     """
 
     """
-    if isinstance(reductions, (str, int)) and isinstance(n_years, str) and isinstance(indicator, str) and isinstance(n_sites, str) and (catch_id is not None):
+    if isinstance(reductions, (str, int)) and isinstance(n_years, str) and isinstance(indicator, str) and isinstance(n_sites, str) and (catch_id != ''):
         n_samples = int(n_sites)*int(n_years)
 
         power_data = xr.open_dataset(eco_power_catch_path, engine='h5netcdf')
@@ -913,14 +925,7 @@ def update_map_info(sites_powers_obj, catch_power_obj, sites_feature, old_info, 
     """
 
     """
-    # info = """###### Likelihood of observing a reduction (%)"""
     info = """"""
-
-    # if (reductions_obj != '') and (reductions_obj is not None) and ('reductions_poly' in map_checkboxes):
-    #     info = info + """\n\nHover over the polygons to see reduction %"""
-
-    # trig = ctx.triggered_id
-    # print(trig)
 
     if (catch_power_obj != '') and (catch_power_obj is not None):
 
@@ -939,12 +944,6 @@ def update_map_info(sites_powers_obj, catch_power_obj, sites_feature, old_info, 
         if feature_id in props.nzsegment:
             reach_data = props.sel(nzsegment=feature_id)
             power = reach_data.power.values
-
-        # reach_data = props[props.nzsegment == feature_id]
-
-        # if not reach_data.empty:
-
-            # power = reach_data.power.values[0]
 
             if np.isnan(power):
                 power = 'NA'
@@ -968,7 +967,7 @@ def update_map_info(sites_powers_obj, catch_power_obj, sites_feature, old_info, 
 @callback(
     Output("dl_power_eco", "data"),
     Input("dl_btn_power_eco", "n_clicks"),
-    State('catch_id_eco', 'value'),
+    State('catch_id_eco', 'data'),
     State('sites_powers_obj_eco', 'data'),
     State('indicator_eco', 'value'),
     State('time_period_eco', 'value'),
@@ -977,7 +976,7 @@ def update_map_info(sites_powers_obj, catch_power_obj, sites_feature, old_info, 
     )
 def download_power(n_clicks, catch_id, powers_obj, indicator, n_years, n_samples_year):
 
-    if isinstance(catch_id, str) and (powers_obj != '') and (powers_obj is not None) and isinstance(n_samples_year, str):
+    if (catch_id != '') and (powers_obj != '') and (powers_obj is not None) and isinstance(n_samples_year, str):
         power_data = decode_obj(powers_obj)
 
         df1 = power_data.to_dataframe().reset_index()

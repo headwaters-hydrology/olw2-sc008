@@ -74,6 +74,7 @@ rivers_catch_path = assets_path.joinpath('rivers_catchments_minor.blt')
 rivers_reach_mapping_path = assets_path.joinpath('rivers_reaches_mapping.blt')
 rivers_sites_path = assets_path.joinpath('rivers_sites_catchments.blt')
 river_loads_rec_path = assets_path.joinpath('rivers_loads_rec.blt')
+river_catch_name_path = assets_path.joinpath('rivers_catchments_names.blt')
 
 # rivers_catch_lc_dir = assets_path.joinpath('rivers_land_cover_gpkg')
 # rivers_catch_lc_gpkg_str = '{}_rivers_land_cover_reductions.gpkg'
@@ -539,9 +540,10 @@ def layout():
                                 dmc.AccordionPanel([
 
                                     html.Label('(1a) Select a catchment on the map:'),
-                                    dcc.Dropdown(options=[{'label': d, 'value': d} for d in catches], id='catch_id', optionHeight=40, clearable=False,
-                                                  style={'margin-top': 10}
-                                                  ),
+                                    dmc.Text(id='catch_name', weight=700, style={'margin-top': 10}),
+                                    # dcc.Dropdown(options=[{'label': d, 'value': d} for d in catches], id='catch_id', optionHeight=40, clearable=False,
+                                    #               style={'margin-top': 10}
+                                    #               ),
                                     ]
                                     )
                                 ],
@@ -698,6 +700,7 @@ def layout():
                         ),
                     ]
                     ),
+            dcc.Store(id='catch_id', data=''),
             dcc.Store(id='powers_obj', data=''),
             dcc.Store(id='reaches_obj', data=''),
             dcc.Store(id='custom_reductions_obj', data=''),
@@ -712,7 +715,7 @@ def layout():
 ### Callbacks
 
 @callback(
-    Output('catch_id', 'value'),
+    Output('catch_id', 'data'),
     [Input('catch_map', 'click_feature')]
     )
 def update_catch_id(feature):
@@ -720,21 +723,36 @@ def update_catch_id(feature):
 
     """
     # print(ds_id)
-    catch_id = None
+    catch_id = ''
     if feature is not None:
         if not feature['properties']['cluster']:
-            catch_id = feature['id']
+            catch_id = str(feature['id'])
 
     return catch_id
 
 
 @callback(
+    Output('catch_name', 'children'),
+    [Input('catch_id', 'data')]
+    )
+def update_catch_name(catch_id):
+    """
+
+    """
+    # print(ds_id)
+    if catch_id != '':
+        with booklet.open(river_catch_name_path) as f:
+            catch_name = f[int(catch_id)]
+
+        return catch_name
+
+
+@callback(
         Output('reach_map', 'data'),
-        Input('catch_id', 'value'),
+        Input('catch_id', 'data'),
         )
-# @cache.memoize()
 def update_reaches(catch_id):
-    if (catch_id is not None):
+    if catch_id != '':
         with booklet.open(rivers_reach_gbuf_path, 'r') as f:
             data = base64.b64encode(f[int(catch_id)]).decode()
 
@@ -746,11 +764,10 @@ def update_reaches(catch_id):
 
 @callback(
         Output('sites_points', 'data'),
-        Input('catch_id', 'value'),
+        Input('catch_id', 'data'),
         )
-# @cache.memoize()
 def update_monitor_sites(catch_id):
-    if (catch_id is not None):
+    if catch_id != '':
         with booklet.open(rivers_sites_path, 'r') as f:
             data = base64.b64encode(f[int(catch_id)]).decode()
 
@@ -763,9 +780,8 @@ def update_monitor_sites(catch_id):
 @callback(
         Output('reach_map', 'options'),
         Input('reach_map', 'hideout'),
-        Input('catch_id', 'value')
+        Input('catch_id', 'data')
         )
-# @cache.memoize()
 def update_reaches_option(hideout, catch_id):
     trig = ctx.triggered_id
 
@@ -779,42 +795,28 @@ def update_reaches_option(hideout, catch_id):
 
 @callback(
         Output('base_reductions_obj', 'data'),
-        Input('catch_id', 'value'),
+        Input('catch_id', 'data'),
         prevent_initial_call=True
         )
-# @cache.memoize()
 def update_base_reductions_obj(catch_id):
     data = ''
 
-    if catch_id is not None:
+    if catch_id != '':
         with booklet.open(rivers_lc_clean_path, 'r') as f:
             data = encode_obj(f[int(catch_id)])
 
     return data
 
 
-# @callback(
-#     Output("dl_poly", "data"),
-#     Input("dl_btn", "n_clicks"),
-#     State('catch_id', 'value'),
-#     prevent_initial_call=True,
-#     )
-# def download_lc(n_clicks, catch_id):
-#     if isinstance(catch_id, str):
-#         path = rivers_catch_lc_dir.joinpath(rivers_catch_lc_gpkg_str.format(catch_id))
-
-#         return dcc.send_file(path)
-
-
 @callback(
     Output("dl_poly", "href"),
     # Input('indicator_lc', 'value'),
-    Input('catch_id', 'value'),
+    Input('catch_id', 'data'),
     prevent_initial_call=True,
     )
 def download_catch_lc(catch_id):
 
-    if isinstance(catch_id, str):
+    if catch_id != '':
         url = rivers_catch_lc_gpkg_str.format(base_url=base_data_url, catch_id=catch_id)
 
         return url
@@ -824,15 +826,14 @@ def download_catch_lc(catch_id):
         Output('custom_reductions_obj', 'data'), Output('upload_error_text', 'children'),
         Input('upload_data_rivers', 'contents'),
         State('upload_data_rivers', 'filename'),
-        State('catch_id', 'value'),
+        State('catch_id', 'data'),
         prevent_initial_call=True
         )
-# @cache.memoize()
 def update_land_reductions(contents, filename, catch_id):
     data = None
     error_text = ''
 
-    if catch_id is not None:
+    if catch_id != '':
         if contents is not None:
             data = parse_gis_file(contents, filename)
 
@@ -848,7 +849,7 @@ def update_land_reductions(contents, filename, catch_id):
     Input('process_reductions_rivers', 'n_clicks'),
     Input('base_reductions_obj', 'data'),
     [
-      State('catch_id', 'value'),
+      State('catch_id', 'data'),
       State('custom_reductions_obj', 'data'),
       ],
     prevent_initial_call=True)
@@ -859,7 +860,7 @@ def update_reach_reductions(click, base_reductions_obj, catch_id, reductions_obj
     trig = ctx.triggered_id
 
     if (trig == 'process_reductions_rivers'):
-        if isinstance(catch_id, str) and (reductions_obj != '') and (reductions_obj is not None):
+        if (catch_id != '') and (reductions_obj != '') and (reductions_obj is not None):
             red1 = xr.open_dataset(rivers_reductions_model_path)
 
             with booklet.open(rivers_reach_mapping_path) as f:
@@ -883,7 +884,7 @@ def update_reach_reductions(click, base_reductions_obj, catch_id, reductions_obj
             data = ''
             text_out = 'Not all inputs have been selected'
     else:
-        if isinstance(catch_id, str):
+        if catch_id != '':
             # print('trigger')
             red1 = xr.open_dataset(rivers_reductions_model_path)
 
@@ -907,7 +908,7 @@ def update_reach_reductions(click, base_reductions_obj, catch_id, reductions_obj
 @callback(
     Output('powers_obj', 'data'),
     [Input('reaches_obj', 'data'), Input('indicator_rivers', 'value'), Input('time_period', 'value'), Input('freq', 'value'), Input('Reductions_slider', 'value')],
-    [State('catch_id', 'value')]
+    [State('catch_id', 'data')]
     )
 def update_powers_data(reaches_obj, indicator, n_years, n_samples_year, prop_red, catch_id):
     """
@@ -1042,35 +1043,48 @@ def update_map_info(powers_obj, reach_feature, sites_feature, old_info):
     if (powers_obj != '') and (powers_obj is not None):
 
         props = decode_obj(powers_obj)
+        # print(reach_feature)
+        # print(sites_feature)
 
-        if trig == 'reach_map':
+        if (trig == 'reach_map'):
             # print(reach_feature)
             feature_id = int(reach_feature['id'])
 
-            if feature_id in props.nzsegment:
+            reach_data = props.sel(nzsegment=feature_id)
 
-                reach_data = props.sel(nzsegment=feature_id)
+            info_str = """\n\n**nzsegment**: {seg}\n\n**Reduction**: {red}%\n\n**Likelihood of observing a reduction (power)**: {t_stat}%""".format(red=int(reach_data.reduction), t_stat=int(reach_data.power_modelled), seg=feature_id)
 
-                info_str = """\n\n**nzsegment**: {seg}\n\n**Reduction**: {red}%\n\n**Likelihood of observing a reduction (power)**: {t_stat}%""".format(red=int(reach_data.reduction), t_stat=int(reach_data.power_modelled), seg=feature_id)
-
-                info = info + info_str
-
-            else:
-                info = info + """\n\nClick on a reach to see info"""
-        elif trig == 'sites_points':
+            info += info_str
+        elif (trig == 'sites_points'):
             feature_id = int(sites_feature['properties']['nzsegment'])
             # print(sites_feature)
 
-            if feature_id in props.nzsegment:
+            reach_data = props.sel(nzsegment=feature_id)
 
+            info_str = """\n\n**nzsegment**: {seg}\n\n**Site name**: {site}\n\n**Reduction**: {red}%\n\n**Likelihood of observing a reduction (power)**: {t_stat}%""".format(red=int(reach_data.reduction), t_stat=int(reach_data.power_monitored), seg=feature_id, site=sites_feature['id'])
+
+            info += info_str
+        else:
+            if 'Site name' in old_info:
+                feature_id = int(sites_feature['properties']['nzsegment'])
                 reach_data = props.sel(nzsegment=feature_id)
 
                 info_str = """\n\n**nzsegment**: {seg}\n\n**Site name**: {site}\n\n**Reduction**: {red}%\n\n**Likelihood of observing a reduction (power)**: {t_stat}%""".format(red=int(reach_data.reduction), t_stat=int(reach_data.power_monitored), seg=feature_id, site=sites_feature['id'])
 
-                info = info + info_str
+                info += info_str
+            elif 'nzsegment' in old_info:
+                feature_id = int(reach_feature['id'])
+                reach_data = props.sel(nzsegment=feature_id)
 
-        else:
-            info = old_info
+                info_str = """\n\n**nzsegment**: {seg}\n\n**Reduction**: {red}%\n\n**Likelihood of observing a reduction (power)**: {t_stat}%""".format(red=int(reach_data.reduction), t_stat=int(reach_data.power_modelled), seg=feature_id)
+
+                info += info_str
+            else:
+                info += """\n\nClick on a reach to see info"""
+
+
+        # else:
+        #     info = old_info
 
     return info
 
@@ -1078,7 +1092,7 @@ def update_map_info(powers_obj, reach_feature, sites_feature, old_info):
 @callback(
     Output("dl_power_rivers", "data"),
     Input("dl_btn_power_rivers", "n_clicks"),
-    State('catch_id', 'value'),
+    State('catch_id', 'data'),
     State('powers_obj', 'data'),
     State('indicator_rivers', 'value'),
     State('time_period', 'value'),
@@ -1087,7 +1101,7 @@ def update_map_info(powers_obj, reach_feature, sites_feature, old_info):
     )
 def download_power(n_clicks, catch_id, powers_obj, indicator, n_years, n_samples_year):
 
-    if isinstance(catch_id, str) and (powers_obj != '') and (powers_obj is not None):
+    if (catch_id != '') and (powers_obj != '') and (powers_obj is not None):
         power_data = decode_obj(powers_obj)
 
         df1 = power_data.to_dataframe().reset_index()
