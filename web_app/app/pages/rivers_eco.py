@@ -56,7 +56,7 @@ assets_path = pathlib.Path(os.path.realpath(os.path.dirname(__file__))).parent.j
 
 app_base_path = pathlib.Path('/assets')
 
-base_data_url = 'https://b2.tethys-ts.xyz/file/'
+# base_data_url = 'https://b2.tethys-ts.xyz/file/'
 
 # lc_url = '{}olw-data/olw-sc008/olw_land_cover_reductions.gpkg'.format(base_data_url)
 # rivers_red_url = '{}olw-data/olw-sc008/olw_eco_reductions.csv.zip'.format(base_data_url)
@@ -75,7 +75,7 @@ eco_sites_path = assets_path.joinpath('eco_sites_catchments.blt')
 
 # rivers_catch_lc_dir = assets_path.joinpath('rivers_land_cover_gpkg')
 # rivers_catch_lc_gpkg_str = '{}_eco_land_cover_reductions.gpkg'
-rivers_catch_lc_gpkg_str = '{base_url}olw-data/olw-sc008/rivers_land_cover_gpkg/{catch_id}_eco_land_cover_reductions.gpkg'
+# rivers_catch_lc_gpkg_str = '{base_url}olw-data/olw-sc008/rivers_land_cover_gpkg/{catch_id}_eco_land_cover_reductions.gpkg'
 
 ### Layout
 map_height = 700
@@ -102,7 +102,7 @@ eco_freq_dict = {'mci': 1, 'peri': 12, 'sediment': 12}
 
 rivers_points_hideout = {'classes': [], 'colorscale': ['#232323'], 'circleOptions': dict(fillOpacity=1, stroke=True, weight=1, color='black', radius=site_point_radius), 'colorProp': 'nzsegment'}
 
-eco_indicator_dict = {'peri': 'Periphyton', 'mci': 'MCI', 'sediment': 'Total Suspended Sediment'}
+eco_indicator_dict = {'peri': 'Periphyton', 'mci': 'MCI', 'sediment': 'Percent deposited sediment'}
 
 eco_reduction_cols = list(eco_indicator_dict.values())
 
@@ -494,10 +494,10 @@ def diff_reductions(new_reductions, base_reductions, reduction_cols):
 ###############################################
 ### Initial processing
 
-with booklet.open(eco_sites_path, 'r') as f:
-    catches = [int(c) for c in f]
+# with booklet.open(eco_sites_path, 'r') as f:
+#     catches = [int(c) for c in f]
 
-catches.sort()
+# catches.sort()
 indicators = list(eco_indicator_dict.keys())
 indicators.sort()
 
@@ -557,9 +557,9 @@ def layout():
                                 ),
 
                             dmc.AccordionItem([
-                                dmc.AccordionControl('(2) Select a reduction', style={'font-size': 18}),
+                                dmc.AccordionControl('(2) Select an improvement', style={'font-size': 18}),
                                 dmc.AccordionPanel([
-                                    html.Label('(2a) Select a reduction:'),
+                                    html.Label('(2a) Select a percent improvement:'),
                                     dmc.Slider(id='reductions_slider_eco',
                                                value=25,
                                                mb=35,
@@ -931,7 +931,9 @@ def update_map_info(sites_powers_obj, catch_power_obj, sites_feature, old_info, 
 
         catch_power = int(catch_power_obj)
 
-        info += """***Catchment***:\n\n**Likelihood of observing a reduction (power)**: {power}%\n\n**Number of sites**: {n_sites}""".format(power = catch_power, n_sites=n_sites)
+        info += """##### Catchment:
+
+            \n\n**Likelihood of observing an improvement (power)**: {power}%\n\n**Number of sites**: {n_sites}\n\n""".format(power = catch_power, n_sites=n_sites)
 
     if (sites_powers_obj != '') and (sites_powers_obj is not None) and (sites_feature is not None):
         props = decode_obj(sites_powers_obj)
@@ -948,15 +950,21 @@ def update_map_info(sites_powers_obj, catch_power_obj, sites_feature, old_info, 
             if np.isnan(power):
                 power = 'NA'
 
-                info += """\n\n***Monitoring Site***:\n\n**nzsegment**: {seg}\n\n**Site name**: {site}\n\n**Likelihood of observing a reduction (power)**: {t_stat}""".format(t_stat=power, seg=feature_id, site=sites_feature['id'])
+                info += """##### Monitoring Site:
+
+                    \n\n**nzsegment**: {seg}\n\n**Site name**: {site}\n\n**Likelihood of observing an improvement (power)**: {t_stat}""".format(t_stat=power, seg=feature_id, site=sites_feature['id'])
             else:
                 power = int(power)
 
-                info += """\n\n***Monitoring Site***:\n\n**nzsegment**: {seg}\n\n**Site name**: {site}\n\n**Likelihood of observing a reduction (power)**: {t_stat}%""".format(t_stat=power, seg=feature_id, site=sites_feature['id'])
+                info += """##### Monitoring Site:
+
+                    \n\n**nzsegment**: {seg}\n\n**Site name**: {site}\n\n**Likelihood of observing an improvement (power)**: {t_stat}%""".format(t_stat=power, seg=feature_id, site=sites_feature['id'])
         else:
             power = 'NA'
 
-            info += """\n\n***Monitoring Site***:\n\n**nzsegment**: {seg}\n\n**Site name**: {site}\n\n**Likelihood of observing a reduction (power)**: {t_stat}""".format(t_stat=power, seg=feature_id, site=sites_feature['id'])
+            info += """##### Monitoring Site:
+
+                \n\n**nzsegment**: {seg}\n\n**Site name**: {site}\n\n**Likelihood of observing an improvement (power)**: {t_stat}""".format(t_stat=power, seg=feature_id, site=sites_feature['id'])
 
     if info == """""":
         info = old_info
