@@ -469,24 +469,24 @@ def layout():
                                     ),
                                     ],
                                     ),
-                                dmc.AccordionPanel([
-                                    dmc.Text('(3c) Download land cover reductions for all NZ (gpkg):'),
-                                    dcc.Loading(
-                                    type="default",
-                                    children=[
-                            dmc.Anchor(dmc.Button('Download land cover NZ-wide'), href=lc_url, id='lc_dl2')],
-                                    ),
-                                    ],
-                                    ),
-                                dmc.AccordionPanel([
-                                    dmc.Text('(3d) Download river reach reductions for all NZ (csv):'),
-                                    dcc.Loading(
-                                    type="default",
-                                    children=[
-                            dmc.Anchor(dmc.Button('Download reaches NZ-wide'), href=rivers_red_url, id='reach_dl2')],
-                                    ),
-                                    ],
-                                    )
+                            #     dmc.AccordionPanel([
+                            #         dmc.Text('(3c) Download land cover reductions for all NZ (gpkg):'),
+                            #         dcc.Loading(
+                            #         type="default",
+                            #         children=[
+                            # dmc.Anchor(dmc.Button('Download land cover NZ-wide'), href=lc_url, id='lc_dl2')],
+                            #         ),
+                            #         ],
+                            #         ),
+                            #     dmc.AccordionPanel([
+                            #         dmc.Text('(3d) Download river reach reductions for all NZ (csv):'),
+                            #         dcc.Loading(
+                            #         type="default",
+                            #         children=[
+                            # dmc.Anchor(dmc.Button('Download reaches NZ-wide'), href=rivers_red_url, id='reach_dl2')],
+                            #         ),
+                            #         ],
+                            #         )
                                 ],
                                 value='3'
                                 ),

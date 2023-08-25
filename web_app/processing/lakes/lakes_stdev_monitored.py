@@ -117,9 +117,15 @@ for i, data in grp1:
     r1 = seasonal.STL(s5, robust=False, seasonal=13).fit()
     r2 = pd.concat([r1.observed, r1.trend, r1.seasonal, r1.resid], axis=1)
     r2.index.name = 'date'
-    r2['site_id'] = i[0]
-    r2['parameter'] = i[1]
-    r3 = r2.reset_index().set_index(['parameter', 'site_id', 'date'])
+
+    # Put the observations back in and use a linear interp to get the others
+    r2b = pd.concat([np.log(d1).to_frame(), r2]).sort_index()
+    r2c = r2b.interpolate('time', limit_area='inside')
+    r2d = r2c[r2c.index.isin(d1.index)].dropna()
+
+    r2d['site_id'] = i[0]
+    r2d['parameter'] = i[1]
+    r3 = r2d.reset_index().set_index(['parameter', 'site_id', 'date'])
     combo0 = r3.trend + r3.resid
     combo0.name = 'deseasoned'
     raw_output_list.append(r3)
@@ -128,24 +134,24 @@ for i, data in grp1:
 all_results = pd.concat(raw_output_list)
 results = pd.concat(results_list)
 
-all_results.to_csv(utils.lakes_deseason_path)
+all_results.round(4).to_csv(utils.lakes_deseason_path)
 
 
 ## De-trend and calc stdev
 stdev_df = stdev_regress(results.reset_index(), date_col='date', data_col='deseasoned')
 
 ## Compare to non-deseasonalised results
-stdev0 = stdev_regress(all_results.reset_index(), date_col='date', data_col='observed').rename(columns={'stdev': 'stdev_base'})
+stdev0 = stdev_regress(all_results.reset_index(), date_col='date', data_col='observed').rename(columns={'stdev': 'stdev_raw'})
 
 combo0 = pd.merge(stdev_df, stdev0, on=['parameter', 'lawa_id'])
 
-combo0.to_csv(utils.lakes_deseason_comp_path, index=False)
+combo0.round(4).to_csv(utils.lakes_deseason_comp_path, index=False)
 
-combo0['ratio'] = combo0['stdev']/combo0['stdev_base']
+combo0['ratio'] = combo0['stdev']/combo0['stdev_raw']
 
 combo1 = combo0.groupby('parameter')['ratio'].mean()
 
-# The mean ratio for all parameters is 0.84. It varies little between parameters.
+# The mean ratio for all parameters is 0.65. It varies little between parameters.
 
 ## Add in the LFENZIDs
 wq_data = pd.read_csv(utils.lakes_data_path)
