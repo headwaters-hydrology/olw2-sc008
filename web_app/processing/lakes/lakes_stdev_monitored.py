@@ -120,8 +120,10 @@ for i, data in grp1:
 
     # Put the observations back in and use a linear interp to get the others
     r2b = pd.concat([np.log(d1).to_frame(), r2]).sort_index()
-    r2c = r2b.interpolate('time', limit_area='inside')
-    r2d = r2c[r2c.index.isin(d1.index)].dropna()
+    r2b = r2b[~r2b.index.duplicated(keep='last')].copy()
+    r2b[['trend', 'season']] = r2b[['trend', 'season']].interpolate('time', limit_area='inside')
+    r2b['resid'] = r2b['observed'] - r2b['trend'] - r2b['season']
+    r2d = r2b.loc[d1.index, :].dropna()
 
     r2d['site_id'] = i[0]
     r2d['parameter'] = i[1]
@@ -151,7 +153,7 @@ combo0['ratio'] = combo0['stdev']/combo0['stdev_raw']
 
 combo1 = combo0.groupby('parameter')['ratio'].mean()
 
-# The mean ratio for all parameters is 0.65. It varies little between parameters.
+# The mean ratio for all parameters is 0.85. It varies little between parameters.
 
 ## Add in the LFENZIDs
 wq_data = pd.read_csv(utils.lakes_data_path)
