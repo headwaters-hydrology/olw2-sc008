@@ -68,6 +68,9 @@ indicator_dict = {
 ### RC boundaries
 rc_bounds_gbuf = assets_path.joinpath('rc_bounds.pbf')
 
+### Marae locations
+marae_gpkg = base_path.joinpath('marae.gpkg')
+
 ### Land use/cover
 lc_base_path = base_path.joinpath('land_use')
 lc_base_path.mkdir(parents=True, exist_ok=True)
@@ -143,6 +146,7 @@ river_reach_gbuf_path = assets_path.joinpath('rivers_reaches.blt')
 river_catch_path = assets_path.joinpath('rivers_catchments_minor.blt')
 river_catch_major_path = assets_path.joinpath('rivers_catchments_major.blt')
 river_catch_name_path = assets_path.joinpath('rivers_catchments_names.blt')
+river_marae_path = assets_path.joinpath('rivers_catchments_marae.blt')
 
 river_sims_path = output_path.joinpath('rivers_sims')
 river_sims_path.mkdir(parents=True, exist_ok=True)

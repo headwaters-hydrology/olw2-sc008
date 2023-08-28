@@ -66,6 +66,7 @@ Source = "https://github.com/unknown/olw2-sc008"
 python = "3.9"
 dependencies = [
   "spyder-kernels==2.4",
+  "matplotlib",
   "coverage[toml]>=6.5",
   "pytest",
 ]
