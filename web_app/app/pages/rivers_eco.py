@@ -310,44 +310,44 @@ def cartesian(arrays, out=None):
     return out
 
 
-def parse_gis_file(contents, filename):
-    """
+# def parse_gis_file(contents, filename):
+#     """
 
-    """
-    try:
-        content_type, content_string = contents.split(',')
-        decoded = base64.b64decode(content_string)
-        plan1 = gpd.read_file(io.BytesIO(decoded))
+#     """
+#     try:
+#         content_type, content_string = contents.split(',')
+#         decoded = base64.b64decode(content_string)
+#         plan1 = gpd.read_file(io.BytesIO(decoded))
 
-        output = encode_obj(plan1)
-    except:
-        output = ['Wrong file type. It must be a GeoPackage (gpkg).']
+#         output = encode_obj(plan1)
+#     except:
+#         output = ['Wrong file type. It must be a GeoPackage (gpkg).']
 
-    return output
-
-
-def check_reductions_input(new_reductions, base_reductions):
-    """
-
-    """
-    base_typos = base_reductions.typology.unique()
-    try:
-        missing_typos = np.in1d(new_reductions.typology.unique(), base_typos).all()
-    except:
-        missing_typos = False
-
-    return missing_typos
+#     return output
 
 
-def diff_reductions(new_reductions, base_reductions, reduction_cols):
-    """
+# def check_reductions_input(new_reductions, base_reductions):
+#     """
 
-    """
-    new_reductions1 = new_reductions.set_index('typology').sort_index()[reduction_cols]
-    base_reductions1 = base_reductions.set_index('typology').sort_index()[reduction_cols]
-    temp1 = new_reductions1.compare(base_reductions1, align_axis=0)
+#     """
+#     base_typos = base_reductions.typology.unique()
+#     try:
+#         missing_typos = np.in1d(new_reductions.typology.unique(), base_typos).all()
+#     except:
+#         missing_typos = False
 
-    return list(temp1.columns)
+#     return missing_typos
+
+
+# def diff_reductions(new_reductions, base_reductions, reduction_cols):
+#     """
+
+#     """
+#     new_reductions1 = new_reductions.set_index('typology').sort_index()[reduction_cols]
+#     base_reductions1 = base_reductions.set_index('typology').sort_index()[reduction_cols]
+#     temp1 = new_reductions1.compare(base_reductions1, align_axis=0)
+
+#     return list(temp1.columns)
 
 
 # def calc_eco_reach_reductions(catch_id, new_reductions, base_reductions):

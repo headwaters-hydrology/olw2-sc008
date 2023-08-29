@@ -41,13 +41,13 @@ def rivers_marae_processing():
     ## Organise by catchment
     catches0 = booklet.open(utils.river_catch_major_path)
 
-    with booklet.open(utils.river_marae_path, 'n', key_serializer='uint4', value_serializer='orjson', n_buckets=1607) as f:
+    with booklet.open(utils.river_marae_path, 'n', key_serializer='uint4', value_serializer='zstd', n_buckets=1607) as f:
         for k, v in catches0.items():
             marae2 = marae1[marae1.within(v)]
             marae3 = orjson.loads(marae2.to_json())
-            # gbuf = geobuf.encode(marae3)
-            # f[k] = gbuf
-            f[k] = marae3
+            gbuf = geobuf.encode(marae3)
+            f[k] = gbuf
+            # f[k] = marae3
 
     catches0.close()
 

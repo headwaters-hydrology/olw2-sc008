@@ -104,6 +104,13 @@ def create_sidebar_children(pages):
         dmc.Group(
             children=[
                 create_nav_link(
+                    label=pages["pages.rivers_wq_site"]['title'], href=pages["pages.rivers_wq_site"]["path"]
+                    )
+                ], style={"marginBottom": 10}
+            ),
+        dmc.Group(
+            children=[
+                create_nav_link(
                     label=pages["pages.rivers_eco"]['title'], href=pages["pages.rivers_eco"]["path"]
                     )
                 ], style={"marginBottom": 10}
@@ -253,8 +260,8 @@ def updated_title(path):
         raise dash.exceptions.PreventUpdate
 
 
-# if __name__ == '__main__':
-#     app.run_server(host='0.0.0.0', port=80)
-
 if __name__ == '__main__':
-    app.run_server(debug=True, host='0.0.0.0', port=8000)
+    app.run_server(host='0.0.0.0', port=80)
+
+# if __name__ == '__main__':
+#     app.run_server(debug=True, host='0.0.0.0', port=8000)
