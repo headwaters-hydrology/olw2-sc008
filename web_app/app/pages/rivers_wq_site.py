@@ -44,9 +44,9 @@ import hdf5tools
 dash.register_page(
     __name__,
     path='/rivers-wq-site',
-    title='Water Quality by Site',
+    title='Water Quality Sites Only',
     name='rivers_wq_site',
-    description='Rivers Water Quality by Site'
+    description='Rivers Water Quality Sites Only'
 )
 
 ### Paths
