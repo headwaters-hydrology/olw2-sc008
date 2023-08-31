@@ -47,6 +47,15 @@ window.dashExtensions = Object.assign({}, window.dashExtensions, {
 
             return L.circleMarker(latlng, circleOptions);
         },
+        rivers_marae_handle: function(feature, latlng) {
+            const flag = L.icon({
+                iconUrl: '/assets/nzta-marae.svg',
+                iconSize: [20, 30]
+            });
+            return L.marker(latlng, {
+                icon: flag
+            });
+        },
         gw_rc_style_handle: function style(feature) {
             return {
                 fillColor: 'grey',

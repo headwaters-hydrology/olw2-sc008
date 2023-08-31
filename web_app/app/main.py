@@ -158,7 +158,7 @@ def create_sidebar_children(pages):
 
 sidebar = dmc.Navbar(
     fixed=True,
-    width={"base": 180},
+    width={"base": 185},
     position={"top": 80},
     px=10,
     # height=300,
