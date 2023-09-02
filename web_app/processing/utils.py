@@ -258,12 +258,15 @@ eco_power_model_path = assets_path.joinpath('eco_reaches_power_modelled.h5')
 ## Source data processing
 lakes_source_path = base_path.joinpath('lakes')
 
+lakes_raw_moni_data_csv_path = lakes_source_path.joinpath('lakewqmonitoringdataandstatetrendresults_sept2021.csv')
+
 lakes_source_data_path = lakes_source_path.joinpath('lakes_source_data.csv')
 lakes_deseason_path = lakes_source_path.joinpath('lakes_deseason_data.csv')
 lakes_deseason_comp_path = lakes_source_path.joinpath('lakes_deseason_comparison.csv')
 lakes_trend_comp_path = lakes_source_path.joinpath('lakes_trend_deseason_comparison.csv')
 lakes_interp_test_results_path = lakes_source_path.joinpath('lakes_interp_test_results.csv')
 lakes_interp_test_summ_path = lakes_source_path.joinpath('lakes_interp_test_summary.csv')
+lakes_dtl_ratios_path = lakes_source_path.joinpath('lakes_dtl_ratios.csv')
 
 lakes_fenz_catch_path = base_path.joinpath('lakes_catchments_fenz.gpkg')
 lakes_fenz_poly_path = base_path.joinpath('lakes_polygons_fenz.gpkg')
@@ -932,6 +935,65 @@ def discrete_resample(df, freq_code, agg_fun, remove_inter=False, **kwargs):
 
     return s6
 
+
+def dtl_correction(data, dtl_method='trend'):
+    """
+    The method to use to convert values below a detection limit to numeric. Used for water quality results. Options are 'half' or 'trend'. 'half' simply halves the detection limit value, while 'trend' uses half the highest detection limit across the results when more than 40% of the values are below the detection limit. Otherwise it uses half the detection limit.
+    """
+    new_data_list = []
+    append = new_data_list.append
+    for i, df in data.groupby(['site_id', 'parameter']):
+        if df.censor_code.isin(['greater_than', 'less_than']).any():
+            greater1 = df.censor_code == 'greater_than'
+            df.loc[greater1, 'value'] = df.loc[greater1, 'value'] * 1.5
+
+            less1 = df.censor_code == 'less_than'
+            if less1.sum() > 0:
+                df.loc[less1, 'value'] = df.loc[less1, 'value'] * 0.5
+                if dtl_method == 'trend':
+                    df1 = df.loc[less1]
+                    count1 = len(df)
+                    count_dtl = len(df1)
+                    # count_dtl_val = df1['value'].nunique()
+                    dtl_ratio = np.round(count_dtl / float(count1), 2)
+                    if dtl_ratio >= 0.4:
+                        dtl_val = df1['value'].max()
+                        df.loc[(df['value'] < dtl_val) | less1, 'value'] = dtl_val
+
+        append(df)
+
+    new_data = pd.concat(new_data_list)
+
+    return new_data
+
+
+        #     greater1 = data_df['Value'].str.contains('>')
+        #     if greater1.sum() > 0:
+        #         greater1.loc[greater1.isnull()] = False
+        #         data_df = data_df.copy()
+        #         data_df.loc[greater1, 'Value'] = pd.to_numeric(data_df.loc[greater1, 'Value'].str.replace('>', ''), errors='coerce') * 2
+        #     data_df['Value'] = pd.to_numeric(data_df['Value'], errors='ignore')
+
+        # if data_df['Value'].dtype == 'object':
+        #     less1 = data_df['Value'].str.contains('<')
+        #     if less1.sum() > 0:
+        #         less1.loc[less1.isnull()] = False
+        #         data_df = data_df.copy()
+        #         data_df.loc[less1, 'Value'] = pd.to_numeric(data_df.loc[less1, 'Value'].str.replace('<', ''), errors='coerce') * 0.5
+        #     data_df['Value'] = pd.to_numeric(data_df['Value'], errors='coerce')
+        #     if (dtl_method == 'trend') and (less1.sum() > 0):
+        #         df1 = data_df.loc[less1]
+        #         count1 = len(data_df)
+        #         count_dtl = len(df1)
+        #         count_dtl_val = df1['Value'].nunique()
+        #         dtl_ratio = np.round(count_dtl / float(count1), 2)
+
+        #         if dtl_ratio > 0.7:
+        #             print('More than 70% of the values are less than the detection limit! Be careful...')
+
+        #         if (dtl_ratio >= 0.4) or (count_dtl_val != 1):
+        #             dtl_val = df1['Value'].max()
+        #             data_df.loc[(data_df['Value'] < dtl_val) | less1, 'Value'] = dtl_val
 
 # import matplotlib.pyplot as plt
 # count, bins, ignored = plt.hist(s, 100, density=True, align='mid')

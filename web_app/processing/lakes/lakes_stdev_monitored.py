@@ -41,6 +41,16 @@ def reg_transform(x, y, slope, intercept):
     return y_new
 
 
+def est_median_freq(data):
+    """
+
+    """
+    d2 = data['date'].shift(1) - data['date']
+    m_days = -d2.dt.days.median()
+
+    return m_days
+
+
 def regress(results, data_col, date_col='date'):
     """
 
@@ -211,6 +221,7 @@ def test_deseason_resampling(data):
 ##############################################################
 ### Process data
 
+## monitoring data from individual files
 data_list = []
 for param in params:
     dir_name = base_dir_name.format(param=param)
@@ -223,7 +234,37 @@ for param in params:
         data_list.append(data)
 
 data0 = pd.concat(data_list).set_index(['site_id', 'parameter', 'date']).sort_index()
-data0.to_csv(utils.lakes_source_data_path)
+# data0.to_csv(utils.lakes_source_data_path)
+
+## monitoring data from large spreadsheet
+moni0 = pd.read_csv(utils.lakes_raw_moni_data_csv_path, usecols=['LawaSiteID', 'SiteID', 'LFENZID', 'Latitude', 'Longitude', 'Indicator', 'SampleDate', 'Symbol', 'CensoredValue']).rename(columns={'LawaSiteID': 'lawa_id', 'SiteID': 'site_id', 'Latitude': 'lat', 'Longitude': 'lon', 'Indicator': 'parameter', 'SampleDate': 'date', 'CensoredValue': 'value', 'Symbol': 'censor_code'})
+moni1 = moni0.dropna(subset=['LFENZID', 'date', 'lat', 'lon', 'value']).copy()
+moni1 = moni1[(moni1.LFENZID > 0) & (~moni1.parameter.isin(['pH']))].copy()
+moni1['LFENZID'] = moni1['LFENZID'].astype('int32')
+moni1['date'] = pd.to_datetime(moni1['date'], infer_datetime_format=True)
+moni1.loc[moni1.censor_code == 'Right', 'censor_code'] = 'greater_than'
+moni1.loc[moni1.censor_code == 'Left', 'censor_code'] = 'less_than'
+moni1.loc[~moni1.censor_code.isin(['greater_than', 'less_than']), 'censor_code'] = 'not_censored'
+
+site_data0 = moni1[['lawa_id', 'site_id', 'LFENZID', 'lat', 'lon']].drop_duplicates(subset=['LFENZID']).copy()
+
+moni2 = moni1.drop(['lawa_id', 'LFENZID', 'lat', 'lon'], axis=1).copy()
+
+## Stats on site above/below dtl
+dtl_list = []
+for i, df in moni2.groupby(['site_id', 'parameter']):
+    dtl_bool = df.censor_code.isin(['greater_than', 'less_than'])
+    if dtl_bool.any():
+        ratio = round(dtl_bool.sum()/len(dtl_bool), 3)
+        dtl_list.append([i[0], i[1], ratio])
+
+dtl_df0 = pd.DataFrame(dtl_list, columns=['site_id', 'parameter', 'dtl_ratio'])
+dtl_df0.to_csv(utils.lakes_dtl_ratios_path, index=False)
+
+
+moni3 = utils.dtl_correction(moni2, 'half')
+
+## Filter data
 
 ## Deseasonalize the data - test removing overall trend before/after deseason
 data0a = np.log(data0.observed[data0.observed != 0]) # log transformed
