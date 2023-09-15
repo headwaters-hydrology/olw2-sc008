@@ -260,7 +260,8 @@ lakes_source_path = base_path.joinpath('lakes')
 
 lakes_raw_moni_data_csv_path = lakes_source_path.joinpath('lakewqmonitoringdataandstatetrendresults_sept2021.csv')
 
-lakes_source_data_path = lakes_source_path.joinpath('lakes_source_data.csv')
+lakes_source_data_path = lakes_source_path.joinpath('lakes_cleaned_source_data.csv')
+lakes_filtered_data_path = lakes_source_path.joinpath('lakes_cleaned_filtered_data.csv')
 lakes_deseason_path = lakes_source_path.joinpath('lakes_deseason_data.csv')
 lakes_deseason_comp_path = lakes_source_path.joinpath('lakes_deseason_comparison.csv')
 lakes_trend_comp_path = lakes_source_path.joinpath('lakes_trend_deseason_comparison.csv')
@@ -308,8 +309,13 @@ lakes_rupesh_stdev_path = base_path.joinpath('lakes_stdev_v04.csv')
 lakes_data_path = base_path.joinpath('lakes_wq_data.csv')
 # lakes_data_clean_path = base_path.joinpath('lakes_wq_data_clean.feather')
 lakes_class_csv = base_path.joinpath('fenz_lakes_classification.csv')
-lakes_stdev_model_path = output_path.joinpath('lakes_stdev_modelled_v05.h5')
-lakes_stdev_moni_path = output_path.joinpath('lakes_stdev_monitored_v05.csv')
+lakes_stdev_model_path = output_path.joinpath('lakes_stdev_modelled_v06.h5')
+lakes_stdev_moni_path = output_path.joinpath('lakes_stdev_monitored_v06.csv')
+lakes_stdev_model_summ_path = lakes_source_path.joinpath('lakes_stdev_modelled_summary.csv')
+lakes_stdev_model_importances_path = lakes_source_path.joinpath('lakes_stdev_modelled_importances.csv')
+lakes_stdev_model_input_path = lakes_source_path.joinpath('lakes_FENZ_model_input.csv')
+lakes_stdev_model_input_sites_path = lakes_source_path.joinpath('lakes_FENZ_model_input_at_sites.csv')
+lakes_conc_moni_path = lakes_source_path.joinpath('lakes_conc_monitored.csv')
 
 lakes_missing_3rd_path = output_path.joinpath('lakes_stdev_missing.gpkg')
 
@@ -486,6 +492,52 @@ def power_test(x, Y, min_p_value=0.05):
 
 
 def power_sims_rivers(error, n_years, n_samples_year, n_sims, output_path):
+    """
+    Power simulation function.
+    Given an error (float), a number of sampling years (list of int), a number of samples per year (list of int), and the conc percentages (list of int), run n simulations (int) on all possible combinations.
+    """
+    print(error)
+
+    conc_perc = np.arange(1, 101, 1, dtype='int8')
+
+    n_samples = np.prod(hdf5tools.utils.cartesian([n_samples_year, n_years]), axis=1)
+    n_samples = list(set(n_samples))
+    n_samples.sort()
+
+    filler = np.empty((1, len(n_samples), len(conc_perc)), dtype='int8')
+
+    rng = np.random.default_rng()
+
+    for ni, n in enumerate(n_samples):
+        # print(n)
+
+        for pi, perc in enumerate(conc_perc):
+            red1 = np.log(np.interp(np.arange(n), [0, n-1], [1, perc*0.01]))
+
+            rand_shape = (n_sims, n)
+            red2 = np.tile(red1, n_sims).reshape(rand_shape)
+            r2 = rng.normal(0, error, rand_shape)
+
+            p2 = power_test(np.arange(n), red2 + r2, min_p_value=0.05)
+
+            filler[0][ni][pi] = p2
+
+    error1 = int(error*1000)
+
+    props = xr.Dataset(data_vars={'power': (('error', 'n_samples', 'conc_perc'), filler)
+                                  },
+                       coords={'error': np.array([error1], dtype='int16'),
+                               'n_samples': np.array(n_samples, dtype='int16'),
+                               'conc_perc': conc_perc}
+                       )
+
+    output = os.path.join(output_path, str(error1) + '.h5')
+    hdf5tools.xr_to_hdf5(props, output)
+
+    return output
+
+
+def power_sims_lakes(error, n_years, n_samples_year, n_sims, output_path):
     """
     Power simulation function.
     Given an error (float), a number of sampling years (list of int), a number of samples per year (list of int), and the conc percentages (list of int), run n simulations (int) on all possible combinations.
@@ -942,7 +994,7 @@ def dtl_correction(data, dtl_method='trend'):
     """
     new_data_list = []
     append = new_data_list.append
-    for i, df in data.groupby(['site_id', 'parameter']):
+    for i, df in data.groupby(['lawa_id', 'parameter']):
         if df.censor_code.isin(['greater_than', 'less_than']).any():
             greater1 = df.censor_code == 'greater_than'
             df.loc[greater1, 'value'] = df.loc[greater1, 'value'] * 1.5

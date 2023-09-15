@@ -33,9 +33,13 @@ pd.options.display.max_columns = 10
 encodings = {'power': {'scale_factor': 1, '_FillValue': -99, 'dtype': 'int8'},
              }
 
-start = 0.02
-end = 1.4
-step = 0.03
+# start = 0.02
+# end = 1.4
+# step = 0.03
+
+start = 0.1
+end = 1.7
+step = 0.04
 
 
 def lakes_power_monitored_processing():
@@ -48,9 +52,9 @@ def lakes_power_monitored_processing():
     lakes0 = pd.read_csv(utils.lakes_stdev_moni_path)
     lakes0 = lakes0.groupby(['indicator', 'LFENZID'])['stdev'].mean().reset_index()
 
-    lakes_poly = gpd.read_feather(utils.lakes_poly_path)
-
-    lakes1 = lakes0[lakes0.LFENZID.isin(lakes_poly.LFENZID.values)].copy()
+    # lakes_poly = gpd.read_feather(utils.lakes_poly_path)
+    # lakes1 = lakes0[lakes0.LFENZID.isin(lakes_poly.LFENZID.values)].copy()
+    lakes1 = lakes0
 
     ## Combine with sims
     lake_sims = xr.open_dataset(utils.lakes_sims_h5_path, engine='h5netcdf')
@@ -94,12 +98,11 @@ def lakes_power_modelled_processing():
     list1 = utils.log_error_cats(start, end, step)
 
     lakes0 = xr.open_dataset(utils.lakes_stdev_model_path, engine='h5netcdf')
-    # lakes1 = lakes0.sel(model='BoostingRegressor', drop=True)
-    lakes1 = lakes0.sel(model='RandomForestRegressor', drop=True)
+    lakes1 = lakes0.sel(model='BoostingRegressor', drop=True)
+    # lakes1 = lakes0.sel(model='RandomForestRegressor', drop=True)
 
-    lakes_poly = gpd.read_feather(utils.lakes_poly_path)
-
-    lakes1 = lakes1.where(lakes1.LFENZID.isin(lakes_poly.LFENZID.values), drop=True)
+    # lakes_poly = gpd.read_feather(utils.lakes_poly_path)
+    # lakes1 = lakes1.where(lakes1.LFENZID.isin(lakes_poly.LFENZID.values), drop=True)
 
     ## Combine with sims
     lake_sims = xr.open_dataset(utils.lakes_sims_h5_path, engine='h5netcdf')

@@ -6,6 +6,7 @@ Created on Wed Dec 21 16:17:00 2022
 @author: mike
 """
 import os
+import pathlib
 from gistools import vector, rec
 import geopandas as gpd
 import pandas as pd
@@ -42,12 +43,13 @@ pd.options.display.max_columns = 10
 
 # start = 0.069
 # end = 4.299
-start = 0.02
-end = 1.4
+start = 0.1
+end = 1.7
 
-errors = utils.log_error_cats(start, end, 0.03)
+errors = utils.log_error_cats(start, end, 0.04)
 
-n_samples_year = utils.n_samples_year
+# n_samples_year = utils.n_samples_year
+n_samples_year = [4, 6, 12, 26, 52, 104, 364]
 n_years = utils.n_years
 n_sims = 10000
 
@@ -56,7 +58,7 @@ if __name__ == '__main__':
     with concurrent.futures.ProcessPoolExecutor(max_workers=7, mp_context=mp.get_context("spawn")) as executor:
         futures = []
         for error in errors[:-1]:
-            f = executor.submit(utils.power_sims, error, n_years, n_samples_year, n_sims, utils.lakes_sims_path)
+            f = executor.submit(utils.power_sims_lakes, error, n_years, n_samples_year, n_sims, utils.lakes_sims_path)
             futures.append(f)
         runs = concurrent.futures.wait(futures)
 
@@ -72,11 +74,17 @@ if __name__ == '__main__':
 
 
 
+# base_path = pathlib.Path('/home/mike/data/OLW/web_app/output/lakes_sims')
 
+# paths = []
+# for path in base_path.iterdir():
+#     try:
+#         _ = int(path.stem)
+#         paths.append(path)
+#     except:
+#         pass
 
-
-
-
+# paths.sort()
 
 
 
