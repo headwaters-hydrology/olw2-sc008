@@ -25,11 +25,11 @@ lakes_sims_h5_path = '/home/mike/data/OLW/web_app/output/lakes_sims/lakes_sims.h
 lakes_nps_path = '/home/mike/data/OLW/web_app/lakes/lakes_monitored_perc_reductions_required.csv'
 lakes_stdev_moni_path = '/home/mike/data/OLW/web_app/output/lakes_stdev_monitored_v06.csv'
 
-output_csv = 'power_calcs_at_monitored_lakes_for_bottom_line_v02.csv'
-output2_csv = 'n_samples_at_monitored_lakes_for_bottom_line_gte_80_power_v02.csv'
+output_csv = 'power_calcs_at_monitored_lakes_for_bottom_line_v03.csv'
+output2_csv = 'n_samples_at_monitored_lakes_for_bottom_line_gte_80_power_v03.csv'
 
 n_years = [5, 20]
-n_samples_year = [6]
+n_samples_year = [6, 12, 26, 52, 104, 364]
 
 n_samples0 = hdf5tools.utils.cartesian([n_years, n_samples_year])
 n_samples = np.prod(n_samples0, axis=1)
