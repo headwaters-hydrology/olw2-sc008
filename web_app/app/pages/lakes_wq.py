@@ -105,7 +105,7 @@ reach_style = {'weight': 2, 'opacity': 0.75, 'color': 'grey'}
 
 # lakes_indicator_dict = {'CHLA': 'Chlorophyll a', 'CYANOTOT': 'Total Cyanobacteria', 'ECOLI': 'E.coli', 'NH4N': 'Ammoniacal nitrogen', 'Secchi': 'Secchi Depth', 'TN': 'Total nitrogen', 'TP': 'Total phosphorus'}
 
-lakes_indicator_dict = {'Chla': 'Chlorophyll a', 'Secchi': 'Secchi Depth', 'TN': 'Total nitrogen', 'TP': 'Total phosphorus'}
+lakes_indicator_dict = {'CHLA': 'Chlorophyll a', 'Secchi': 'Secchi Depth', 'TN': 'Total nitrogen', 'TP': 'Total phosphorus'}
 
 lakes_reduction_cols = list(lakes_indicator_dict.values())
 
