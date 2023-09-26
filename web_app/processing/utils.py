@@ -327,7 +327,7 @@ gw_monitoring_data_path = base_path.joinpath('gw_monitoring_data_v04.nc')
 
 ## Spatial data
 # gw_points_gbuf_path = assets_path.joinpath('gw_points.pbf')
-gw_points_path = output_path.joinpath('gw_points.feather')
+gw_points_path = output_path.joinpath('gw_points.gpkg')
 gw_points_rc_blt = assets_path.joinpath('gw_points_rc.blt')
 
 ## Power calcs

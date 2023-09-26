@@ -30,6 +30,7 @@ import geobuf
 import pathlib
 import hdf5plugin
 import booklet
+from dash_iconify import DashIconify
 
 # from .app import app
 
@@ -410,7 +411,28 @@ def layout():
                                 dmc.AccordionPanel([
                                     dmc.Text('(3a) Select Indicator:'),
                                     dcc.Dropdown(options=indicators, id='indicator_gw', optionHeight=40, clearable=False),
-                                    dmc.Text('(3b) Select sampling length (years):', style={'margin-top': 20}),
+                                    dmc.Group(
+                                        [dmc.Text('(3b) Select sampling length (years):', color="black"),
+                                        dmc.HoverCard(
+                                            withArrow=True,
+                                            width=300,
+                                            shadow="md",
+                                            children=[
+                                                dmc.HoverCardTarget(DashIconify(icon="material-symbols:help", width=30)),
+                                                dmc.HoverCardDropdown(
+                                                    dmc.Text(
+                                                        """
+                                                        The power results for groundwater only apply after the groundwater lag times of the upgradient mitigation actions. Any mitigation actions performed upgradient of the wells will take time to reach the wells. Click on a well to see the estimated mean residence time.
+                                                        """,
+                                                        size="sm",
+                                                    )
+                                                ),
+                                            ],
+                                        ),
+                                        ],
+                                        style={'margin-top': 20}
+                                    ),
+                                    # dmc.Text('(3b) Select sampling length (years):', style={'margin-top': 20}),
                                     dmc.SegmentedControl(data=[{'label': d, 'value': str(d)} for d in time_periods],
                                                          id='time_period_gw',
                                                          value='5',
@@ -485,129 +507,6 @@ def layout():
 
     return layout
 
-
-# def layout():
-#     layout = html.Div(children=[
-#         # html.Div([html.H2('Groundwater Quality')]),
-#         html.Div([
-#             html.H3('(1) Reductions'),
-
-#             html.Label('Select a Regional Council on the map:'),
-#             dcc.Dropdown(options=[{'label': d, 'value': d} for d in rcs], id='rc_id', optionHeight=40, clearable=False, style={'margin-bottom': 20}),
-
-#             # dcc.Upload(
-#             #     id='upload_data_gw',
-#             #     children=html.Button('Upload reductions polygons gpkg'),
-#             #     style={
-#             #         'width': '100%',
-#             #         'height': '60px',
-#             #         'textAlign': 'center',
-#             #         'margin-top': 40
-#             #     },
-#             #     multiple=False
-#             # ),
-#             # dcc.Markdown('''##### **Or**''', style={
-#             #     'textAlign': 'center',
-#             #                 }),
-#             # html.Button('Use land cover for reductions', id='demo_data_gw',
-#             #             style={
-#             #                 'width': '100%',
-#             #                 'height': '50%',
-#             #                 'textAlign': 'center',
-#             #                 'margin-top': 20
-#             #             }),
-
-#             html.Label('Select a reduction %:'),
-#             dcc.Dropdown(options=reductions_options, id='gw_reductions', optionHeight=40, clearable=False),
-
-#         #     html.Label('Select a reductions column in the GIS file:', style={'margin-top': 20}),
-#         #     dcc.Dropdown(options=[], id='col_name_gw', optionHeight=40, clearable=False),
-#         #     dcc.Loading(
-#         #     id="loading-2",
-#         #     type="default",
-#         #     children=html.Div([html.Button('Process reductions', id='process_gw', n_clicks=0),
-#         #                        html.Div(id='process_text_gw')],
-#         #                       style={'margin-top': 20, 'margin-bottom': 100}
-#         #                       )
-#         # ),
-
-#             # html.Label('Select Indicator:'),
-#             # dcc.Dropdown(options=[{'label': d, 'value': d} for d in indicators], id='indicator', optionHeight=40, clearable=False, value='NH4'),
-#             # html.Label('Select expected percent improvement:'),
-#             # dcc.Dropdown(options=[{'label': d, 'value': d} for d in percent_changes], id='percent_change', clearable=False, value=10),
-
-#             # dcc.Link(html.Img(src=str(app_base_path.joinpath('our-land-and-water-logo.svg'))), href='https://ourlandandwater.nz/')
-#             ], className='two columns', style={'margin': 10}),
-
-#     html.Div([
-#         html.H3('(2) Sampling options'),
-#         html.Label('Select Indicator:'),
-#         dcc.Dropdown(options=indicators, id='gw_indicator', optionHeight=40, clearable=False, value='Nitrate'),
-#         html.Label('Select sampling lehtml.Label('(3d) Change the percent of the reductions applied (100% is the max realistic reduction):', style={'margin-top': 20}),
-                                    # dmc.Slider(id='reductions_slider_gw',
-                                    #            value=100,
-                                    #            mb=35,
-                                    #            step=10,
-                                    #            # min=10,
-                                    #            showLabelOnHover=True,
-                                    #            disabled=False,
-                                    #            marks=[{'label': str(d) + '%', 'value': d} for d in range(0, 101, 20)]
-                                    #            ),ngth (years):', style={'margin-top': 20}),
-#         dcc.Dropdown(options=[{'label': d, 'value': d} for d in time_periods], id='gw_time_period', clearable=False, value=5),
-#         html.Label('Select sampling frequency:'),
-#         dcc.Dropdown(options=[{'label': v, 'value': k} for k, v in freq_mapping.items()], id='gw_freq', clearable=False, value=12, style={'margin-bottom': 460}),
-
-#         # html.H4(children='Map Layers', style={'margin-top': 20}),
-#         # dcc.Checklist(
-#         #        options=[
-#         #            {'label': 'Reductions polygons', 'value': 'reductions_poly'},
-#         #             # {'label': 'Lake polygon', 'value': 'gw_poly'},
-#         #            {'label': 'River reaches', 'value': 'reach_map'}
-#         #        ],
-#         #        value=['reductions_poly', 'reach_map'],
-#         #        id='map_checkboxes_gw',
-#         #        style={'padding': 5, 'margin-bottom': 330}
-#         #     ),
-#         # dcc.Link(html.Img(src=str(app_base_path.joinpath('our-land-and-water-logo.svg'))), href='https://ourlandandwater.nz/')
-#         ], className='two columns', style={'margin': 10}),
-
-#     html.Div([
-#         dl.Map(center=center, zoom=7, children=[
-#             dl.TileLayer(id='gw_tile_layer', attribution=attribution),
-#             dl.GeoJSON(url=str(rc_bounds_gbuf), format="geobuf", id='rc_map', zoomToBoundsOnClick=True, zoomToBounds=True, options=dict(style=rc_style_handle),  hideout={}),
-#             dl.GeoJSON(data='', format="geobuf", id='gw_points', zoomToBounds=True, zoomToBoundsOnClick=True, cluster=False, options=dict(pointToLayer=gw_points_style_handle), hideout=gw_points_hideout),
-#             # dl.GeoJSON(data='', format="geobuf", id='catch_map_gw', zoomToBoundsOnClick=True, options=dict(style=catch_style)),
-#             # dl.GeoJSON(url='', format="geobuf", id='base_reach_map', options=dict(style=base_reaches_style_handle)),
-#             # dl.GeoJSON(data='', format="geobuf", id='reach_map_gw', options=dict(style=reach_style), hideout={}),
-#             # dl.GeoJSON(data='', format="geobuf", id='gw_poly', options=dict(style=gw_style_handle), hideout={'classes': [''], 'colorscale': ['#808080'], 'style': gw_style, 'colorProp': 'ref'}),
-#             # dl.GeoJSON(data='', format="geobuf", id='reductions_poly_gw'),
-#             colorbar,
-#             info
-#                             ], style={'width': '100%', 'height': 700, 'margin': "auto", "display": "block"})
-#     ], className='five columns', style={'margin': 10}),
-
-#     # html.Div([
-#     #     dcc.Loading(
-#     #             id="loading-tabs",
-#     #             type="default",
-#     #             children=[dcc.Tabs(id='plot_tabs', value='info_tab', style=tabs_styles, children=[
-#     #                         dcc.Tab(label='Info', value='info_tab', style=tab_style, selected_style=tab_selected_style),
-#     #                         # dcc.Tab(label='Habitat Suitability', value='hs_tab', style=tab_style, selected_style=tab_selected_style),
-#     #                         ]
-#     #                     ),
-#     #                 html.Div(id='plots')
-#     #                 ]
-#     #             ),
-
-#     # ], className='three columns', style={'margin': 10}),
-
-#     dcc.Store(id='gw_props_obj', data=None),
-#     dcc.Store(id='gw_points_ids', data=None),
-#     # dcc.Store(id='reaches_obj_gw', data=''),
-#     # dcc.Store(id='reductions_obj_gw', data=''),
-# ], style={'margin':0})
-
-#     return layout
 
 ###############################################
 ### Callbacks
@@ -721,7 +620,7 @@ def update_map_info_gw(powers_obj, reductions, feature, gw_points_encode):
 
     """
     info = """"""
-    info_str = """\n\n**Reduction**: {red}%\n\n**Likelihood of observing a reduction (power)**: {t_stat}%\n\n**Well Depth (m)**: {depth:.1f}"""
+    # info_str = """\n\n**Reduction**: {red}%\n\n**Likelihood of observing a reduction (power)**: {t_stat}%\n\n**Well Depth (m)**: {depth:.1f}\n\n**mean residence time (years)**: {lag}"""
 
     # if (reductions_obj != '') and (reductions_obj is not None) and ('reductions_poly' in map_checkboxes):
     #     info = info + """\n\nHover over the polygons to see reduction %"""
@@ -733,12 +632,20 @@ def update_map_info_gw(powers_obj, reductions, feature, gw_points_encode):
             if feature['id'] in gw_refs:
                 props = decode_obj(powers_obj)
 
-                info2 = info_str.format(red=int(reductions), t_stat=int(props[props.ref==feature['id']].iloc[0]['power']), depth=feature['properties']['depth'])
+                # print(feature['properties']['lag_at_site'])
 
-                info = info + info2
+                if feature['properties']['lag_at_site'] is None:
+                    info_str = """\n\n**Reduction**: {red}%\n\n**Likelihood of observing a reduction (power)**: {t_stat}%\n\n**Well Depth (m)**: {depth:.1f}\n\n**Mean residence time (MRT) at well (years)**: NA\n\n**MRT at nearest well**: {lag_median} years within a distance of {lag_dist:,} m"""
+                    info2 = info_str.format(red=int(reductions), t_stat=int(props[props.ref==feature['id']].iloc[0]['power']), depth=feature['properties']['depth'], lag_median=feature['properties']['lag_median'], lag_dist=feature['properties']['lag_dist'])
+                else:
+                    site_lag = str(int(feature['properties']['lag_at_site']))
+                    info_str = """\n\n**Reduction**: {red}%\n\n**Likelihood of observing a reduction (power)**: {t_stat}%\n\n**Well Depth (m)**: {depth:.1f}\n\n**Mean residence time (MRT) at well (years)**: {site_lag}"""
+                    info2 = info_str.format(red=int(reductions), t_stat=int(props[props.ref==feature['id']].iloc[0]['power']), depth=feature['properties']['depth'], site_lag=site_lag)
+
+                info = info2
 
         else:
-            info = info + """\n\nClick on a well to see info"""
+            info = """\n\nClick on a well to see info"""
 
     return info
 
