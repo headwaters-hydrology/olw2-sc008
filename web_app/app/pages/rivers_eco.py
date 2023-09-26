@@ -71,6 +71,7 @@ rivers_reach_gbuf_path = assets_path.joinpath('rivers_reaches.blt')
 river_catch_name_path = assets_path.joinpath('rivers_catchments_names.blt')
 
 eco_sites_path = assets_path.joinpath('eco_sites_catchments.blt')
+river_marae_path = assets_path.joinpath('rivers_catchments_marae.blt')
 # eco_loads_rec_path = assets_path.joinpath('rivers_loads_rec.blt')
 
 # rivers_catch_lc_dir = assets_path.joinpath('rivers_land_cover_gpkg')
@@ -147,6 +148,10 @@ sites_points_handle = assign("""function rivers_sites_points_handle(feature, lat
     return L.circleMarker(latlng, circleOptions);
 }""", name='eco_sites_points_handle')
 
+draw_marae = assign("""function(feature, latlng){
+const flag = L.icon({iconUrl: '/assets/nzta-marae.svg', iconSize: [20, 30]});
+return L.marker(latlng, {icon: flag});
+}""", name='eco_marae_handle')
 
 ### Colorbars
 colorbar_base = dl.Colorbar(style={'opacity': 0})
@@ -308,188 +313,6 @@ def cartesian(arrays, out=None):
             out[j*m:(j+1)*m, 1:] = out[0:m, 1:]
 
     return out
-
-
-# def parse_gis_file(contents, filename):
-#     """
-
-#     """
-#     try:
-#         content_type, content_string = contents.split(',')
-#         decoded = base64.b64decode(content_string)
-#         plan1 = gpd.read_file(io.BytesIO(decoded))
-
-#         output = encode_obj(plan1)
-#     except:
-#         output = ['Wrong file type. It must be a GeoPackage (gpkg).']
-
-#     return output
-
-
-# def check_reductions_input(new_reductions, base_reductions):
-#     """
-
-#     """
-#     base_typos = base_reductions.typology.unique()
-#     try:
-#         missing_typos = np.in1d(new_reductions.typology.unique(), base_typos).all()
-#     except:
-#         missing_typos = False
-
-#     return missing_typos
-
-
-# def diff_reductions(new_reductions, base_reductions, reduction_cols):
-#     """
-
-#     """
-#     new_reductions1 = new_reductions.set_index('typology').sort_index()[reduction_cols]
-#     base_reductions1 = base_reductions.set_index('typology').sort_index()[reduction_cols]
-#     temp1 = new_reductions1.compare(base_reductions1, align_axis=0)
-
-#     return list(temp1.columns)
-
-
-# def calc_eco_reach_reductions(catch_id, new_reductions, base_reductions):
-#     """
-#     This assumes that the concentration is the same throughout the entire greater catchment. If it's meant to be different, then each small catchment must be set and multiplied by the area to weight the contribution downstream.
-#     """
-#     diff_cols = diff_reductions(new_reductions, base_reductions)
-
-#     with booklet.open(rivers_catch_path) as f:
-#         catches1 = f[int(catch_id)]
-
-#     with booklet.open(rivers_reach_mapping_path) as f:
-#         branches = f[int(catch_id)]
-
-#     with booklet.open(eco_loads_rec_path) as f:
-#         loads = f[int(catch_id)][diff_cols]
-
-#     new_reductions0 = new_reductions[diff_cols + ['geometry']]
-#     not_all_zeros = new_reductions0[diff_cols].sum(axis=1) > 0
-#     new_reductions1 = new_reductions0.loc[not_all_zeros]
-
-#     ## Calc reductions per nzsegment given sparse geometry input
-#     c2 = new_reductions1.overlay(catches1)
-#     c2['sub_area'] = c2.area
-
-#     c2['combo_area'] = c2.groupby('nzsegment')['sub_area'].transform('sum')
-
-#     c2b = c2.copy()
-#     catches1['tot_area'] = catches1.area
-#     catches1 = catches1.drop('geometry', axis=1)
-
-#     results_list = []
-#     for col in diff_cols:
-#         c2b['prop_reductions'] = c2b[col]*(c2b['sub_area']/c2['combo_area'])
-#         c3 = c2b.groupby('nzsegment')[['prop_reductions', 'sub_area']].sum()
-
-#         ## Add in missing areas and assume that they are 0 reductions
-#         c4 = pd.merge(catches1, c3, on='nzsegment', how='left')
-#         c4.loc[c4['prop_reductions'].isnull(), ['prop_reductions', 'sub_area']] = 0
-#         c4['reduction'] = (c4['prop_reductions'] * c4['sub_area'])/c4['tot_area']
-
-#         c5 = c4[['nzsegment', 'reduction']].rename(columns={'reduction': col}).groupby('nzsegment').sum().round(2)
-#         results_list.append(c5)
-
-#     results = pd.concat(results_list, axis=1)
-
-#     ## Scale the reductions
-#     props_index = np.array(list(branches.keys()), dtype='int32')
-#     props_val = np.zeros((len(red_ratios), len(props_index)))
-
-#     reach_red = {}
-#     for ind in diff_cols:
-#         c4 = results[[ind]].merge(loads[[ind]], on='nzsegment')
-
-#         c4['base'] = c4[ind + '_y'] * 100
-
-#         for r, ratio in enumerate(red_ratios):
-#             c4['prop'] = c4[ind + '_y'] * c4[ind + '_x'] * ratio * 0.01
-#             c4b = c4[['base', 'prop']]
-#             c5 = {r: list(v.values()) for r, v in c4b.to_dict('index').items()}
-
-#             for h, reach in enumerate(branches):
-#                 branch = branches[reach]
-#                 t_area = np.zeros(branch.shape)
-#                 prop_area = t_area.copy()
-
-#                 for i, b in enumerate(branch):
-#                     if b in c5:
-#                         t_area1, prop_area1 = c5[b]
-#                         t_area[i] = t_area1
-#                         prop_area[i] = prop_area1
-#                     else:
-#                         prop_area[i] = 0
-
-#                 t_area_sum = np.sum(t_area)
-#                 if t_area_sum <= 0:
-#                     props_val[r, h] = 0
-#                 else:
-#                     p1 = np.sum(prop_area)/t_area_sum
-#                     props_val[r, h] = p1
-
-#             reach_red[ind] = np.round(props_val*100).astype('int8') # Round to nearest even number
-
-#     new_props = xr.Dataset(data_vars={ind: (('reduction_perc', 'nzsegment'), values)  for ind, values in reach_red.items()},
-#                        coords={'nzsegment': props_index,
-#                                 'reduction_perc': red_ratios}
-#                        )
-
-#     return new_props
-
-
-# def xr_concat(datasets):
-#     """
-#     A much more efficient concat/combine of xarray datasets. It's also much safer on memory.
-#     """
-#     # Get variables for the creation of blank dataset
-#     coords_list = []
-#     chunk_dict = {}
-
-#     for chunk in datasets:
-#         coords_list.append(chunk.coords.to_dataset())
-#         for var in chunk.data_vars:
-#             if var not in chunk_dict:
-#                 dims = tuple(chunk[var].dims)
-#                 enc = chunk[var].encoding.copy()
-#                 dtype = chunk[var].dtype
-#                 _ = [enc.pop(d) for d in ['original_shape', 'source'] if d in enc]
-#                 var_dict = {'dims': dims, 'enc': enc, 'dtype': dtype, 'attrs': chunk[var].attrs}
-#                 chunk_dict[var] = var_dict
-
-#     try:
-#         xr3 = xr.combine_by_coords(coords_list, compat='override', data_vars='minimal', coords='all', combine_attrs='override')
-#     except:
-#         xr3 = xr.merge(coords_list, compat='override', combine_attrs='override')
-
-#     # Create the blank dataset
-#     for var, var_dict in chunk_dict.items():
-#         dims = var_dict['dims']
-#         shape = tuple(xr3[c].shape[0] for c in dims)
-#         xr3[var] = (dims, np.full(shape, np.nan, var_dict['dtype']))
-#         xr3[var].attrs = var_dict['attrs']
-#         xr3[var].encoding = var_dict['enc']
-
-#     # Update the attributes in the coords from the first ds
-#     for coord in xr3.coords:
-#         xr3[coord].encoding = datasets[0][coord].encoding
-#         xr3[coord].attrs = datasets[0][coord].attrs
-
-#     # Fill the dataset with data
-#     for chunk in datasets:
-#         for var in chunk.data_vars:
-#             if isinstance(chunk[var].variable._data, np.ndarray):
-#                 xr3[var].loc[chunk[var].transpose(*chunk_dict[var]['dims']).coords.indexes] = chunk[var].transpose(*chunk_dict[var]['dims']).values
-#             elif isinstance(chunk[var].variable._data, xr.core.indexing.MemoryCachedArray):
-#                 c1 = chunk[var].copy().load().transpose(*chunk_dict[var]['dims'])
-#                 xr3[var].loc[c1.coords.indexes] = c1.values
-#                 c1.close()
-#                 del c1
-#             else:
-#                 raise TypeError('Dataset data should be either an ndarray or a MemoryCachedArray.')
-
-#     return xr3
 
 ###############################################
 ### Initial processing
@@ -660,6 +483,7 @@ def layout():
                                     dl.BaseLayer(dl.TileLayer(attribution=attribution, opacity=0.7), checked=True, name='OpenStreetMap'),
                                     dl.BaseLayer(dl.TileLayer(url='https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', attribution='Map data: © OpenStreetMap contributors, SRTM | Map style: © OpenTopoMap (CC-BY-SA)', opacity=0.6), checked=False, name='OpenTopoMap'),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(url=str(rivers_catch_pbf_path), format="geobuf", id='catch_map_eco', zoomToBoundsOnClick=True, zoomToBounds=False, options=dict(style=catch_style_handle))), name='Catchments', checked=True),
+                                    dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='marae_map_eco', zoomToBoundsOnClick=False, zoomToBounds=False, options=dict(pointToLayer=draw_marae))), name='Marae', checked=False),
                                     # dl.GeoJSON(url='', format="geobuf", id='base_reach_map', options=dict(style=base_reaches_style_handle)),
 
                                     # dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='sites_points', options=dict(pointToLayer=sites_points_handle), hideout={'circleOptions': dict(fillOpacity=1, stroke=False, radius=5, color='black')})), name='Monitoring sites', checked=True),
@@ -750,6 +574,21 @@ def update_reaches(catch_id):
 def update_monitor_sites(catch_id):
     if catch_id != '':
         with booklet.open(eco_sites_path, 'r') as f:
+            data = base64.b64encode(f[int(catch_id)]).decode()
+
+    else:
+        data = ''
+
+    return data
+
+
+@callback(
+        Output('marae_map_eco', 'data'),
+        Input('catch_id_eco', 'data'),
+        )
+def update_marae(catch_id):
+    if catch_id != '':
+        with booklet.open(river_marae_path, 'r') as f:
             data = base64.b64encode(f[int(catch_id)]).decode()
 
     else:

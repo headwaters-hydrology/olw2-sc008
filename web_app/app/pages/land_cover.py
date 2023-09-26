@@ -72,6 +72,7 @@ rivers_lc_clean_path = assets_path.joinpath('rivers_catch_lc.blt')
 rivers_reach_mapping_path = assets_path.joinpath('rivers_reaches_mapping.blt')
 rivers_sites_path = assets_path.joinpath('rivers_sites_catchments.blt')
 river_catch_name_path = assets_path.joinpath('rivers_catchments_names.blt')
+river_marae_path = assets_path.joinpath('rivers_catchments_marae.blt')
 
 # rivers_catch_lc_dir = assets_path.joinpath('rivers_land_cover_gpkg')
 rivers_catch_lc_gpkg_str = '{base_url}olw-data/olw-sc008/rivers_land_cover_gpkg/{catch_id}_rivers_land_cover_reductions.gpkg'
@@ -160,8 +161,12 @@ sites_points_handle = assign("""function rivers_sites_points_handle(feature, lat
     }
 
     return L.circleMarker(latlng, circleOptions);
-}""", name='rivers_sites_points_handle')
+}""", name='rivers_lc_points_handle')
 
+draw_marae = assign("""function(feature, latlng){
+const flag = L.icon({iconUrl: '/assets/nzta-marae.svg', iconSize: [20, 30]});
+return L.marker(latlng, {icon: flag});
+}""", name='rivers_lc_marae_handle')
 
 ### Colorbar
 # colorbar_base = dl.Colorbar(style={'opacity': 0})
@@ -514,6 +519,7 @@ def layout():
 
                                     # dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='sites_points', options=dict(pointToLayer=sites_points_handle), hideout={'circleOptions': dict(fillOpacity=1, stroke=False, radius=5, color='black')})), name='Monitoring sites', checked=True),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='reductions_poly_lc', hoverStyle=arrow_function(dict(weight=5, color='#666', dashArray='')), options=dict(style=lc_style_handle), hideout={})), name='Land cover', checked=True),
+                                    dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='marae_map_lc', zoomToBoundsOnClick=False, zoomToBounds=False, options=dict(pointToLayer=draw_marae))), name='Marae', checked=False),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='reach_map_lc', options={}, hideout={}, hoverStyle=arrow_function(dict(weight=8, color='black', dashArray='')))), name='Rivers', checked=False),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='sites_points_lc', options=dict(pointToLayer=sites_points_handle), hideout=rivers_points_hideout)), name='Monitoring sites', checked=False),
                                     ], id='layers_lc'),
@@ -583,6 +589,21 @@ def update_catch_name(catch_id):
 def update_reaches(catch_id):
     if catch_id != '':
         with booklet.open(rivers_reach_gbuf_path, 'r') as f:
+            data = base64.b64encode(f[int(catch_id)]).decode()
+
+    else:
+        data = ''
+
+    return data
+
+
+@callback(
+        Output('marae_map_lc', 'data'),
+        Input('catch_id_lc', 'data'),
+        )
+def update_marae(catch_id):
+    if catch_id != '':
+        with booklet.open(river_marae_path, 'r') as f:
             data = base64.b64encode(f[int(catch_id)]).decode()
 
     else:
