@@ -527,7 +527,7 @@ def layout():
                                 # html.Div(id='colorbar', children=colorbar_base),
                                 # dmc.Group(id='colorbar', children=colorbar_base),
                                 dcc.Markdown(id="info_lc", className="info", style={"position": "absolute", "top": "10px", "right": "160px", "z-index": "1000"})
-                                                ], style={'width': '100%', 'height': 700, 'margin': "auto", "display": "block"}, id="map2_lc"),
+                                                ], style={'width': '100%', 'height': '100vh', 'margin': "auto", "display": "block"}, id="map2_lc"),
 
                             ],
                             # className='five columns', style={'margin': 10}

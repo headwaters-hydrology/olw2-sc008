@@ -144,15 +144,6 @@ def create_sidebar_children(pages):
             ),
         ]
 
-    # dmc.Group(
-    #     children=[
-    #         create_nav_link(
-    #             label=page["name"], href=page["path"]
-    #         )
-    #     ], style={"marginBottom": 10}
-    # )
-    # for page in pages if 'Home' not in page["name"]]
-
     return list1
 
 
@@ -161,7 +152,6 @@ sidebar = dmc.Navbar(
     width={"base": 185},
     position={"top": 80},
     px=10,
-    # height=300,
     children=[
         dmc.ScrollArea(
             offsetScrollbars=True,
@@ -173,54 +163,54 @@ sidebar = dmc.Navbar(
 
 app.layout = html.Div(
     [
-     dmc.Header(
-        height=60,
-        fixed=True,
-        px=25,
-        children=[
-            dmc.Grid(
-                # gutter='xl',
-                style={"height": 60},
-                children=[
-                    dmc.Col(
-                        dmc.Anchor(
-                            'Mitigation Effectiveness Monitoring Design',
-                            size="xl",
-                            href="/",
-                            underline=False,
-                            # align='center',
-                            # style={'vertical-align': 'middle'}
+    #  dmc.Header(
+    #     height=60,
+    #     fixed=True,
+    #     px=25,
+    #     children=[
+    #         dmc.Grid(
+    #             # gutter='xl',
+    #             style={"height": 60},
+    #             children=[
+    #                 dmc.Col(
+    #                     dmc.Anchor(
+    #                         'Mitigation Effectiveness Monitoring Design',
+    #                         size="xl",
+    #                         href="/",
+    #                         underline=False,
+    #                         # align='center',
+    #                         # style={'vertical-align': 'middle'}
 
-                        ),
-                        span=6,
-                        style={'padding': '20px 0'}
-                        # style={'vertical-align': 'middle'}
-                        ),
-                    dmc.Col(
-                        dmc.Text(
-                            '',
-                            id='title',
-                            size=28,
-                            ),
-                        span=3,
-                        style={'padding': '20px 0'}
-                        ),
-                    dmc.Col(
-                        dmc.Anchor(
-                            dmc.Image(
-                                src=str(app_base_path.joinpath('our-land-and-water-logo.svg')),
-                                fit='cover',
-                                width='90%'
-                                ),
-                            href='https://ourlandandwater.nz/'
-                            ),
-                        span=3,
-                        offset=0
-                        ),
-                    ]
-                )
-            ]
-        ),
+    #                     ),
+    #                     span=6,
+    #                     style={'padding': '20px 0'}
+    #                     # style={'vertical-align': 'middle'}
+    #                     ),
+    #                 dmc.Col(
+    #                     dmc.Text(
+    #                         '',
+    #                         id='title',
+    #                         size=28,
+    #                         ),
+    #                     span=3,
+    #                     style={'padding': '20px 0'}
+    #                     ),
+    #                 dmc.Col(
+    #                     dmc.Anchor(
+    #                         dmc.Image(
+    #                             src=str(app_base_path.joinpath('our-land-and-water-logo.svg')),
+    #                             fit='cover',
+    #                             width='90%'
+    #                             ),
+    #                         href='https://ourlandandwater.nz/'
+    #                         ),
+    #                     span=3,
+    #                     offset=0
+    #                     ),
+    #                 ]
+    #             )
+    #         ]
+    #     ),
 
         #     html.Div(
         #  dcc.Link(html.Img(src=str(app_base_path.joinpath('our-land-and-water-logo.svg')), style={'height': 60}), href='https://ourlandandwater.nz/'),
@@ -230,34 +220,34 @@ app.layout = html.Div(
         # html.Div(
         # html.H2('', id='title'), className='seven columns'
         # ),
-        sidebar,
+        # sidebar,
         # html.Div(dash.page_container, className='eleven columns', style={'margin': 0, "marginLeft": 190})
         # html.Div(dash.page_container, style={"margin-top": 80, 'margin-left': 220, 'margin-right': 220})
         dmc.Container(
             dash.page_container,
             size="xl",
             # pt=20,
-            style={"margin-top": 80, 'margin-left': 200, 'margin-right': 20},
+            style={"margin-top": 0, 'margin-left': 0, 'margin-right': 0, 'margin-bottom': 0},
         ),
     ],
 )
 
-@callback(
-    Output('title', 'children'),
-    Input('_pages_location', 'pathname'),
-    prevent_initial_call=True
-    )
-def updated_title(path):
-    # print(path)
-    if isinstance(path, str):
-        title = page_path_names[path]
-        if title == 'Home':
-            # title = 'Mitigation Effectiveness Monitoring Design'
-            title = ''
+# @callback(
+#     Output('title', 'children'),
+#     Input('_pages_location', 'pathname'),
+#     prevent_initial_call=True
+#     )
+# def updated_title(path):
+#     # print(path)
+#     if isinstance(path, str):
+#         title = page_path_names[path]
+#         if title == 'Home':
+#             # title = 'Mitigation Effectiveness Monitoring Design'
+#             title = ''
 
-        return title
-    else:
-        raise dash.exceptions.PreventUpdate
+#         return title
+#     else:
+#         raise dash.exceptions.PreventUpdate
 
 
 if __name__ == '__main__':
