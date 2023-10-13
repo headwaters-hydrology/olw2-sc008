@@ -503,9 +503,9 @@ def layout():
                                 ),
 
                             dmc.AccordionItem([
-                                dmc.AccordionControl('(2 - Optional) Customise Reductions Layer', style={'font-size': 18}),
+                                dmc.AccordionControl('(2 - Optional) Customise Improvements Layer', style={'font-size': 18}),
                                 dmc.AccordionPanel([
-                                    html.Label('(2a) Download reductions polygons as GPKG:'),
+                                    html.Label('(2a) Download improvements polygons as GPKG:'),
                                     dcc.Loading(
                                     type="default",
                                     children=[dmc.Anchor(dmc.Button('Download land cover'), href='', id='dl_poly_lakes', style={'margin-top': 10})],
@@ -514,7 +514,7 @@ def layout():
                                         'margin-top': 10
                                     }
                                         ),
-                                    html.Label('(2b) Upload modified reductions polygons as GPKG:', style={
+                                    html.Label('(2b) Upload modified improvements polygons as GPKG:', style={
                                         'margin-top': 20
                                     }
                                         ),
@@ -522,7 +522,7 @@ def layout():
                                         children=[
                                             dcc.Upload(
                                                 id='upload_data_lakes',
-                                                children=dmc.Button('Upload reductions',
+                                                children=dmc.Button('Upload improvements',
                                                 ),
                                                 style={
                                                     'margin-top': 10
@@ -534,13 +534,13 @@ def layout():
                                     dcc.Markdown('', style={
                                         'textAlign': 'left',
                                                     }, id='upload_error_text_lakes'),
-                                    html.Label('(2c) Process the reductions layer and route the reductions downstream:', style={
+                                    html.Label('(2c) Process the improvements layer and route the improvements downstream:', style={
                                         'margin-top': 20
                                     }
                                         ),
                                     dcc.Loading(
                                     type="default",
-                                    children=html.Div([dmc.Button('Process reductions', id='process_reductions_lakes',
+                                    children=html.Div([dmc.Button('Process improvements', id='process_reductions_lakes',
                                                                   # className="me-1",
                                                                   n_clicks=0),
                                                         html.Div(id='process_text_lakes')],
@@ -572,7 +572,7 @@ def layout():
                                                          fullWidth=True,
                                                          color=1
                                                          ),
-                                    html.Label('(3d) Change the percent of the reductions applied (100% is the max realistic reduction):', style={'margin-top': 20}),
+                                    html.Label('(3d) Change the percent of the improvements applied (100% is the max realistic improvement):', style={'margin-top': 20}),
                                     dmc.Slider(id='reductions_slider_lakes',
                                                value=100,
                                                mb=35,
@@ -626,12 +626,17 @@ def layout():
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='reach_map_lakes', options=dict(style=reach_style))), name='Rivers', checked=True),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='lake_poly', options=dict(style=lake_style_handle), hideout={'classes': [''], 'colorscale': ['#808080'], 'style': lake_style, 'colorProp': 'name'})), name='Lakes', checked=True),
                                     # dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='sites_points_lakes', options=dict(pointToLayer=sites_points_handle), hideout=rivers_points_hideout)), name='Monitoring sites', checked=True),
-                                    ], id='layers_gw'),
+                                    ], 
+                                    id='layers_gw',
+                                    ),
                                 colorbar_power,
                                 # html.Div(id='colorbar', children=colorbar_base),
                                 # dmc.Group(id='colorbar', children=colorbar_base),
                                 dcc.Markdown(id="info_lakes", className="info", style={"position": "absolute", "top": "10px", "right": "160px", "z-index": "1000"})
-                                                ], style={'width': '100%', 'height': '100vh', 'margin': "auto", "display": "block"}, id="map2"),
+                                ], 
+                                style={'width': '100%', 'height': '100vh', 'margin': "auto", "display": "block"}, 
+                                id="map2",
+                                ),
 
                             ],
                             ),
@@ -1038,7 +1043,7 @@ def update_map_info_lakes(powers_obj, feature):
             else:
                 moni1 = str(int(props['power'][1])) + '%'
 
-            info_str = """\n\n**Reduction**: {red}%\n\n**Likelihood of observing a reduction (power)**:\n\n&nbsp;&nbsp;&nbsp;&nbsp;**Modelled**: {t_stat1}%\n\n&nbsp;&nbsp;&nbsp;&nbsp;**Monitored**: {t_stat2}""".format(red=int(props['reduction']), t_stat1=int(props['power'][0]), t_stat2=moni1)
+            info_str = """\n\n**Improvement**: {red}%\n\n**Likelihood of observing an improvement (power)**:\n\n&nbsp;&nbsp;&nbsp;&nbsp;**Modelled**: {t_stat1}%\n\n&nbsp;&nbsp;&nbsp;&nbsp;**Monitored**: {t_stat2}""".format(red=int(props['reduction']), t_stat1=int(props['power'][0]), t_stat2=moni1)
 
             info = info + info_str
 
@@ -1087,8 +1092,8 @@ def download_power(n_clicks, lake_id, powers_obj, indicator, n_years, n_samples_
         df1['n_years'] = n_years
         df1['n_samples_per_year'] = n_samples_year
         df1['LFENZID'] = int(lake_id)
-        df1['reduction'] = power_data['reduction']
+        df1['improvement'] = power_data['reduction']
 
-        df2 = df1.set_index(['indicator', 'n_years', 'n_samples_per_year', 'reduction', 'LFENZID']).sort_index()
+        df2 = df1.set_index(['indicator', 'n_years', 'n_samples_per_year', 'improvement', 'LFENZID']).sort_index()
 
         return dcc.send_data_frame(df2.to_csv, f"lake_power_{lake_id}.csv")

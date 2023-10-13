@@ -65,7 +65,7 @@ Source = "https://github.com/unknown/olw2-sc008"
 [tool.hatch.envs.default]
 # type = "container"
 # image = 'python:3.9-slim-bullseye'
-python = "3.9"
+python = "3.10"
 dependencies = [
   "spyder-kernels==2.4",
   "matplotlib",

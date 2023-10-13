@@ -490,13 +490,17 @@ def layout():
                                     # dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='reductions_poly')), name='Land use reductions', checked=False),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='reach_map_eco', options={}, hideout={})), name='Rivers', checked=True),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='sites_points_eco', options=dict(pointToLayer=sites_points_handle), hideout=rivers_points_hideout)), name='Monitoring sites', checked=True),
-                                    ], id='layers_eco'),
+                                    ], 
+                                    id='layers_eco'
+                                    ),
                                 colorbar_power,
                                 colorbar_weights,
                                 # html.Div(id='colorbar', children=colorbar_base),
                                 # dmc.Group(id='colorbar', children=colorbar_base),
                                 dcc.Markdown(id="info_eco", className="info", style={"position": "absolute", "top": "10px", "right": "160px", "z-index": "1000"})
-                                                ], style={'width': '100%', 'height': '100vh', 'margin': "auto", "display": "block"}),
+                                ], 
+                                style={'width': '100%', 'height': '100vh', 'margin': "auto", "display": "block"}
+                                ),
 
                             ],
                             # className='five columns', style={'margin': 10}

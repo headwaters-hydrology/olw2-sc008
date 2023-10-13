@@ -384,9 +384,9 @@ def layout():
                                 ),
 
                             dmc.AccordionItem([
-                                dmc.AccordionControl('(2) Select a reduction', style={'font-size': 18}),
+                                dmc.AccordionControl('(2) Select an improvement', style={'font-size': 18}),
                                 dmc.AccordionPanel([
-                                    html.Label('(2a) Select a reduction:'),
+                                    html.Label('(2a) Select an improvement:'),
                                     dmc.Slider(id='reductions_slider_gw',
                                                value=25,
                                                mb=35,
@@ -422,7 +422,7 @@ def layout():
                                                 dmc.HoverCardDropdown(
                                                     dmc.Text(
                                                         """
-                                                        The power results for groundwater only apply after the groundwater lag times of the upgradient mitigation actions. Any mitigation actions performed upgradient of the wells will take time to reach the wells. Click on a well to see the estimated mean residence time.
+                                                        The power results for groundwater only apply after the groundwater lag times of the upgradient improvements. Any improvements performed upgradient of the wells will take time to reach the wells. Click on a well to see the estimated mean residence time.
                                                         """,
                                                         size="sm",
                                                     )
@@ -488,12 +488,17 @@ def layout():
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(url=str(rc_bounds_gbuf), format="geobuf", id='rc_map', zoomToBoundsOnClick=True, options=dict(style=rc_style_handle),  hideout={})), name='Regional Councils', checked=True),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='gw_points', zoomToBounds=True, zoomToBoundsOnClick=True, cluster=False, options=dict(pointToLayer=gw_points_style_handle), hideout=gw_points_hideout)), name='GW wells', checked=True),
                                     # dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='sites_points_gw', options=dict(pointToLayer=sites_points_handle), hideout=rivers_points_hideout)), name='Monitoring sites', checked=True),
-                                    ], id='layers_gw'),
+                                    ], 
+                                    id='layers_gw'
+                                    ),
                                 colorbar_power,
                                 # html.Div(id='colorbar', children=colorbar_base),
                                 # dmc.Group(id='colorbar', children=colorbar_base),
                                 dcc.Markdown(id="info_gw", className="info", style={"position": "absolute", "top": "10px", "right": "160px", "z-index": "1000"})
-                                                ], style={'width': '100%', 'height': '100vh', 'margin': "auto", "display": "block"}, id="map2"),
+                                ], 
+                                style={'width': '100%', 'height': '100vh', 'margin': "auto", "display": "block"}, 
+                                id="map2",
+                                ),
 
                             ],
                             ),
@@ -635,11 +640,11 @@ def update_map_info_gw(powers_obj, reductions, feature, gw_points_encode):
                 # print(feature['properties']['lag_at_site'])
 
                 if feature['properties']['lag_at_site'] is None:
-                    info_str = """\n\n**Reduction**: {red}%\n\n**Likelihood of observing a reduction (power)**: {t_stat}%\n\n**Well Depth (m)**: {depth:.1f}\n\n**Mean residence time (MRT) at well (years)**: NA\n\n**MRT at nearest well**: {lag_median} years within a distance of {lag_dist:,} m"""
+                    info_str = """\n\n**Improvement**: {red}%\n\n**Likelihood of observing an improvement (power)**: {t_stat}%\n\n**Well Depth (m)**: {depth:.1f}\n\n**Mean residence time (MRT) at well (years)**: NA\n\n**MRT at nearest well**: {lag_median} years within a distance of {lag_dist:,} m"""
                     info2 = info_str.format(red=int(reductions), t_stat=int(props[props.ref==feature['id']].iloc[0]['power']), depth=feature['properties']['depth'], lag_median=feature['properties']['lag_median'], lag_dist=feature['properties']['lag_dist'])
                 else:
                     site_lag = str(int(feature['properties']['lag_at_site']))
-                    info_str = """\n\n**Reduction**: {red}%\n\n**Likelihood of observing a reduction (power)**: {t_stat}%\n\n**Well Depth (m)**: {depth:.1f}\n\n**Mean residence time (MRT) at well (years)**: {site_lag}"""
+                    info_str = """\n\n**Improvement**: {red}%\n\n**Likelihood of observing an improvement (power)**: {t_stat}%\n\n**Well Depth (m)**: {depth:.1f}\n\n**Mean residence time (MRT) at well (years)**: {site_lag}"""
                     info2 = info_str.format(red=int(reductions), t_stat=int(props[props.ref==feature['id']].iloc[0]['power']), depth=feature['properties']['depth'], site_lag=site_lag)
 
                 info = info2
@@ -671,9 +676,9 @@ def download_power(n_clicks, powers_obj, rc_id, indicator, n_years, n_samples_ye
         df1['indicator'] = gw_indicator_dict[indicator]
         df1['n_years'] = n_years
         df1['n_samples_per_year'] = n_samples_year
-        df1['reduction'] = reductions
+        df1['improvement'] = reductions
 
-        df2 = df1.rename(columns={'ref': 'site_id'}).set_index(['indicator', 'n_years', 'n_samples_per_year', 'reduction', 'site_id']).sort_index()
+        df2 = df1.rename(columns={'ref': 'site_id'}).set_index(['indicator', 'n_years', 'n_samples_per_year', 'improvement', 'site_id']).sort_index()
 
         return dcc.send_data_frame(df2.to_csv, f"gw_power_{rc_id}.csv")
 

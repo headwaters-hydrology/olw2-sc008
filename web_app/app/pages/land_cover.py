@@ -435,7 +435,7 @@ def layout():
                                     dmc.Text('(2a) Select Indicator:'),
                                     dcc.Dropdown(options=[{'label': rivers_indicator_dict[d], 'value': d} for d in indicators], id='indicator_lc', optionHeight=40, clearable=False),
 
-                                    dmc.Text('(2b) Change the percent of the reductions applied. 100% is the max realistic reduction (This option only applies to the river segments):', style={'margin-top': 20}),
+                                    dmc.Text('(2b) Change the percent of the improvements applied. 100% is the max realistic improvement (This option only applies to the river segments):', style={'margin-top': 20}),
                                     dmc.Slider(id='Reductions_slider_lc',
                                                 value=100,
                                                 mb=35,
@@ -456,7 +456,7 @@ def layout():
                             dmc.AccordionItem([
                                 dmc.AccordionControl('(3) Download Results', style={'font-size': 18}),
                                 dmc.AccordionPanel([
-                                    dmc.Text('(3a) Download land cover reductions for the selected catchment (gpkg):'),
+                                    dmc.Text('(3a) Download land cover improvements for the selected catchment (gpkg):'),
                                     dcc.Loading(
                                     type="default",
                                     children=[
@@ -465,7 +465,7 @@ def layout():
                                     ],
                                     ),
                                 dmc.AccordionPanel([
-                                    dmc.Text('(3b) Download river reach reductions for the selected catchment (csv):'),
+                                    dmc.Text('(3b) Download river reach improvements for the selected catchment (csv):'),
                                     dcc.Loading(
                                     type="default",
                                     children=[
@@ -785,7 +785,7 @@ def update_map_info(reaches_obj, reach_feature, lc_feature, indicator, prop_red)
 
                 reach_data = props.sel(nzsegment=feature_id)
 
-                info_str = """**nzsegment**: {seg}\n\n**Reduction**: {red}%""".format(red=int(reach_data.reduction), seg=feature_id)
+                info_str = """**nzsegment**: {seg}\n\n**Improvement**: {red}%""".format(red=int(reach_data.reduction), seg=feature_id)
 
                 info = info + info_str
 
@@ -796,7 +796,7 @@ def update_map_info(reaches_obj, reach_feature, lc_feature, indicator, prop_red)
             feature = lc_feature['properties']
             # print(feature)
 
-            info_str = """**Typology**: {typo}\n\n**Land Cover**: {lc}\n\n**Reduction**: {red}%""".format(red=int(feature[ind_name]), typo=feature['typology'], lc=feature['land_cover'])
+            info_str = """**Typology**: {typo}\n\n**Land Cover**: {lc}\n\n**Improvement**: {red}%""".format(red=int(feature[ind_name]), typo=feature['typology'], lc=feature['land_cover'])
 
             info = info + info_str
 
@@ -836,7 +836,7 @@ def download_power(n_clicks, catch_id, reaches_obj):
         for col in df1.columns:
             df1[col] = df1[col].astype(int)
 
-        df2 = df1.set_index(['reduction_perc', 'nzsegment'])
+        df2 = df1.set_index(['improvement_perc', 'nzsegment'])
 
-        return dcc.send_data_frame(df2.to_csv, f"rivers_reductions_{catch_id}.csv")
+        return dcc.send_data_frame(df2.to_csv, f"rivers_improvement_{catch_id}.csv")
 

@@ -562,9 +562,9 @@ def layout():
 
                             dmc.AccordionItem([
                                 # html.H5('Optional (2) Customise Reductions Layer', style={'font-weight': 'bold', 'margin-top': 20}),
-                                dmc.AccordionControl('(2 - Optional) Customise Reductions Layer', style={'font-size': 18}),
+                                dmc.AccordionControl('(2 - Optional) Customise Improvements Layer', style={'font-size': 18}),
                                 dmc.AccordionPanel([
-                                    html.Label('(2a) Download reductions polygons as GPKG:'),
+                                    html.Label('(2a) Download improvements polygons as GPKG:'),
                                     dcc.Loading(
                                     id="loading-2",
                                     type="default",
@@ -574,7 +574,7 @@ def layout():
                                         'margin-top': 10
                                     }
                                         ),
-                                    html.Label('(2b) Upload modified reductions polygons as GPKG:', style={
+                                    html.Label('(2b) Upload modified improvements polygons as GPKG:', style={
                                         'margin-top': 20
                                     }
                                         ),
@@ -598,7 +598,7 @@ def layout():
                                     dcc.Markdown('', style={
                                         'textAlign': 'left',
                                                     }, id='upload_error_text'),
-                                    html.Label('(2c) Process the reductions layer and route the reductions downstream:', style={
+                                    html.Label('(2c) Process the improvements layer and route the improvements downstream:', style={
                                         'margin-top': 20
                                     }
                                         ),
@@ -637,7 +637,7 @@ def layout():
                                                          fullWidth=True,
                                                          color=1
                                                          ),
-                                    html.Label('(3d) Change the percent of the reductions applied (100% is the max realistic reduction):', style={'margin-top': 20}),
+                                    html.Label('(3d) Change the percent of the improvements applied (100% is the max realistic improvement):', style={'margin-top': 20}),
                                     dmc.Slider(id='Reductions_slider',
                                                value=100,
                                                mb=35,
@@ -698,12 +698,17 @@ def layout():
                                     # dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='reductions_poly')), name='Land use reductions', checked=False),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='reach_map', options={}, hideout={}, hoverStyle=arrow_function(dict(weight=10, color='black', dashArray='')))), name='Rivers', checked=True),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='sites_points', options=dict(pointToLayer=sites_points_handle), hideout=rivers_points_hideout)), name='Monitoring sites', checked=True),
-                                    ], id='layers_rivers'),
+                                    ], 
+                                    id='layers_rivers'
+                                    ),
                                 colorbar_power,
                                 # html.Div(id='colorbar', children=colorbar_base),
                                 # dmc.Group(id='colorbar', children=colorbar_base),
                                 dcc.Markdown(id="info", className="info", style={"position": "absolute", "top": "10px", "right": "160px", "z-index": "1000"})
-                                                ], style={'width': '100%', 'height': '100vh', 'margin': "auto", "display": "block"}, id="map2"),
+                                ], 
+                                style={'width': '100%', 'height': '100vh', 'margin': "auto", "display": "block"}, 
+                                id="map2",
+                                ),
 
                             ],
                             # className='five columns', style={'margin': 10}
@@ -1078,7 +1083,7 @@ def update_map_info(powers_obj, reach_feature, sites_feature, old_info):
 
             reach_data = props.sel(nzsegment=feature_id)
 
-            info_str = """\n\n**nzsegment**: {seg}\n\n**Reduction**: {red}%\n\n**Likelihood of observing a reduction (power)**: {t_stat}%""".format(red=int(reach_data.reduction), t_stat=int(reach_data.power_modelled), seg=feature_id)
+            info_str = """\n\n**nzsegment**: {seg}\n\n**Improvement**: {red}%\n\n**Likelihood of observing an improvement (power)**: {t_stat}%""".format(red=int(reach_data.reduction), t_stat=int(reach_data.power_modelled), seg=feature_id)
 
             info += info_str
         elif (trig == 'sites_points'):
@@ -1087,7 +1092,7 @@ def update_map_info(powers_obj, reach_feature, sites_feature, old_info):
 
             reach_data = props.sel(nzsegment=feature_id)
 
-            info_str = """\n\n**nzsegment**: {seg}\n\n**Site name**: {site}\n\n**Reduction**: {red}%\n\n**Likelihood of observing a reduction (power)**: {t_stat}%""".format(red=int(reach_data.reduction), t_stat=int(reach_data.power_monitored), seg=feature_id, site=sites_feature['id'])
+            info_str = """\n\n**nzsegment**: {seg}\n\n**Site name**: {site}\n\n**Improvement**: {red}%\n\n**Likelihood of observing an improvement (power)**: {t_stat}%""".format(red=int(reach_data.reduction), t_stat=int(reach_data.power_monitored), seg=feature_id, site=sites_feature['id'])
 
             info += info_str
         else:
@@ -1095,14 +1100,14 @@ def update_map_info(powers_obj, reach_feature, sites_feature, old_info):
                 feature_id = int(sites_feature['properties']['nzsegment'])
                 reach_data = props.sel(nzsegment=feature_id)
 
-                info_str = """\n\n**nzsegment**: {seg}\n\n**Site name**: {site}\n\n**Reduction**: {red}%\n\n**Likelihood of observing a reduction (power)**: {t_stat}%""".format(red=int(reach_data.reduction), t_stat=int(reach_data.power_monitored), seg=feature_id, site=sites_feature['id'])
+                info_str = """\n\n**nzsegment**: {seg}\n\n**Site name**: {site}\n\n**Improvement**: {red}%\n\n**Likelihood of observing an improvement (power)**: {t_stat}%""".format(red=int(reach_data.reduction), t_stat=int(reach_data.power_monitored), seg=feature_id, site=sites_feature['id'])
 
                 info += info_str
             elif 'nzsegment' in old_info:
                 feature_id = int(reach_feature['id'])
                 reach_data = props.sel(nzsegment=feature_id)
 
-                info_str = """\n\n**nzsegment**: {seg}\n\n**Reduction**: {red}%\n\n**Likelihood of observing a reduction (power)**: {t_stat}%""".format(red=int(reach_data.reduction), t_stat=int(reach_data.power_modelled), seg=feature_id)
+                info_str = """\n\n**nzsegment**: {seg}\n\n**Improvement**: {red}%\n\n**Likelihood of observing an improvement (power)**: {t_stat}%""".format(red=int(reach_data.reduction), t_stat=int(reach_data.power_modelled), seg=feature_id)
 
                 info += info_str
             else:
