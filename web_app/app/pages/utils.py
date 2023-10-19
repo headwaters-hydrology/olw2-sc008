@@ -16,7 +16,6 @@ import xarray as xr
 # from shapely.geometry import shape, mapping
 # import tethysts
 import os
-from gistools import vector
 import geopandas as gpd
 import base64
 from dash import dcc, html

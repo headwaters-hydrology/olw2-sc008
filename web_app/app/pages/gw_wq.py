@@ -22,7 +22,6 @@ import zstandard as zstd
 import codecs
 import pickle
 import geopandas as gpd
-from gistools import vector
 import os
 # import tethysts
 import base64

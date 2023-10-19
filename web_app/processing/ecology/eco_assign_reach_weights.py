@@ -10,6 +10,7 @@ import pandas as pd
 import xarray as xr
 import numpy as np
 from hdf5tools import H5
+import hdf5plugin
 
 import sys
 if '..' not in sys.path:
@@ -44,6 +45,8 @@ param_weights = {
         },
     }
 
+encoding = {'missing_value': -99, 'dtype': 'int16', 'scale_factor': 0.1}
+
 params = list(param_weights['peri'].keys())
 
 #############################################
@@ -54,7 +57,7 @@ def eco_calc_river_reach_weights():
     """
 
     """
-    reach_red0 = xr.open_dataset(utils.river_reductions_model_path)
+    reach_red0 = xr.open_dataset(utils.river_reductions_model_path, engine='h5netcdf')
 
     reach_weights_list = []
     with booklet.open(utils.river_reach_mapping_path) as f:
@@ -64,11 +67,14 @@ def eco_calc_river_reach_weights():
 
             arr_list = []
             for param, weights in param_weights.items():
-                arr1 = np.ceil(sum([reach_red1[p]*w for p, w in weights.items()])).astype('int8')
+                # arr1 = np.ceil(sum([reach_red1[p]*w for p, w in weights.items()])).astype('int8')
+                arr1 = sum([reach_red1[p]*w for p, w in weights.items()])
                 arr1.name = param
+                arr1.encoding = encoding
                 arr_list.append(arr1)
 
             reach_weights0 = xr.merge(arr_list)
+
             reach_weights_list.append(reach_weights0)
 
     rw0 = H5(reach_weights_list)

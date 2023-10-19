@@ -21,6 +21,7 @@ import numpy as np
 import zstandard as zstd
 import codecs
 import pickle
+import geopandas as gpd
 import os
 # import tethysts
 import base64
@@ -43,10 +44,10 @@ import hdf5tools
 
 dash.register_page(
     __name__,
-    path='/rivers-wq-site',
-    title='Water Quality Sites Only',
-    name='rivers_wq_site',
-    description='Rivers Water Quality Sites Only'
+    path='/rivers-eco-sites',
+    title='Ecology Sites',
+    name='rivers_eco_sites',
+    description='River Ecology Sites'
 )
 
 ### Paths
@@ -54,25 +55,16 @@ assets_path = pathlib.Path(os.path.realpath(os.path.dirname(__file__))).parent.j
 
 app_base_path = pathlib.Path('/assets')
 
-# base_data_url = 'https://b2.tethys-ts.xyz/file/'
-
-# lc_url = '{}olw-data/olw-sc008/olw_land_cover_reductions.gpkg'.format(base_data_url)
-# rivers_red_url = '{}olw-data/olw-sc008/olw_sites_reductions.csv.zip'.format(base_data_url)
-
-rivers_power_moni_path = assets_path.joinpath('rivers_reaches_power_monitored.h5')
+eco_power_moni_path = assets_path.joinpath('eco_reaches_power_monitored.h5')
+eco_reach_weights_path = assets_path.joinpath('eco_reach_weights.h5')
 
 rivers_catch_pbf_path = app_base_path.joinpath('rivers_catchments.pbf')
 
 rivers_reach_gbuf_path = assets_path.joinpath('rivers_reaches.blt')
 river_catch_name_path = assets_path.joinpath('rivers_catchments_names.blt')
 
-rivers_sites_path = assets_path.joinpath('rivers_sites_catchments.blt')
+eco_sites_path = assets_path.joinpath('eco_sites_catchments.blt')
 river_marae_path = assets_path.joinpath('rivers_catchments_marae.blt')
-# eco_loads_rec_path = assets_path.joinpath('rivers_loads_rec.blt')
-
-# rivers_catch_lc_dir = assets_path.joinpath('rivers_land_cover_gpkg')
-# rivers_catch_lc_gpkg_str = '{}_sites_land_cover_reductions.gpkg'
-# rivers_catch_lc_gpkg_str = '{base_url}olw-data/olw-sc008/rivers_land_cover_gpkg/{catch_id}_sites_land_cover_reductions.gpkg'
 
 ### Layout
 map_height = 700
@@ -80,9 +72,9 @@ center = [-41.1157, 172.4759]
 
 attribution = 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 
-reductions_values = range(5, 95, 10)
-
-reductions_options = [{'value': v, 'label': str(v)+'%'} for v in reductions_values]
+freq_mapping = {1: 'yearly', 4: 'quarterly', 12: 'monthly'}
+time_periods = [5, 10, 20, 30]
+n_sites = [5, 10, 20, 30]
 
 style = dict(weight=4, opacity=1, color='white')
 
@@ -91,31 +83,17 @@ site_point_radius = 6
 # reduction_ratios = range(10, 101, 10)
 # red_ratios = np.array(list(reduction_ratios), dtype='int8')
 
-freq_mapping = {4: 'quarterly', 12: 'monthly', 26: 'fortnightly', 52: 'weekly', 104: 'biweekly', 364: 'daily'}
-time_periods = [5, 10, 20, 30]
+eco_reductions_values = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
 
-style = dict(weight=4, opacity=1, color='white')
-classes = [0, 20, 40, 60, 80]
-bins = classes.copy()
-bins.append(101)
-# colorscale = ['#808080', '#FED976', '#FEB24C', '#FC4E2A', '#BD0026', '#800026']
-colorscale = ['#808080', '#FED976', '#FD8D3C', '#E31A1C', '#800026']
-# reductions_colorscale = ['#edf8fb','#b2e2e2','#66c2a4','#2ca25f','#006d2c']
-# ctg = ["{}%+".format(cls, classes[i + 1]) for i, cls in enumerate(classes[1:-1])] + ["{}%+".format(classes[-1])]
-# ctg.insert(0, 'NA')
-ctg = ["{}%+".format(cls, classes[i + 1]) for i, cls in enumerate(classes[:-1])] + ["{}%+".format(classes[-1])]
-# ctg.insert(0, 'NA')
+eco_reductions_options = [{'value': v, 'label': str(v)+'%'} for v in eco_reductions_values]
 
-site_point_radius = 6
-
-reduction_ratios = range(10, 101, 10)
-red_ratios = np.array(list(reduction_ratios), dtype='int8')
+eco_freq_dict = {'mci': 1, 'peri': 12, 'sediment': 12}
 
 rivers_points_hideout = {'classes': [], 'colorscale': ['#232323'], 'circleOptions': dict(fillOpacity=1, stroke=True, weight=1, color='black', radius=site_point_radius), 'colorProp': 'nzsegment'}
 
-rivers_indicator_dict = {'BD': 'Visual Clarity', 'EC': 'E.coli', 'DRP': 'Dissolved reactive phosporus', 'NH': 'Ammoniacal nitrogen', 'NO': 'Nitrate', 'TN': 'Total nitrogen', 'TP': 'Total phosphorus'}
+eco_indicator_dict = {'peri': 'Periphyton', 'mci': 'MCI', 'sediment': 'Percent deposited sediment'}
 
-rivers_reduction_cols = list(rivers_indicator_dict.values())
+eco_reduction_cols = list(eco_indicator_dict.values())
 
 catch_style_handle = assign("""function style(feature) {
     return {
@@ -125,7 +103,7 @@ catch_style_handle = assign("""function style(feature) {
         color: 'black',
         fillOpacity: 0.1
     };
-}""", name='rivers_catch_style_handle_sites')
+}""", name='eco_catch_style_handle')
 
 base_reach_style_handle = assign("""function style3(feature) {
     return {
@@ -133,18 +111,7 @@ base_reach_style_handle = assign("""function style3(feature) {
         opacity: 0.75,
         color: 'grey',
     };
-}""", name='rivers_base_reach_style_handle_sites')
-
-# reach_style_handle = assign("""function style2(feature, context){
-#     const {classes, colorscale, style, colorProp} = context.props.hideout;  // get props from hideout
-#     const value = feature.properties[colorProp];  // get value the determines the color
-#     for (let i = 0; i < classes.length; ++i) {
-#         if (value == classes[i]) {
-#             style.color = colorscale[i];  // set the fill color according to the class
-#         }
-#     }
-#     return style;
-# }""", name='rivers_reach_style_handle')
+}""", name='eco_base_reach_style_handle')
 
 sites_points_handle = assign("""function rivers_sites_points_handle(feature, latlng, context){
     const {classes, colorscale, circleOptions, colorProp} = context.props.hideout;  // get props from hideout
@@ -156,26 +123,25 @@ sites_points_handle = assign("""function rivers_sites_points_handle(feature, lat
     }
 
     return L.circleMarker(latlng, circleOptions);
-}""", name='rivers_sites_points_handle_sites')
+}""", name='eco_sites_points_handle')
 
 draw_marae = assign("""function(feature, latlng){
 const flag = L.icon({iconUrl: '/assets/nzta-marae.svg', iconSize: [20, 30]});
 return L.marker(latlng, {icon: flag});
-}""", name='rivers_sites_marae_handle')
+}""", name='eco_marae_handle')
 
-### Colorbar
+### Colorbars
 colorbar_base = dl.Colorbar(style={'opacity': 0})
 base_reach_style = dict(weight=4, opacity=1, color='white')
 
+classes = [0, 20, 40, 60, 80]
+bins = classes.copy()
+bins.append(101)
+colorscale = ['#808080', '#FED976', '#FD8D3C', '#E31A1C', '#800026']
+ctg = ["{}%+".format(cls, classes[i + 1]) for i, cls in enumerate(classes[:-1])] + ["{}%+".format(classes[-1])]
+
 indices = list(range(len(ctg) + 1))
 colorbar_power = dl.Colorbar(min=0, max=len(ctg), classes=indices, colorscale=colorscale, tooltip=True, tickValues=[item + 0.5 for item in indices[:-1]], tickText=ctg, width=300, height=30, position="bottomright")
-
-marks = []
-for i in range(0, 101, 10):
-    if (i % 20) == 0:
-        marks.append({'label': str(i) + '%', 'value': i})
-    else:
-        marks.append({'value': i})
 
 # catch_id = 3076139
 
@@ -183,58 +149,37 @@ for i in range(0, 101, 10):
 ### Helper Functions
 
 
-# def read_pkl_zstd(obj, unpickle=False):
-#     """
-#     Deserializer from a pickled object compressed with zstandard.
+def read_pkl_zstd(obj, unpickle=False):
+    """
+    Deserializer from a pickled object compressed with zstandard.
 
-#     Parameters
-#     ----------
-#     obj : bytes or str
-#         Either a bytes object that has been pickled and compressed or a str path to the file object.
-#     unpickle : bool
-#         Should the bytes object be unpickled or left as bytes?
+    Parameters
+    ----------
+    obj : bytes or str
+        Either a bytes object that has been pickled and compressed or a str path to the file object.
+    unpickle : bool
+        Should the bytes object be unpickled or left as bytes?
 
-#     Returns
-#     -------
-#     Python object
-#     """
-#     if isinstance(obj, (str, pathlib.Path)):
-#         with open(obj, 'rb') as p:
-#             dctx = zstd.ZstdDecompressor()
-#             with dctx.stream_reader(p) as reader:
-#                 obj1 = reader.read()
+    Returns
+    -------
+    Python object
+    """
+    if isinstance(obj, (str, pathlib.Path)):
+        with open(obj, 'rb') as p:
+            dctx = zstd.ZstdDecompressor()
+            with dctx.stream_reader(p) as reader:
+                obj1 = reader.read()
 
-#     elif isinstance(obj, bytes):
-#         dctx = zstd.ZstdDecompressor()
-#         obj1 = dctx.decompress(obj)
-#     else:
-#         raise TypeError('obj must either be a str path or a bytes object')
+    elif isinstance(obj, bytes):
+        dctx = zstd.ZstdDecompressor()
+        obj1 = dctx.decompress(obj)
+    else:
+        raise TypeError('obj must either be a str path or a bytes object')
 
-#     if unpickle:
-#         obj1 = pickle.loads(obj1)
+    if unpickle:
+        obj1 = pickle.loads(obj1)
 
-#     return obj1
-
-
-# def encode_xr(obj: xr.Dataset):
-#     """
-
-#     """
-#     i1 = io.BytesIO()
-#     hdf5tools.xr_to_hdf5(obj, i1)
-#     str_obj = codecs.encode(i1.read(), encoding="base64").decode()
-
-#     return str_obj
-
-
-# def decode_xr(str_obj):
-#     """
-
-#     """
-#     i1 = io.BytesIO(codecs.decode(str_obj.encode(), encoding="base64"))
-#     x1 = xr.load_dataset(i1)
-
-#     return x1
+    return obj1
 
 
 def encode_obj(obj):
@@ -258,6 +203,56 @@ def decode_obj(str_obj):
     return d1
 
 
+def cartesian(arrays, out=None):
+    """
+    Generate a cartesian product of input arrays.
+
+    Parameters
+    ----------
+    arrays : list of array-like
+        1-D arrays to form the cartesian product of.
+    out : ndarray
+        Array to place the cartesian product in.
+
+    Returns
+    -------
+    out : ndarray
+        2-D array of shape (M, len(arrays)) containing cartesian products
+        formed of input arrays.
+
+    Examples
+    --------
+    >>> cartesian(([1, 2, 3], [4, 5], [6, 7]))
+    array([[1, 4, 6],
+            [1, 4, 7],
+            [1, 5, 6],
+            [1, 5, 7],
+            [2, 4, 6],
+            [2, 4, 7],
+            [2, 5, 6],
+            [2, 5, 7],
+            [3, 4, 6],
+            [3, 4, 7],
+            [3, 5, 6],
+            [3, 5, 7]])
+
+    """
+
+    arrays = [np.asarray(x) for x in arrays]
+    dtype = arrays[0].dtype
+
+    n = np.prod([x.size for x in arrays])
+    if out is None:
+        out = np.zeros([n, len(arrays)], dtype=dtype)
+
+    m = int(n / arrays[0].size)
+    out[:,0] = np.repeat(arrays[0], m)
+    if arrays[1:]:
+        cartesian(arrays[1:], out=out[0:m, 1:])
+        for j in range(1, arrays[0].size):
+            out[j*m:(j+1)*m, 1:] = out[0:m, 1:]
+
+    return out
 
 ###############################################
 ### Initial processing
@@ -266,8 +261,10 @@ def decode_obj(str_obj):
 #     catches = [int(c) for c in f]
 
 # catches.sort()
-indicators = list(rivers_indicator_dict.keys())
+indicators = list(eco_indicator_dict.keys())
 indicators.sort()
+
+
 
 ###############################################
 ### App layout
@@ -310,12 +307,11 @@ def layout():
                             chevronPosition='left',
                             children=[
                             dmc.AccordionItem([
-                                # html.H5('(1) Catchment selection', style={'font-weight': 'bold'}),
                                 dmc.AccordionControl('(1) Catchment Selection', style={'font-size': 18}),
                                 dmc.AccordionPanel([
 
                                     html.Label('(1a) Select a catchment on the map:'),
-                                    dmc.Text(id='catch_name_sites', weight=700, style={'margin-top': 10}),
+                                    dmc.Text(id='catch_name_eco_sites', weight=700, style={'margin-top': 10}),
                                     ]
                                     )
                                 ],
@@ -323,10 +319,12 @@ def layout():
                                 ),
 
                             dmc.AccordionItem([
-                                dmc.AccordionControl('(2) Define an improvement by site', style={'font-size': 18}),
+                                dmc.AccordionControl('(2) Define Indicator and improvements by site', style={'font-size': 18}),
                                 dmc.AccordionPanel([
-                                    html.Label('(2a) Type in a percent improvement by site under the "improvement %" column then press enter to confirm:'),
-                                    dash_table.DataTable(data=[], columns=[{'name': n, 'id': n, 'editable': (n == 'improvement %')} for n in ['site name', 'improvement %']], id='sites_tbl', style_cell={'font-size': 11}, style_header_conditional=[{
+                                    dmc.Text('(2a) Select Indicator:'),
+                                    dcc.Dropdown(options=[{'label': eco_indicator_dict[d], 'value': d} for d in indicators], id='indicator_eco_sites', optionHeight=40, clearable=False, style={'margin-bottom': 20}),
+                                    html.Label('(2b) Type in a percent improvement by site under the "improvement %" column then press enter to confirm:'),
+                                    dash_table.DataTable(data=[], columns=[{'name': n, 'id': n, 'editable': (n == 'improvement %')} for n in ['site name', 'improvement %']], id='tbl_eco_sites', style_cell={'font-size': 11}, style_header_conditional=[{
         'if': {'column_id': 'improvement %'},
         'font-weight': 'bold'
     }]),
@@ -352,33 +350,20 @@ def layout():
                             dmc.AccordionItem([
                                 dmc.AccordionControl('(3) Query Options', style={'font-size': 18}),
                                 dmc.AccordionPanel([
-                                    dmc.Text('(3a) Select Indicator:'),
-                                    dcc.Dropdown(options=[{'label': rivers_indicator_dict[d], 'value': d} for d in indicators], id='indicator_sites', optionHeight=40, clearable=False),
-                                    dmc.Text('(3b) Select sampling length (years):', style={'margin-top': 20}),
+                                    dmc.Text('(3a) Select sampling length (years):', style={'margin-top': 20}),
                                     dmc.SegmentedControl(data=[{'label': d, 'value': str(d)} for d in time_periods],
-                                                         id='time_period_sites',
+                                                         id='time_period_eco_sites',
                                                          value='5',
                                                          fullWidth=True,
                                                          color=1,
                                                          ),
-                                    dmc.Text('(3c) Select sampling frequency (monitoring site power):', style={'margin-top': 20}),
+                                    dmc.Text('(3b) Select sampling frequency:', style={'margin-top': 20}),
                                     dmc.SegmentedControl(data=[{'label': v, 'value': str(k)} for k, v in freq_mapping.items()],
-                                                          id='freq_sites',
-                                                          value='12',
-                                                          fullWidth=True,
-                                                          color=1
-                                                          ),
-                                    # html.Label('(3d) Change the percent of the reductions applied (100% is the max realistic reduction):', style={'margin-top': 20}),
-                                    # dmc.Slider(id='Reductions_slider',
-                                    #            value=100,
-                                    #            mb=35,
-                                    #            step=10,
-                                    #            # min=10,
-                                    #            showLabelOnHover=True,
-                                    #            disabled=False,
-                                    #            marks=marks
-                                    #            ),
-                                    # dcc.Dropdown(options=[{'label': d, 'value': d} for d in time_periods], id='time_period', clearable=False, value=5),
+                                                        id='freq_eco_sites',
+                                                        value='12',
+                                                        fullWidth=True,
+                                                        color=1
+                                                        ),
 
                                     ],
                                     )
@@ -392,8 +377,8 @@ def layout():
                                     dmc.Text('(4a) Download power results given the prior query options (csv):'),
                                     dcc.Loading(
                                     type="default",
-                                    children=[html.Div(dmc.Button("Download power results", id='dl_btn_power_sites'), style={'margin-bottom': 20, 'margin-top': 10}),
-                            dcc.Download(id="dl_power_sites")],
+                                    children=[html.Div(dmc.Button("Download power results", id='dl_btn_power_eco_sites'), style={'margin-bottom': 20, 'margin-top': 10}),
+                            dcc.Download(id="dl_power_eco_sites")],
                                     ),
                                     ],
                                     )
@@ -421,21 +406,15 @@ def layout():
                                 dl.LayersControl([
                                     dl.BaseLayer(dl.TileLayer(attribution=attribution, opacity=0.7), checked=True, name='OpenStreetMap'),
                                     dl.BaseLayer(dl.TileLayer(url='https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', attribution='Map data: © OpenStreetMap contributors, SRTM | Map style: © OpenTopoMap (CC-BY-SA)', opacity=0.6), checked=False, name='OpenTopoMap'),
-                                    dl.Overlay(dl.LayerGroup(dl.GeoJSON(url=str(rivers_catch_pbf_path), format="geobuf", id='catch_map_sites', zoomToBoundsOnClick=True, zoomToBounds=False, options=dict(style=catch_style_handle))), name='Catchments', checked=True),
-                                    dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='marae_map_sites', zoomToBoundsOnClick=False, zoomToBounds=False, options=dict(pointToLayer=draw_marae))), name='Marae', checked=False),
-                                    # dl.GeoJSON(url='', format="geobuf", id='base_reach_map', options=dict(style=base_reaches_style_handle)),
-
-                                    # dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='sites_points', options=dict(pointToLayer=sites_points_handle), hideout={'circleOptions': dict(fillOpacity=1, stroke=False, radius=5, color='black')})), name='Monitoring sites', checked=True),
-                                    # dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='reductions_poly')), name='Land use reductions', checked=False),
-                                    dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='reach_map_sites', options=dict(style=base_reach_style_handle), hideout={})), name='Rivers', checked=True),
-                                    dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='sites_points_sites', options=dict(pointToLayer=sites_points_handle), hideout=rivers_points_hideout)), name='Monitoring sites', checked=True),
-                                    ], 
-                                    id='layers_sites'
+                                    dl.Overlay(dl.LayerGroup(dl.GeoJSON(url=str(rivers_catch_pbf_path), format="geobuf", id='catch_map_eco_sites', zoomToBoundsOnClick=True, zoomToBounds=False, options=dict(style=catch_style_handle))), name='Catchments', checked=True),
+                                    dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='marae_map_eco_sites', zoomToBoundsOnClick=False, zoomToBounds=False, options=dict(pointToLayer=draw_marae))), name='Marae', checked=False),
+                                    dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='reach_map_eco_sites', options=dict(style=base_reach_style_handle), hideout={})), name='Rivers', checked=True),
+                                    dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='sites_points_eco_sites', options=dict(pointToLayer=sites_points_handle), hideout=rivers_points_hideout)), name='Monitoring sites', checked=True),
+                                    ],
+                                    id='layers_eco'
                                     ),
                                 colorbar_power,
-                                # html.Div(id='colorbar', children=colorbar_base),
-                                # dmc.Group(id='colorbar', children=colorbar_base),
-                                dcc.Markdown(id="info_sites", className="info", style={"position": "absolute", "top": "10px", "right": "160px", "z-index": "1000"})
+                                dcc.Markdown(id="info_eco_sites", className="info", style={"position": "absolute", "top": "10px", "right": "160px", "z-index": "1000"})
                                 ], 
                                 style={'width': '100%', 'height': '100vh', 'margin': "auto", "display": "block"}
                                 ),
@@ -446,8 +425,10 @@ def layout():
                         ),
                     ]
                     ),
-            dcc.Store(id='catch_id_sites', data=''),
-            dcc.Store(id='sites_powers_obj_sites', data=''),
+            dcc.Store(id='catch_id_eco_sites', data=''),
+            dcc.Store(id='sites_powers_obj_eco_sites', data=''),
+            # dcc.Store(id='reaches_obj_eco_sites', data=''),
+            # dcc.Store(id='catch_power_obj_eco_sites', data=''),
             ]
         )
 
@@ -458,8 +439,8 @@ def layout():
 ### Callbacks
 
 @callback(
-    Output('catch_id_sites', 'data'),
-    [Input('catch_map_sites', 'click_feature')]
+    Output('catch_id_eco_sites', 'data'),
+    [Input('catch_map_eco_sites', 'click_feature')]
     )
 def update_catch_id(feature):
     """
@@ -475,8 +456,8 @@ def update_catch_id(feature):
 
 
 @callback(
-    Output('catch_name_sites', 'children'),
-    [Input('catch_id_sites', 'data')]
+    Output('catch_name_eco_sites', 'children'),
+    [Input('catch_id_eco_sites', 'data')]
     )
 def update_catch_name(catch_id):
     """
@@ -491,8 +472,8 @@ def update_catch_name(catch_id):
 
 
 @callback(
-        Output('reach_map_sites', 'data'),
-        Input('catch_id_sites', 'data'),
+        Output('reach_map_eco_sites', 'data'),
+        Input('catch_id_eco_sites', 'data'),
         )
 # @cache.memoize()
 def update_reaches(catch_id):
@@ -506,9 +487,25 @@ def update_reaches(catch_id):
     return data
 
 
+# @callback(
+#         Output('sites_points_eco_sites', 'data'),
+#         Input('catch_id_eco_sites', 'data'),
+#         )
+# # @cache.memoize()
+# def update_monitor_sites(catch_id):
+#     if catch_id != '':
+#         with booklet.open(eco_sites_path, 'r') as f:
+#             data = base64.b64encode(f[int(catch_id)]).decode()
+
+#     else:
+#         data = ''
+
+#     return data
+
+
 @callback(
-        Output('marae_map_sites', 'data'),
-        Input('catch_id_sites', 'data'),
+        Output('marae_map_eco_sites', 'data'),
+        Input('catch_id_eco_sites', 'data'),
         )
 def update_marae(catch_id):
     if catch_id != '':
@@ -522,14 +519,26 @@ def update_marae(catch_id):
 
 
 @callback(
-        Output('sites_points_sites', 'data'),
-        Output('sites_tbl', 'data'),
-        Input('catch_id_sites', 'data'),
+    Output("freq_eco_sites", "value"),
+    Input('indicator_eco_sites', 'value'),
+    prevent_initial_call=True,
+    )
+def update_freq(indicator):
+
+    if isinstance(indicator, str):
+        n_samples_year = eco_freq_dict[indicator]
+
+        return str(n_samples_year)
+
+
+@callback(
+        Output('sites_points_eco_sites', 'data'),
+        Output('tbl_eco_sites', 'data'),
+        Input('catch_id_eco_sites', 'data'),
         )
-# @cache.memoize()
 def update_monitor_sites(catch_id):
     if catch_id != '':
-        with booklet.open(rivers_sites_path, 'r') as f:
+        with booklet.open(eco_sites_path, 'r') as f:
             sites = f[int(catch_id)]
 
         points_data = base64.b64encode(sites).decode()
@@ -547,18 +556,17 @@ def update_monitor_sites(catch_id):
     return points_data, tbl_data
 
 
+
 @callback(
-    Output('sites_powers_obj_sites', 'data'),
-    [Input('indicator_sites', 'value'), Input('time_period_sites', 'value'), Input('freq_sites', 'value'),
-    Input('sites_tbl', 'data')],
+    Output('sites_powers_obj_eco_sites', 'data'),
+    [Input('tbl_eco_sites', 'data'), Input('indicator_eco_sites', 'value'), Input('time_period_eco_sites', 'value'), Input('freq_eco_sites', 'value')],
     prevent_initial_call=True
     )
-def update_sites_powers_obj(indicator, n_years, n_samples_year, tbl_data):
+def update_sites_powers_obj(tbl_data, indicator, n_years, n_samples_year):
     """
 
     """
-    if isinstance(n_years, str) and isinstance(indicator, str) and isinstance(n_samples_year, str) and (len(tbl_data) > 0):
-        n_samples = int(n_samples_year)*int(n_years)
+    if (len(tbl_data) > 0) and isinstance(n_years, str) and isinstance(indicator, str) and isinstance(n_samples_year, str):
 
         red1 = {}
         for r in tbl_data:
@@ -568,8 +576,10 @@ def update_sites_powers_obj(indicator, n_years, n_samples_year, tbl_data):
                 red_int = 0
             red1[int(r['nzsegment'])] = 100 - red_int
 
-        power_data = xr.open_dataset(rivers_power_moni_path, engine='h5netcdf')
-        power_data1 = power_data.sel(indicator=indicator, n_samples=n_samples, drop=True).dropna('nzsegment').load().copy()
+        n_samples = int(n_samples_year)*int(n_years)
+
+        power_data = xr.open_dataset(eco_power_moni_path, engine='h5netcdf')
+        power_data1 = power_data.sel(indicator=indicator, n_samples=n_samples, drop=True).dropna('nzsegment').copy().load()
         power_data2 = []
         for seg, conc_perc in red1.items():
             if seg in power_data1.nzsegment:
@@ -579,6 +589,8 @@ def update_sites_powers_obj(indicator, n_years, n_samples_year, tbl_data):
         # print(power_data1)
         power_data.close()
         del power_data
+        power_data1.close()
+        del power_data1
 
         data = encode_obj(power_data2)
         return data
@@ -587,8 +599,8 @@ def update_sites_powers_obj(indicator, n_years, n_samples_year, tbl_data):
 
 
 @callback(
-    Output('sites_points_sites', 'hideout'),
-    [Input('sites_powers_obj_sites', 'data')],
+    Output('sites_points_eco_sites', 'hideout'),
+    [Input('sites_powers_obj_eco_sites', 'data')],
     prevent_initial_call=True
     )
 def update_sites_hideout(powers_obj):
@@ -613,11 +625,71 @@ def update_sites_hideout(powers_obj):
     return hideout_moni
 
 
+# @callback(
+#     Output("info_eco_sites", "children"),
+#     [Input('sites_powers_obj_eco_sites', 'data'),
+#       Input('catch_power_obj_eco_sites', 'data'),
+#       Input('sites_points_eco_sites', 'click_feature')],
+#     [State("info_eco_sites", "children"),
+#      State('n_sites_eco_sites', 'value')
+#      ]
+#     )
+# def update_map_info(sites_powers_obj, catch_power_obj, sites_feature, old_info, n_sites):
+#     """
+
+#     """
+#     info = """"""
+
+#     if (catch_power_obj != '') and (catch_power_obj is not None):
+
+#         catch_power = int(catch_power_obj)
+
+#         info += """##### Catchment:
+
+#             \n\n**Likelihood of observing an improvement (power)**: {power}%\n\n**Number of sites**: {n_sites}\n\n""".format(power = catch_power, n_sites=n_sites)
+
+#     if (sites_powers_obj != '') and (sites_powers_obj is not None) and (sites_feature is not None):
+#         props = decode_obj(sites_powers_obj)
+
+#         feature_id = int(sites_feature['properties']['nzsegment'])
+#         # print(sites_feature)
+#         # print(props.nzsegment)
+#         # print(feature_id)
+
+#         if feature_id in props.nzsegment:
+#             reach_data = props.sel(nzsegment=feature_id)
+#             power = reach_data.power.values
+
+#             if np.isnan(power):
+#                 power = 'NA'
+
+#                 info += """##### Monitoring Site:
+
+#                     \n\n**nzsegment**: {seg}\n\n**Site name**: {site}\n\n**Likelihood of observing an improvement (power)**: {t_stat}""".format(t_stat=power, seg=feature_id, site=sites_feature['id'])
+#             else:
+#                 power = int(power)
+
+#                 info += """##### Monitoring Site:
+
+#                     \n\n**nzsegment**: {seg}\n\n**Site name**: {site}\n\n**Likelihood of observing an improvement (power)**: {t_stat}%""".format(t_stat=power, seg=feature_id, site=sites_feature['id'])
+#         else:
+#             power = 'NA'
+
+#             info += """##### Monitoring Site:
+
+#                 \n\n**nzsegment**: {seg}\n\n**Site name**: {site}\n\n**Likelihood of observing an improvement (power)**: {t_stat}""".format(t_stat=power, seg=feature_id, site=sites_feature['id'])
+
+#     if info == """""":
+#         info = old_info
+
+#     return info
+
+
 @callback(
-    Output("info_sites", "children"),
-    [Input('sites_powers_obj_sites', 'data'),
-      Input('sites_points_sites', 'click_feature')],
-    [State("info_sites", "children"),
+    Output("info_eco_sites", "children"),
+    [Input('sites_powers_obj_eco_sites', 'data'),
+      Input('sites_points_eco_sites', 'click_feature')],
+    [State("info_eco_sites", "children"),
      ]
     )
 def update_map_info(sites_powers_obj, sites_feature, old_info):
@@ -650,13 +722,13 @@ def update_map_info(sites_powers_obj, sites_feature, old_info):
 
 
 @callback(
-    Output("dl_power_sites", "data"),
-    Input("dl_btn_power_sites", "n_clicks"),
-    State('catch_id_sites', 'data'),
-    State('sites_powers_obj_sites', 'data'),
-    State('indicator_sites', 'value'),
-    State('time_period_sites', 'value'),
-    State('freq_sites', 'value'),
+    Output("dl_power_eco_sites", "data"),
+    Input("dl_btn_power_eco_sites", "n_clicks"),
+    State('catch_id_eco_sites', 'data'),
+    State('sites_powers_obj_eco_sites', 'data'),
+    State('indicator_eco_sites', 'value'),
+    State('time_period_eco_sites', 'value'),
+    State('freq_eco_sites', 'value'),
     prevent_initial_call=True,
     )
 def download_power(n_clicks, catch_id, powers_obj, indicator, n_years, n_samples_year):
@@ -666,10 +738,10 @@ def download_power(n_clicks, catch_id, powers_obj, indicator, n_years, n_samples
 
         df1 = pd.DataFrame.from_dict(power_data)
         df1['improvement'] = 100 - df1['conc_perc']
-        df1['indicator'] = rivers_indicator_dict[indicator]
+        df1['indicator'] = eco_indicator_dict[indicator]
         df1['n_years'] = n_years
         df1['n_samples_per_year'] = n_samples_year
 
         df2 = df1.drop('conc_perc', axis=1).set_index(['nzsegment', 'improvement', 'indicator', 'n_years', 'n_samples_per_year']).sort_index()
 
-        return dcc.send_data_frame(df2.to_csv, f"sites_power_{catch_id}.csv")
+        return dcc.send_data_frame(df2.to_csv, f"river_ecoology_sites_power_{catch_id}.csv")

@@ -22,7 +22,6 @@ import zstandard as zstd
 import codecs
 import pickle
 import geopandas as gpd
-from gistools import vector
 import os
 # import tethysts
 import base64
@@ -46,9 +45,9 @@ import hdf5tools
 dash.register_page(
     __name__,
     path='/rivers-eco',
-    title='Ecology',
+    title='Ecology Reaches',
     name='rivers_eco',
-    description='Rivers Ecology'
+    description='River Ecology Reaches'
 )
 
 ### Paths
@@ -56,27 +55,18 @@ assets_path = pathlib.Path(os.path.realpath(os.path.dirname(__file__))).parent.j
 
 app_base_path = pathlib.Path('/assets')
 
-# base_data_url = 'https://b2.tethys-ts.xyz/file/'
-
-# lc_url = '{}olw-data/olw-sc008/olw_land_cover_reductions.gpkg'.format(base_data_url)
-# rivers_red_url = '{}olw-data/olw-sc008/olw_eco_reductions.csv.zip'.format(base_data_url)
-
 eco_power_catch_path = assets_path.joinpath('eco_reaches_power_modelled.h5')
-eco_power_moni_path = assets_path.joinpath('eco_reaches_power_monitored.h5')
+# eco_power_moni_path = assets_path.joinpath('eco_reaches_power_monitored.h5')
 eco_reach_weights_path = assets_path.joinpath('eco_reach_weights.h5')
 
 rivers_catch_pbf_path = app_base_path.joinpath('rivers_catchments.pbf')
 
 rivers_reach_gbuf_path = assets_path.joinpath('rivers_reaches.blt')
 river_catch_name_path = assets_path.joinpath('rivers_catchments_names.blt')
+rivers_reach_mapping_path = assets_path.joinpath('rivers_reaches_mapping.blt')
 
 eco_sites_path = assets_path.joinpath('eco_sites_catchments.blt')
 river_marae_path = assets_path.joinpath('rivers_catchments_marae.blt')
-# eco_loads_rec_path = assets_path.joinpath('rivers_loads_rec.blt')
-
-# rivers_catch_lc_dir = assets_path.joinpath('rivers_land_cover_gpkg')
-# rivers_catch_lc_gpkg_str = '{}_eco_land_cover_reductions.gpkg'
-# rivers_catch_lc_gpkg_str = '{base_url}olw-data/olw-sc008/rivers_land_cover_gpkg/{catch_id}_eco_land_cover_reductions.gpkg'
 
 ### Layout
 map_height = 700
@@ -157,30 +147,12 @@ return L.marker(latlng, {icon: flag});
 colorbar_base = dl.Colorbar(style={'opacity': 0})
 base_reach_style = dict(weight=4, opacity=1, color='white')
 
-classes_weights = [0, 10, 30]
-bins_weights = classes_weights.copy()
-bins_weights.append(101)
+bins_weights = [0, 10, 30, 101]
 colorscale_weights = ['#edf8b1','#7fcdbb','#2c7fb8']
 ctg_weights = ['Low', 'Moderate', 'High']
 
 indices = list(range(len(ctg_weights) + 1))
 colorbar_weights = dl.Colorbar(min=0, max=len(ctg_weights), classes=indices, colorscale=colorscale_weights, tooltip=True, tickValues=[item + 0.5 for item in indices[:-1]], tickText=ctg_weights, width=300, height=30, position="bottomright")
-
-classes = [0, 20, 40, 60, 80]
-bins = classes.copy()
-bins.append(101)
-colorscale = ['#808080', '#FED976', '#FD8D3C', '#E31A1C', '#800026']
-ctg = ["{}%+".format(cls, classes[i + 1]) for i, cls in enumerate(classes[:-1])] + ["{}%+".format(classes[-1])]
-
-indices = list(range(len(ctg) + 1))
-colorbar_power = dl.Colorbar(min=0, max=len(ctg), classes=indices, colorscale=colorscale, tooltip=True, tickValues=[item + 0.5 for item in indices[:-1]], tickText=ctg, width=300, height=30, position="bottomright")
-
-# marks = []
-# for i in range(0, 101, 10):
-#     if (i % 20) == 0:
-#         marks.append({'label': str(i) + '%', 'value': i})
-#     else:
-#         marks.append({'value': i})
 
 # catch_id = 3076139
 
@@ -383,16 +355,16 @@ def layout():
                                 dmc.AccordionControl('(2) Select an improvement', style={'font-size': 18}),
                                 dmc.AccordionPanel([
                                     html.Label('(2a) Select a percent improvement:'),
-                                    dmc.Slider(id='reductions_slider_eco',
-                                               value=25,
-                                               mb=35,
-                                               step=5,
-                                               min=5,
-                                               max=50,
-                                               showLabelOnHover=True,
-                                               disabled=False,
-                                               marks=eco_reductions_options
-                                               ),
+                                    # dmc.Slider(id='reductions_slider_eco',
+                                    #            value=25,
+                                    #            mb=35,
+                                    #            step=5,
+                                    #            min=5,
+                                    #            max=50,
+                                    #            showLabelOnHover=True,
+                                    #            disabled=False,
+                                    #            marks=eco_reductions_options
+                                    #            ),
                                     # dcc.Dropdown(options=gw_reductions_options, id='reductions_gw', optionHeight=40, clearable=False,
                                     #               style={'margin-top': 10}
                                     #               ),
@@ -406,22 +378,33 @@ def layout():
                                 dmc.AccordionControl('(3) Query Options', style={'font-size': 18}),
                                 dmc.AccordionPanel([
                                     dmc.Text('(3a) Select Indicator:'),
-                                    dcc.Dropdown(options=[{'label': eco_indicator_dict[d], 'value': d} for d in indicators], id='indicator_eco', optionHeight=40, clearable=False),
-                                    dmc.Text('(3b) Select sampling length (years):', style={'margin-top': 20}),
+                                    dcc.Dropdown(options=[{'label': eco_indicator_dict[d], 'value': d} for d in indicators], id='indicator_eco', optionHeight=40, clearable=False, style={'margin-bottom': 20}),
+                                    html.Label('(3b) Select a percent improvement for the overall catchment:'),
+                                    dmc.Slider(id='reductions_slider_eco',
+                                               value=25,
+                                               mb=35,
+                                               step=5,
+                                               min=5,
+                                               max=50,
+                                               showLabelOnHover=True,
+                                               disabled=False,
+                                               marks=eco_reductions_options
+                                               ),
+                                    dmc.Text('(3c) Select sampling length (years):', style={'margin-top': 20}),
                                     dmc.SegmentedControl(data=[{'label': d, 'value': str(d)} for d in time_periods],
                                                          id='time_period_eco',
                                                          value='5',
                                                          fullWidth=True,
                                                          color=1,
                                                          ),
-                                    dmc.Text('(3c) Select sampling frequency (monitoring site power):', style={'margin-top': 20}),
-                                    dmc.SegmentedControl(data=[{'label': v, 'value': str(k)} for k, v in freq_mapping.items()],
-                                                          id='freq_eco',
-                                                          value='12',
-                                                          fullWidth=True,
-                                                          color=1
-                                                          ),
-                                    dmc.Text('(3d) Select the number of sites per catchment (catchment power):', style={'margin-top': 20}),
+                                    # dmc.Text('(3c) Select sampling frequency (monitoring site power):', style={'margin-top': 20}),
+                                    # dmc.SegmentedControl(data=[{'label': v, 'value': str(k)} for k, v in freq_mapping.items()],
+                                    #                       id='freq_eco',
+                                    #                       value='12',
+                                    #                       fullWidth=True,
+                                    #                       color=1
+                                    #                       ),
+                                    dmc.Text('(3d) Select the number of sites per catchment:', style={'margin-top': 20}),
                                     dmc.SegmentedControl(data=[{'label': k, 'value': str(k)} for k in n_sites],
                                                           id='n_sites_eco',
                                                           value='10',
@@ -448,20 +431,20 @@ def layout():
                                 value='3'
                                 ),
 
-                            dmc.AccordionItem([
-                                dmc.AccordionControl('(4) Download Results', style={'font-size': 18}),
-                                dmc.AccordionPanel([
-                                    dmc.Text('(4a) Download power results given the prior query options (csv):'),
-                                    dcc.Loading(
-                                    type="default",
-                                    children=[html.Div(dmc.Button("Download power results", id='dl_btn_power_eco'), style={'margin-bottom': 20, 'margin-top': 10}),
-                            dcc.Download(id="dl_power_eco")],
-                                    ),
-                                    ],
-                                    )
-                                ],
-                                value='4'
-                                ),
+                            # dmc.AccordionItem([
+                            #     dmc.AccordionControl('(4) Download Results', style={'font-size': 18}),
+                            #     dmc.AccordionPanel([
+                            #         dmc.Text('(4a) Download power results given the prior query options (csv):'),
+                            #         dcc.Loading(
+                            #         type="default",
+                            #         children=[html.Div(dmc.Button("Download power results", id='dl_btn_power_eco'), style={'margin-bottom': 20, 'margin-top': 10}),
+                            # dcc.Download(id="dl_power_eco")],
+                            #         ),
+                            #         ],
+                            #         )
+                            #     ],
+                            #     value='4'
+                            #     ),
 
                             ],
                             # style={
@@ -484,19 +467,12 @@ def layout():
                                     dl.BaseLayer(dl.TileLayer(url='https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', attribution='Map data: © OpenStreetMap contributors, SRTM | Map style: © OpenTopoMap (CC-BY-SA)', opacity=0.6), checked=False, name='OpenTopoMap'),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(url=str(rivers_catch_pbf_path), format="geobuf", id='catch_map_eco', zoomToBoundsOnClick=True, zoomToBounds=False, options=dict(style=catch_style_handle))), name='Catchments', checked=True),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='marae_map_eco', zoomToBoundsOnClick=False, zoomToBounds=False, options=dict(pointToLayer=draw_marae))), name='Marae', checked=False),
-                                    # dl.GeoJSON(url='', format="geobuf", id='base_reach_map', options=dict(style=base_reaches_style_handle)),
-
-                                    # dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='sites_points', options=dict(pointToLayer=sites_points_handle), hideout={'circleOptions': dict(fillOpacity=1, stroke=False, radius=5, color='black')})), name='Monitoring sites', checked=True),
-                                    # dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='reductions_poly')), name='Land use reductions', checked=False),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='reach_map_eco', options={}, hideout={})), name='Rivers', checked=True),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='sites_points_eco', options=dict(pointToLayer=sites_points_handle), hideout=rivers_points_hideout)), name='Monitoring sites', checked=True),
                                     ], 
                                     id='layers_eco'
                                     ),
-                                colorbar_power,
                                 colorbar_weights,
-                                # html.Div(id='colorbar', children=colorbar_base),
-                                # dmc.Group(id='colorbar', children=colorbar_base),
                                 dcc.Markdown(id="info_eco", className="info", style={"position": "absolute", "top": "10px", "right": "160px", "z-index": "1000"})
                                 ], 
                                 style={'width': '100%', 'height': '100vh', 'margin': "auto", "display": "block"}
@@ -509,7 +485,6 @@ def layout():
                     ]
                     ),
             dcc.Store(id='catch_id_eco', data=''),
-            dcc.Store(id='sites_powers_obj_eco', data=''),
             dcc.Store(id='reaches_obj_eco', data=''),
             dcc.Store(id='catch_power_obj_eco', data=''),
             ]
@@ -618,59 +593,35 @@ def update_reaches_option(hideout, catch_id):
     return options
 
 
-@callback(
-    Output("freq_eco", "value"),
-    Input('indicator_eco', 'value'),
-    prevent_initial_call=True,
-    )
-def update_freq(indicator):
+# @callback(
+#     Output("freq_eco", "value"),
+#     Input('indicator_eco', 'value'),
+#     prevent_initial_call=True,
+#     )
+# def update_freq(indicator):
 
-    if isinstance(indicator, str):
-        n_samples_year = eco_freq_dict[indicator]
+#     if isinstance(indicator, str):
+#         n_samples_year = eco_freq_dict[indicator]
 
-        return str(n_samples_year)
-
-
-@callback(
-    Output('sites_powers_obj_eco', 'data'),
-    [Input('reductions_slider_eco', 'value'), Input('indicator_eco', 'value'), Input('time_period_eco', 'value'), Input('freq_eco', 'value')],
-    # [State('gw_id', 'value')]
-    prevent_initial_call=True
-    )
-def update_sites_powers_obj(reductions, indicator, n_years, n_samples_year):
-    """
-
-    """
-    if isinstance(reductions, (str, int)) and isinstance(n_years, str) and isinstance(indicator, str) and isinstance(n_samples_year, str):
-        # n_samples_year = eco_freq_dict[indicator]
-        n_samples = int(n_samples_year)*int(n_years)
-
-        power_data = xr.open_dataset(eco_power_moni_path, engine='h5netcdf')
-        power_data1 = power_data.sel(indicator=indicator, n_samples=n_samples, conc_perc=100-int(reductions), drop=True).dropna('nzsegment').load().copy()
-        # print(power_data1)
-        power_data.close()
-        del power_data
-
-        data = encode_obj(power_data1)
-        return data
-    else:
-        raise dash.exceptions.PreventUpdate
+#         return str(n_samples_year)
 
 
 @callback(
     Output('reaches_obj_eco', 'data'),
-    [Input('reductions_slider_eco', 'value'),
-     Input('indicator_eco', 'value')],
-    # [State('gw_id', 'value')]
+    Input('reductions_slider_eco', 'value'),
+    Input('indicator_eco', 'value'),
+    State('catch_id_eco', 'data'),
     prevent_initial_call=True
     )
-def update_reaches_obj(reductions, indicator):
+def update_reaches_obj(reductions, indicator, catch_id):
     """
 
     """
-    if isinstance(reductions, (str, int)) and isinstance(indicator, str):
+    if isinstance(reductions, (str, int)) and isinstance(indicator, str) and (catch_id != ''):
         power_data = xr.open_dataset(eco_reach_weights_path, engine='h5netcdf')
-        power_data1 = power_data.sel(reduction_perc=int(reductions), drop=True).rename({indicator: 'weights'}).load().copy()
+        with booklet.open(rivers_reach_mapping_path, 'r') as f:
+            reaches = f[int(catch_id)][int(catch_id)]
+        power_data1 = power_data.sel(reduction_perc=int(reductions), nzsegment=reaches, drop=True).rename({indicator: 'weights'}).load().copy()
         power_data.close()
         del power_data
 
@@ -705,34 +656,6 @@ def update_catch_power_obj(reductions, indicator, n_years, n_sites, catch_id):
 
 
 @callback(
-    Output('sites_points_eco', 'hideout'),
-    [Input('sites_powers_obj_eco', 'data')],
-    prevent_initial_call=True
-    )
-def update_sites_hideout(powers_obj):
-    """
-
-    """
-    if (powers_obj != '') and (powers_obj is not None):
-        props = decode_obj(powers_obj)
-
-        ## Monitored
-        props_moni = props
-        if len(props_moni.nzsegment) > 0:
-            # print(props_moni)
-            color_arr2 = pd.cut(props_moni.power.values, bins, labels=colorscale, right=False).tolist()
-
-            hideout_moni = {'classes': props_moni.nzsegment.values.astype(int), 'colorscale': color_arr2, 'circleOptions': dict(fillOpacity=1, stroke=True, color='black', weight=1, radius=site_point_radius), 'colorProp': 'nzsegment'}
-
-        else:
-            hideout_moni = rivers_points_hideout
-    else:
-        hideout_moni = rivers_points_hideout
-
-    return hideout_moni
-
-
-@callback(
     Output('reach_map_eco', 'hideout'),
     Input('reaches_obj_eco', 'data'),
     prevent_initial_call=True
@@ -745,7 +668,10 @@ def update_reach_hideout(reaches_obj):
         props = decode_obj(reaches_obj)
 
         ## Modelled
-        color_arr = pd.cut(props.weights.values, bins_weights, labels=colorscale_weights, right=False).tolist()
+        values = props.weights.values
+        bins_weights = np.quantile(values, [0, 0.50, 0.75, 1])
+        bins_weights[-1] += 0.01
+        color_arr = pd.cut(values, bins_weights, labels=colorscale_weights, right=False).tolist()
 
         hideout_model = {'colorscale': color_arr, 'classes': props.nzsegment.values.astype(int), 'style': style, 'colorProp': 'nzsegment'}
 
@@ -757,14 +683,14 @@ def update_reach_hideout(reaches_obj):
 
 @callback(
     Output("info_eco", "children"),
-    [Input('sites_powers_obj_eco', 'data'),
+    [
       Input('catch_power_obj_eco', 'data'),
-      Input('sites_points_eco', 'click_feature')],
+      ],
     [State("info_eco", "children"),
      State('n_sites_eco', 'value')
      ]
     )
-def update_map_info(sites_powers_obj, catch_power_obj, sites_feature, old_info, n_sites):
+def update_map_info(catch_power_obj, old_info, n_sites):
     """
 
     """
@@ -778,63 +704,30 @@ def update_map_info(sites_powers_obj, catch_power_obj, sites_feature, old_info, 
 
             \n\n**Likelihood of observing an improvement (power)**: {power}%\n\n**Number of sites**: {n_sites}\n\n""".format(power = catch_power, n_sites=n_sites)
 
-    if (sites_powers_obj != '') and (sites_powers_obj is not None) and (sites_feature is not None):
-        props = decode_obj(sites_powers_obj)
-
-        feature_id = int(sites_feature['properties']['nzsegment'])
-        # print(sites_feature)
-        # print(props.nzsegment)
-        # print(feature_id)
-
-        if feature_id in props.nzsegment:
-            reach_data = props.sel(nzsegment=feature_id)
-            power = reach_data.power.values
-
-            if np.isnan(power):
-                power = 'NA'
-
-                info += """##### Monitoring Site:
-
-                    \n\n**nzsegment**: {seg}\n\n**Site name**: {site}\n\n**Likelihood of observing an improvement (power)**: {t_stat}""".format(t_stat=power, seg=feature_id, site=sites_feature['id'])
-            else:
-                power = int(power)
-
-                info += """##### Monitoring Site:
-
-                    \n\n**nzsegment**: {seg}\n\n**Site name**: {site}\n\n**Likelihood of observing an improvement (power)**: {t_stat}%""".format(t_stat=power, seg=feature_id, site=sites_feature['id'])
-        else:
-            power = 'NA'
-
-            info += """##### Monitoring Site:
-
-                \n\n**nzsegment**: {seg}\n\n**Site name**: {site}\n\n**Likelihood of observing an improvement (power)**: {t_stat}""".format(t_stat=power, seg=feature_id, site=sites_feature['id'])
-
     if info == """""":
         info = old_info
 
     return info
 
 
-@callback(
-    Output("dl_power_eco", "data"),
-    Input("dl_btn_power_eco", "n_clicks"),
-    State('catch_id_eco', 'data'),
-    State('sites_powers_obj_eco', 'data'),
-    State('indicator_eco', 'value'),
-    State('time_period_eco', 'value'),
-    State('freq_eco', 'value'),
-    prevent_initial_call=True,
-    )
-def download_power(n_clicks, catch_id, powers_obj, indicator, n_years, n_samples_year):
+# @callback(
+#     Output("dl_power_eco", "data"),
+#     Input("dl_btn_power_eco", "n_clicks"),
+#     State('catch_id_eco', 'data'),
+#     State('indicator_eco', 'value'),
+#     State('time_period_eco', 'value'),
+#     prevent_initial_call=True,
+#     )
+# def download_power(n_clicks, catch_id, powers_obj, indicator, n_years):
 
-    if (catch_id != '') and (powers_obj != '') and (powers_obj is not None) and isinstance(n_samples_year, str):
-        power_data = decode_obj(powers_obj)
+#     if (catch_id != '') and (powers_obj != '') and (powers_obj is not None) and isinstance(n_samples_year, str):
+#         power_data = decode_obj(powers_obj)
 
-        df1 = power_data.to_dataframe().reset_index()
-        df1['indicator'] = eco_indicator_dict[indicator]
-        df1['n_years'] = n_years
-        df1['n_samples_per_year'] = n_samples_year
+#         df1 = power_data.to_dataframe().reset_index()
+#         df1['indicator'] = eco_indicator_dict[indicator]
+#         df1['n_years'] = n_years
+#         df1['n_samples_per_year'] = n_samples_year
 
-        df2 = df1.set_index(['indicator', 'n_years', 'n_samples_per_year', 'nzsegment']).sort_index()
+#         df2 = df1.set_index(['indicator', 'n_years', 'n_samples_per_year', 'nzsegment']).sort_index()
 
-        return dcc.send_data_frame(df2.to_csv, f"ecoology_sites_power_{catch_id}.csv")
+#         return dcc.send_data_frame(df2.to_csv, f"ecoology_sites_power_{catch_id}.csv")

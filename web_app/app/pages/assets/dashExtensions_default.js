@@ -1,6 +1,6 @@
 window.dashExtensions = Object.assign({}, window.dashExtensions, {
     default: {
-        rivers_catch_style_handle_sites: function style(feature) {
+        eco_catch_style_handle: function style(feature) {
             return {
                 fillColor: 'grey',
                 weight: 2,
@@ -9,14 +9,29 @@ window.dashExtensions = Object.assign({}, window.dashExtensions, {
                 fillOpacity: 0.1
             };
         },
-        rivers_base_reach_style_handle_sites: function style3(feature) {
+        eco_base_reach_style_handle: function style3(feature) {
             return {
                 weight: 2,
                 opacity: 0.75,
                 color: 'grey',
             };
         },
-        rivers_sites_points_handle_sites: function rivers_sites_points_handle(feature, latlng, context) {
+        eco_reach_style_handle: function style2(feature, context) {
+            const {
+                classes,
+                colorscale,
+                style,
+                colorProp
+            } = context.props.hideout; // get props from hideout
+            const value = feature.properties[colorProp]; // get value the determines the color
+            for (let i = 0; i < classes.length; ++i) {
+                if (value == classes[i]) {
+                    style.color = colorscale[i]; // set the fill color according to the class
+                }
+            }
+            return style;
+        },
+        eco_sites_points_handle: function rivers_sites_points_handle(feature, latlng, context) {
             const {
                 classes,
                 colorscale,
@@ -31,6 +46,15 @@ window.dashExtensions = Object.assign({}, window.dashExtensions, {
             }
 
             return L.circleMarker(latlng, circleOptions);
+        },
+        eco_marae_handle: function(feature, latlng) {
+            const flag = L.icon({
+                iconUrl: '/assets/nzta-marae.svg',
+                iconSize: [20, 30]
+            });
+            return L.marker(latlng, {
+                icon: flag
+            });
         }
     }
 });

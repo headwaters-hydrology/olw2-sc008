@@ -22,7 +22,6 @@ import zstandard as zstd
 import codecs
 import pickle
 import geopandas as gpd
-from gistools import vector
 import os
 # import tethysts
 import base64
@@ -46,9 +45,9 @@ import hdf5tools
 dash.register_page(
     __name__,
     path='/rivers-wq',
-    title='Water Quality',
+    title='Water Quality Reaches',
     name='rivers_wq',
-    description='Rivers Water Quality'
+    description='River Water Quality Reaches'
 )
 
 ### Paths

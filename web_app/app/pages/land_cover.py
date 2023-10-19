@@ -22,7 +22,6 @@ import zstandard as zstd
 import codecs
 import pickle
 import geopandas as gpd
-from gistools import vector
 import os
 # import tethysts
 import base64
@@ -46,9 +45,9 @@ import hdf5tools
 dash.register_page(
     __name__,
     path='/land-cover',
-    title='Land Cover Reductions',
+    title='Land Cover',
     name='land_cover',
-    description='Land Cover Reductions'
+    description='Land Cover'
 )
 
 ### Paths

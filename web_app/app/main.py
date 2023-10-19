@@ -54,16 +54,16 @@ def create_sidebar_children(pages):
         # direction="column",
         children=[
             create_nav_link(
-                label="Home",
+                label=dmc.Text("Home", style={'font-size': 16}),
                 href="/",
                 ),
             ],
             ),
         dmc.Divider(
-            label="User Guides", style={"marginBottom": 20, "marginTop": 20}
+            label=dmc.Text("User Guides", style={'font-size': 16}), style={"marginBottom": 20, "marginTop": 20}
             ),
         dmc.Divider(
-            label="Rivers", style={"marginBottom": 20, "marginTop": 20}
+            label=dmc.Text("Rivers", style={'font-size': 16}), style={"marginBottom": 10, "marginTop": 20}
             ),
         dmc.Group(
             children=[
@@ -75,7 +75,7 @@ def create_sidebar_children(pages):
         dmc.Group(
             children=[
                 create_nav_link(
-                    label=pages["pages.rivers_wq_site"]['title'], href=pages["pages.rivers_wq_site"]["path"]
+                    label=pages["pages.rivers_wq_sites"]['title'], href=pages["pages.rivers_wq_sites"]["path"]
                     )
                 ], style={"marginBottom": 10}
             ),
@@ -89,12 +89,19 @@ def create_sidebar_children(pages):
         dmc.Group(
             children=[
                 create_nav_link(
+                    label=pages["pages.rivers_eco_sites"]['title'], href=pages["pages.rivers_eco_sites"]["path"]
+                    )
+                ], style={"marginBottom": 10}
+            ),
+        dmc.Group(
+            children=[
+                create_nav_link(
                     label=pages["pages.land_cover"]['title'], href=pages["pages.land_cover"]["path"]
                     )
                 ], style={"marginBottom": 10}
             ),
         dmc.Divider(
-            label="Lakes", style={"marginBottom": 20, "marginTop": 20}
+            label=dmc.Text("Lakes", style={'font-size': 16}), style={"marginBottom": 10, "marginTop": 20}
             ),
         dmc.Group(
             children=[
@@ -104,7 +111,7 @@ def create_sidebar_children(pages):
                 ], style={"marginBottom": 10}
             ),
         dmc.Divider(
-            label="Groundwater", style={"marginBottom": 20, "marginTop": 20}
+            label=dmc.Text("Groundwater", style={'font-size': 16}), style={"marginBottom": 10, "marginTop": 20}
             ),
         dmc.Group(
             children=[
