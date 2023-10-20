@@ -5,7 +5,6 @@ Created on Wed Dec 21 13:37:46 2022
 
 @author: mike
 """
-import io
 import xarray as xr
 import dash
 from dash import dcc, html, dash_table, callback, ctx
@@ -17,19 +16,8 @@ import dash_leaflet.express as dlx
 from dash_extensions.javascript import assign, arrow_function
 import pandas as pd
 import numpy as np
-# import requests
-import zstandard as zstd
-import codecs
-import pickle
-import geopandas as gpd
-import os
-# import tethysts
 import base64
-import geobuf
-import pathlib
-import hdf5plugin
 import booklet
-import hdf5tools
 
 # from .app import app
 # from . import utils
@@ -37,10 +25,12 @@ import hdf5tools
 # from app import app
 # import utils
 
+from utils import parameters as param
+from utils import components as gc
+from utils import utils
+
 ##########################################
 ### Parameters
-
-# assets_path = pathlib.Path(os.path.split(os.path.realpath(os.path.dirname(__file__)))[0]).joinpath('assets')
 
 dash.register_page(
     __name__,
@@ -50,66 +40,7 @@ dash.register_page(
     description='Land Cover'
 )
 
-### Paths
-assets_path = pathlib.Path(os.path.realpath(os.path.dirname(__file__))).parent.joinpath('assets')
-
-app_base_path = pathlib.Path('/assets')
-
-base_data_url = 'https://b2.tethys-ts.xyz/file/'
-
-lc_url = '{}olw-data/olw-sc008/olw_land_cover_reductions.gpkg'.format(base_data_url)
-rivers_red_url = '{}olw-data/olw-sc008/olw_rivers_reductions.csv.zip'.format(base_data_url)
-
-rivers_reductions_model_path = assets_path.joinpath('rivers_reductions_modelled.h5')
-rivers_catch_pbf_path = app_base_path.joinpath('rivers_catchments.pbf')
-catch_lc_pbf_path = assets_path.joinpath('rivers_catch_lc_pbf.blt')
-
-rivers_reach_gbuf_path = assets_path.joinpath('rivers_reaches.blt')
-# rivers_loads_path = assets_path.joinpath('rivers_reaches_loads.h5')
-# rivers_flows_path = assets_path.joinpath('rivers_flows_rec.blt')
-rivers_lc_clean_path = assets_path.joinpath('rivers_catch_lc.blt')
-rivers_reach_mapping_path = assets_path.joinpath('rivers_reaches_mapping.blt')
-rivers_sites_path = assets_path.joinpath('rivers_sites_catchments.blt')
-river_catch_name_path = assets_path.joinpath('rivers_catchments_names.blt')
-river_marae_path = assets_path.joinpath('rivers_catchments_marae.blt')
-
-# rivers_catch_lc_dir = assets_path.joinpath('rivers_land_cover_gpkg')
-rivers_catch_lc_gpkg_str = '{base_url}olw-data/olw-sc008/rivers_land_cover_gpkg/{catch_id}_rivers_land_cover_reductions.gpkg'
-
-### Layout
-map_height = 700
-center = [-41.1157, 172.4759]
-
-attribution = 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
-
-# freq_mapping = {12: 'monthly', 26: 'fortnightly', 52: 'weekly', 104: 'twice weekly', 364: 'daily'}
-# time_periods = [5, 10, 20, 30]
-
-reach_style = dict(weight=4, opacity=1, color='white')
-lc_style = dict(weight=1, opacity=0.7, color='white', dashArray='3', fillOpacity=0.7)
-classes = [0, 20, 40, 60, 80]
-bins = classes.copy()
-bins.append(101)
-# colorscale = ['#808080', '#FED976', '#FEB24C', '#FC4E2A', '#BD0026', '#800026']
-# colorscale = ['#808080', '#FED976', '#FD8D3C', '#E31A1C', '#800026']
-colorscale = ['#ffffd4','#fed98e','#fe9929','#d95f0e','#993404']
-# reductions_colorscale = ['#edf8fb','#b2e2e2','#66c2a4','#2ca25f','#006d2c']
-# ctg = ["{}%+".format(cls, classes[i + 1]) for i, cls in enumerate(classes[1:-1])] + ["{}%+".format(classes[-1])]
-# ctg.insert(0, 'NA')
-ctg = ["{}%+".format(cls, classes[i + 1]) for i, cls in enumerate(classes[:-1])] + ["{}%+".format(classes[-1])]
-# ctg.insert(0, 'NA')
-
-site_point_radius = 6
-
-reduction_ratios = range(10, 101, 10)
-red_ratios = np.array(list(reduction_ratios), dtype='int8')
-
-rivers_points_hideout = {'classes': [], 'colorscale': ['#232323'], 'circleOptions': dict(fillOpacity=1, stroke=True, weight=1, color='black', radius=site_point_radius), 'colorProp': 'nzsegment'}
-
-rivers_indicator_dict = {'BD': 'Visual Clarity', 'EC': 'E.coli', 'DRP': 'Dissolved reactive phosporus', 'NH': 'Ammoniacal nitrogen', 'NO': 'Nitrate', 'TN': 'Total nitrogen', 'TP': 'Total phosphorus'}
-
-rivers_reduction_cols = list(rivers_indicator_dict.values())
-
+### Handles
 catch_style_handle = assign("""function style(feature) {
     return {
         fillColor: 'grey',
@@ -167,212 +98,16 @@ const flag = L.icon({iconUrl: '/assets/nzta-marae.svg', iconSize: [20, 30]});
 return L.marker(latlng, {icon: flag});
 }""", name='rivers_lc_marae_handle')
 
-### Colorbar
-# colorbar_base = dl.Colorbar(style={'opacity': 0})
-# base_reach_style = dict(weight=4, opacity=1, color='white')
-
-indices = list(range(len(ctg) + 1))
-colorbar_power = dl.Colorbar(min=0, max=len(ctg), classes=indices, colorscale=colorscale, tooltip=True, tickValues=[item + 0.5 for item in indices[:-1]], tickText=ctg, width=300, height=30, position="bottomright")
-
-reach_hideout = {'colorscale': colorscale, 'classes': classes, 'style': reach_style, 'colorProp': 'nzsegment'}
-lc_hideout = {'colorscale': colorscale, 'classes': classes, 'style': lc_style, 'colorProp': 'Nitrate'}
-
-marks = []
-for i in range(0, 101, 10):
-    if (i % 20) == 0:
-        marks.append({'label': str(i) + '%', 'value': i})
-    else:
-        marks.append({'value': i})
-
-
 # catch_id = 3076139
-
-###############################################
-### Helper Functions
-
-
-def read_pkl_zstd(obj, unpickle=False):
-    """
-    Deserializer from a pickled object compressed with zstandard.
-
-    Parameters
-    ----------
-    obj : bytes or str
-        Either a bytes object that has been pickled and compressed or a str path to the file object.
-    unpickle : bool
-        Should the bytes object be unpickled or left as bytes?
-
-    Returns
-    -------
-    Python object
-    """
-    if isinstance(obj, (str, pathlib.Path)):
-        with open(obj, 'rb') as p:
-            dctx = zstd.ZstdDecompressor()
-            with dctx.stream_reader(p) as reader:
-                obj1 = reader.read()
-
-    elif isinstance(obj, bytes):
-        dctx = zstd.ZstdDecompressor()
-        obj1 = dctx.decompress(obj)
-    else:
-        raise TypeError('obj must either be a str path or a bytes object')
-
-    if unpickle:
-        obj1 = pickle.loads(obj1)
-
-    return obj1
-
-
-def encode_obj(obj):
-    """
-
-    """
-    cctx = zstd.ZstdCompressor(level=1)
-    c_obj = codecs.encode(cctx.compress(pickle.dumps(obj, protocol=pickle.HIGHEST_PROTOCOL)), encoding="base64").decode()
-
-    return c_obj
-
-
-def decode_obj(str_obj):
-    """
-
-    """
-    dctx = zstd.ZstdDecompressor()
-    obj1 = dctx.decompress(codecs.decode(str_obj.encode(), encoding="base64"))
-    d1 = pickle.loads(obj1)
-
-    return d1
-
-
-def cartesian(arrays, out=None):
-    """
-    Generate a cartesian product of input arrays.
-
-    Parameters
-    ----------
-    arrays : list of array-like
-        1-D arrays to form the cartesian product of.
-    out : ndarray
-        Array to place the cartesian product in.
-
-    Returns
-    -------
-    out : ndarray
-        2-D array of shape (M, len(arrays)) containing cartesian products
-        formed of input arrays.
-
-    Examples
-    --------
-    >>> cartesian(([1, 2, 3], [4, 5], [6, 7]))
-    array([[1, 4, 6],
-            [1, 4, 7],
-            [1, 5, 6],
-            [1, 5, 7],
-            [2, 4, 6],
-            [2, 4, 7],
-            [2, 5, 6],
-            [2, 5, 7],
-            [3, 4, 6],
-            [3, 4, 7],
-            [3, 5, 6],
-            [3, 5, 7]])
-
-    """
-
-    arrays = [np.asarray(x) for x in arrays]
-    dtype = arrays[0].dtype
-
-    n = np.prod([x.size for x in arrays])
-    if out is None:
-        out = np.zeros([n, len(arrays)], dtype=dtype)
-
-    m = int(n / arrays[0].size)
-    out[:,0] = np.repeat(arrays[0], m)
-    if arrays[1:]:
-        cartesian(arrays[1:], out=out[0:m, 1:])
-        for j in range(1, arrays[0].size):
-            out[j*m:(j+1)*m, 1:] = out[0:m, 1:]
-
-    return out
-
-
-def parse_gis_file(contents, filename):
-    """
-
-    """
-    try:
-        content_type, content_string = contents.split(',')
-        decoded = base64.b64decode(content_string)
-        plan1 = gpd.read_file(io.BytesIO(decoded))
-
-        output = encode_obj(plan1)
-    except:
-        output = ['Wrong file type. It must be a GeoPackage (gpkg).']
-
-    return output
-
-
-def xr_concat(datasets):
-    """
-    A much more efficient concat/combine of xarray datasets. It's also much safer on memory.
-    """
-    # Get variables for the creation of blank dataset
-    coords_list = []
-    chunk_dict = {}
-
-    for chunk in datasets:
-        coords_list.append(chunk.coords.to_dataset())
-        for var in chunk.data_vars:
-            if var not in chunk_dict:
-                dims = tuple(chunk[var].dims)
-                enc = chunk[var].encoding.copy()
-                dtype = chunk[var].dtype
-                _ = [enc.pop(d) for d in ['original_shape', 'source'] if d in enc]
-                var_dict = {'dims': dims, 'enc': enc, 'dtype': dtype, 'attrs': chunk[var].attrs}
-                chunk_dict[var] = var_dict
-
-    try:
-        xr3 = xr.combine_by_coords(coords_list, compat='override', data_vars='minimal', coords='all', combine_attrs='override')
-    except:
-        xr3 = xr.merge(coords_list, compat='override', combine_attrs='override')
-
-    # Create the blank dataset
-    for var, var_dict in chunk_dict.items():
-        dims = var_dict['dims']
-        shape = tuple(xr3[c].shape[0] for c in dims)
-        xr3[var] = (dims, np.full(shape, np.nan, var_dict['dtype']))
-        xr3[var].attrs = var_dict['attrs']
-        xr3[var].encoding = var_dict['enc']
-
-    # Update the attributes in the coords from the first ds
-    for coord in xr3.coords:
-        xr3[coord].encoding = datasets[0][coord].encoding
-        xr3[coord].attrs = datasets[0][coord].attrs
-
-    # Fill the dataset with data
-    for chunk in datasets:
-        for var in chunk.data_vars:
-            if isinstance(chunk[var].variable._data, np.ndarray):
-                xr3[var].loc[chunk[var].transpose(*chunk_dict[var]['dims']).coords.indexes] = chunk[var].transpose(*chunk_dict[var]['dims']).values
-            elif isinstance(chunk[var].variable._data, xr.core.indexing.MemoryCachedArray):
-                c1 = chunk[var].copy().load().transpose(*chunk_dict[var]['dims'])
-                xr3[var].loc[c1.coords.indexes] = c1.values
-                c1.close()
-                del c1
-            else:
-                raise TypeError('Dataset data should be either an ndarray or a MemoryCachedArray.')
-
-    return xr3
 
 ###############################################
 ### Initial processing
 
-with booklet.open(rivers_reach_gbuf_path, 'r') as f:
+with booklet.open(param.rivers_reach_gbuf_path, 'r') as f:
     catches = [int(c) for c in f]
 
 catches.sort()
-indicators = list(rivers_indicator_dict.keys())
+indicators = list(param.rivers_indicator_dict.keys())
 indicators.sort()
 
 ###############################################
@@ -432,7 +167,7 @@ def layout():
                                 dmc.AccordionControl('(2) Query Options', style={'font-size': 18}),
                                 dmc.AccordionPanel([
                                     dmc.Text('(2a) Select Indicator:'),
-                                    dcc.Dropdown(options=[{'label': rivers_indicator_dict[d], 'value': d} for d in indicators], id='indicator_lc', optionHeight=40, clearable=False),
+                                    dcc.Dropdown(options=[{'label': param.rivers_indicator_dict[d], 'value': d} for d in indicators], id='indicator_lc', optionHeight=40, clearable=False),
 
                                     dmc.Text('(2b) Change the percent of the improvements applied. 100% is the max realistic improvement (This option only applies to the river segments):', style={'margin-top': 20}),
                                     dmc.Slider(id='Reductions_slider_lc',
@@ -442,7 +177,7 @@ def layout():
                                                 # min=10,
                                                 showLabelOnHover=True,
                                                 disabled=False,
-                                                marks=marks
+                                                marks=param.marks
                                                 ),
                                     dmc.Text('NOTE', weight=700, underline=True, style={'margin-top': 20}),
                                     dmc.Text('The river segments can be added to the map via the layer button on the top right corner of the map.')
@@ -509,24 +244,24 @@ def layout():
                         #     'margin-top': 20
                         #     },
                         children=html.Div([
-                            dl.Map(center=center, zoom=6, children=[
+                            dl.Map(center=param.center, zoom=param.zoom, children=[
                                 dl.LayersControl([
-                                    dl.BaseLayer(dl.TileLayer(attribution=attribution, opacity=0.7), checked=True, name='OpenStreetMap'),
+                                    dl.BaseLayer(dl.TileLayer(attribution=param.attribution, opacity=0.7), checked=True, name='OpenStreetMap'),
                                     dl.BaseLayer(dl.TileLayer(url='https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', attribution='Map data: © OpenStreetMap contributors, SRTM | Map style: © OpenTopoMap (CC-BY-SA)', opacity=0.6), checked=False, name='OpenTopoMap'),
-                                    dl.Overlay(dl.LayerGroup(dl.GeoJSON(url=str(rivers_catch_pbf_path), format="geobuf", id='catch_map_lc', zoomToBoundsOnClick=True, zoomToBounds=False, options=dict(style=catch_style_handle))), name='Catchments', checked=True),
+                                    dl.Overlay(dl.LayerGroup(dl.GeoJSON(url=str(param.rivers_catch_pbf_path), format="geobuf", id='catch_map_lc', zoomToBoundsOnClick=True, zoomToBounds=False, options=dict(style=catch_style_handle))), name='Catchments', checked=True),
                                     # dl.GeoJSON(url='', format="geobuf", id='base_reach_map', options=dict(style=base_reaches_style_handle)),
 
                                     # dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='sites_points', options=dict(pointToLayer=sites_points_handle), hideout={'circleOptions': dict(fillOpacity=1, stroke=False, radius=5, color='black')})), name='Monitoring sites', checked=True),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='reductions_poly_lc', hoverStyle=arrow_function(dict(weight=5, color='#666', dashArray='')), options=dict(style=lc_style_handle), hideout={})), name='Land cover', checked=True),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='marae_map_lc', zoomToBoundsOnClick=False, zoomToBounds=False, options=dict(pointToLayer=draw_marae))), name='Marae', checked=False),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='reach_map_lc', options={}, hideout={}, hoverStyle=arrow_function(dict(weight=8, color='black', dashArray='')))), name='Rivers', checked=False),
-                                    dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='sites_points_lc', options=dict(pointToLayer=sites_points_handle), hideout=rivers_points_hideout)), name='Monitoring sites', checked=False),
+                                    dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='sites_points_lc', options=dict(pointToLayer=sites_points_handle), hideout=param.rivers_points_hideout)), name='Monitoring sites', checked=False),
                                     ], id='layers_lc'),
-                                colorbar_power,
+                                gc.colorbar_power,
                                 # html.Div(id='colorbar', children=colorbar_base),
                                 # dmc.Group(id='colorbar', children=colorbar_base),
                                 dcc.Markdown(id="info_lc", className="info", style={"position": "absolute", "top": "10px", "right": "160px", "z-index": "1000"})
-                                                ], style={'width': '100%', 'height': '100vh', 'margin': "auto", "display": "block"}, id="map2_lc"),
+                                                ], style={'width': '100%', 'height': param.map_height, 'margin': "auto", "display": "block"}, id="map2_lc"),
 
                             ],
                             # className='five columns', style={'margin': 10}
@@ -574,7 +309,7 @@ def update_catch_name(catch_id):
     """
     # print(ds_id)
     if catch_id != '':
-        with booklet.open(river_catch_name_path) as f:
+        with booklet.open(param.rivers_catch_name_path) as f:
             catch_name = f[int(catch_id)]
 
         return catch_name
@@ -587,7 +322,7 @@ def update_catch_name(catch_id):
 # @cache.memoize()
 def update_reaches(catch_id):
     if catch_id != '':
-        with booklet.open(rivers_reach_gbuf_path, 'r') as f:
+        with booklet.open(param.rivers_reach_gbuf_path, 'r') as f:
             data = base64.b64encode(f[int(catch_id)]).decode()
 
     else:
@@ -602,7 +337,7 @@ def update_reaches(catch_id):
         )
 def update_marae(catch_id):
     if catch_id != '':
-        with booklet.open(river_marae_path, 'r') as f:
+        with booklet.open(param.rivers_marae_path, 'r') as f:
             data = base64.b64encode(f[int(catch_id)]).decode()
 
     else:
@@ -618,7 +353,7 @@ def update_marae(catch_id):
 # @cache.memoize()
 def update_lc_map(catch_id):
     if catch_id != '':
-        with booklet.open(catch_lc_pbf_path, 'r') as f:
+        with booklet.open(param.lc_catch_pbf_path, 'r') as f:
             data = base64.b64encode(f[int(catch_id)]).decode()
 
     else:
@@ -634,7 +369,7 @@ def update_lc_map(catch_id):
 # @cache.memoize()
 def update_monitor_sites(catch_id):
     if catch_id != '':
-        with booklet.open(rivers_sites_path, 'r') as f:
+        with booklet.open(param.rivers_sites_path, 'r') as f:
             data = base64.b64encode(f[int(catch_id)]).decode()
 
     else:
@@ -670,8 +405,8 @@ def update_base_reductions_obj(catch_id):
     data = ''
 
     if catch_id != '':
-        with booklet.open(rivers_lc_clean_path, 'r') as f:
-            data = encode_obj(f[int(catch_id)])
+        with booklet.open(param.rivers_lc_clean_path, 'r') as f:
+            data = utils.encode_obj(f[int(catch_id)])
 
     return data
 
@@ -689,9 +424,9 @@ def update_reach_reductions(base_reductions_obj, catch_id):
     """
     if catch_id != '':
         # print('trigger')
-        red1 = xr.open_dataset(rivers_reductions_model_path)
+        red1 = xr.open_dataset(param.rivers_reductions_model_path)
 
-        with booklet.open(rivers_reach_mapping_path) as f:
+        with booklet.open(param.rivers_reach_mapping_path) as f:
             branches = f[int(catch_id)][int(catch_id)]
 
         base_props = red1.sel(nzsegment=branches).sortby('nzsegment').load().copy()
@@ -699,7 +434,7 @@ def update_reach_reductions(base_reductions_obj, catch_id):
         del red1
         # print(base_props)
 
-        data = encode_obj(base_props)
+        data = utils.encode_obj(base_props)
     else:
         data = ''
 
@@ -718,14 +453,14 @@ def update_reach_hideout(reaches_obj, indicator, prop_red):
 
     """
     if (reaches_obj != '') and (reaches_obj is not None) and isinstance(indicator, str):
-        ind_name = rivers_indicator_dict[indicator]
+        ind_name = param.rivers_indicator_dict[indicator]
 
-        props = decode_obj(reaches_obj)[[ind_name]].sel(reduction_perc=prop_red, drop=True).rename({ind_name: 'reduction'})
+        props = utils.decode_obj(reaches_obj)[[ind_name]].sel(reduction_perc=prop_red, drop=True).rename({ind_name: 'reduction'})
 
         ## Modelled
-        color_arr = pd.cut(props.reduction.values, bins, labels=colorscale, right=False).tolist()
+        color_arr = pd.cut(props.reduction.values, param.bins, labels=param.colorscale_power, right=False).tolist()
 
-        hideout = {'colorscale': color_arr, 'classes': props.nzsegment.values.tolist(), 'style': reach_style, 'colorProp': 'nzsegment'}
+        hideout = {'colorscale': color_arr, 'classes': props.nzsegment.values.tolist(), 'style': param.reach_style, 'colorProp': 'nzsegment'}
 
     else:
         hideout = {}
@@ -745,9 +480,9 @@ def update_lc_hideout(indicator):
 
     """
     if isinstance(indicator, str):
-        ind_name = rivers_indicator_dict[indicator]
+        ind_name = param.rivers_indicator_dict[indicator]
 
-        hideout = {'colorscale': colorscale, 'classes': classes, 'style': lc_style, 'colorProp': ind_name}
+        hideout = {'colorscale': param.colorscale_power, 'classes': param.classes, 'style': param.lc_style, 'colorProp': ind_name}
 
     else:
         hideout = {}
@@ -773,10 +508,10 @@ def update_map_info(reaches_obj, reach_feature, lc_feature, indicator, prop_red)
     # print(trig)
 
     if isinstance(indicator, str):
-        ind_name = rivers_indicator_dict[indicator]
+        ind_name = param.rivers_indicator_dict[indicator]
 
         if trig == 'reach_map_lc':
-            props = decode_obj(reaches_obj)[[ind_name]].sel(reduction_perc=prop_red, drop=True).rename({ind_name: 'reduction'})
+            props = utils.decode_obj(reaches_obj)[[ind_name]].sel(reduction_perc=prop_red, drop=True).rename({ind_name: 'reduction'})
             # print(reach_feature)
             feature_id = int(reach_feature['id'])
 
@@ -814,7 +549,7 @@ def update_map_info(reaches_obj, reach_feature, lc_feature, indicator, prop_red)
 def download_catch_lc(catch_id):
 
     if catch_id != '':
-        url = rivers_catch_lc_gpkg_str.format(base_url=base_data_url, catch_id=catch_id)
+        url = param.rivers_catch_lc_gpkg_str.format(base_url=param.base_data_url, catch_id=catch_id)
 
         return url
 
@@ -829,13 +564,14 @@ def download_catch_lc(catch_id):
 def download_power(n_clicks, catch_id, reaches_obj):
 
     if catch_id != '':
-        props = decode_obj(reaches_obj)
+        props = utils.decode_obj(reaches_obj)
 
         df1 = props.to_dataframe().reset_index()
+        # print(df1)
         for col in df1.columns:
             df1[col] = df1[col].astype(int)
 
-        df2 = df1.set_index(['improvement_perc', 'nzsegment'])
+        df2 = df1.rename(columns={'reduction_perc': 'improvement_perc'}).set_index(['improvement_perc', 'nzsegment'])
 
         return dcc.send_data_frame(df2.to_csv, f"rivers_improvement_{catch_id}.csv")
 

@@ -55,6 +55,8 @@ assets_path = pathlib.Path(os.path.realpath(os.path.dirname(__file__))).parent.j
 
 app_base_path = pathlib.Path('/assets')
 
+base_data_url = 'https://b2.tethys-ts.xyz/file/'
+
 eco_power_catch_path = assets_path.joinpath('eco_reaches_power_modelled.h5')
 # eco_power_moni_path = assets_path.joinpath('eco_reaches_power_monitored.h5')
 eco_reach_weights_path = assets_path.joinpath('eco_reach_weights.h5')
@@ -62,11 +64,16 @@ eco_reach_weights_path = assets_path.joinpath('eco_reach_weights.h5')
 rivers_catch_pbf_path = app_base_path.joinpath('rivers_catchments.pbf')
 
 rivers_reach_gbuf_path = assets_path.joinpath('rivers_reaches.blt')
+rivers_lc_clean_path = assets_path.joinpath('rivers_catch_lc.blt')
+rivers_catch_path = assets_path.joinpath('rivers_catchments_minor.blt')
+river_loads_rec_path = assets_path.joinpath('rivers_loads_rec.blt')
 river_catch_name_path = assets_path.joinpath('rivers_catchments_names.blt')
 rivers_reach_mapping_path = assets_path.joinpath('rivers_reaches_mapping.blt')
 
 eco_sites_path = assets_path.joinpath('eco_sites_catchments.blt')
 river_marae_path = assets_path.joinpath('rivers_catchments_marae.blt')
+
+rivers_catch_lc_gpkg_str = '{base_url}olw-data/olw-sc008/rivers_land_cover_gpkg/{catch_id}_rivers_land_cover_reductions.gpkg'
 
 ### Layout
 map_height = 700
@@ -352,22 +359,56 @@ def layout():
                                 ),
 
                             dmc.AccordionItem([
-                                dmc.AccordionControl('(2) Select an improvement', style={'font-size': 18}),
+                                dmc.AccordionControl('(2 - Optional) Customise Improvements Layer', style={'font-size': 18}),
                                 dmc.AccordionPanel([
-                                    html.Label('(2a) Select a percent improvement:'),
-                                    # dmc.Slider(id='reductions_slider_eco',
-                                    #            value=25,
-                                    #            mb=35,
-                                    #            step=5,
-                                    #            min=5,
-                                    #            max=50,
-                                    #            showLabelOnHover=True,
-                                    #            disabled=False,
-                                    #            marks=eco_reductions_options
-                                    #            ),
-                                    # dcc.Dropdown(options=gw_reductions_options, id='reductions_gw', optionHeight=40, clearable=False,
-                                    #               style={'margin-top': 10}
-                                    #               ),
+                                    html.Label('(2a) Download improvements polygons as GPKG:'),
+                                    dcc.Loading(
+                                    id="loading-2",
+                                    type="default",
+                                    children=[dmc.Anchor(dmc.Button('Download land cover'), href='', id='dl_poly', style={'margin-top': 10})],
+                                    ),
+                                    html.Label('NOTE: Only modify existing values. Do not add additional columns; they will be ignored.', style={
+                                        'margin-top': 10
+                                    }
+                                        ),
+                                    html.Label('(2b) Upload modified improvements polygons as GPKG:', style={
+                                        'margin-top': 20
+                                    }
+                                        ),
+                                    dcc.Loading(
+                                        children=[
+                                            dcc.Upload(
+                                                id='upload_data_rivers',
+                                                children=dmc.Button('Upload reductions',
+                                                                     # className="me-1"
+                                                                      # style={
+                                                                      #     'width': '50%',
+                                                                      #     }
+                                                ),
+                                                style={
+                                                    'margin-top': 10
+                                                },
+                                                multiple=False
+                                            ),
+                                            ]
+                                        ),
+                                    dcc.Markdown('', style={
+                                        'textAlign': 'left',
+                                                    }, id='upload_error_text'),
+                                    html.Label('(2c) Process the improvements layer and route the improvements downstream:', style={
+                                        'margin-top': 20
+                                    }
+                                        ),
+                                    dcc.Loading(
+                                    id="loading-1",
+                                    type="default",
+                                    children=html.Div([dmc.Button('Process reductions', id='process_reductions_rivers',
+                                                                  # className="me-1",
+                                                                  n_clicks=0),
+                                                        html.Div(id='process_text')],
+                                                      style={'margin-top': 10, 'margin-bottom': 10}
+                                                      )
+                                    ),
                                     ]
                                     )
                                 ],
