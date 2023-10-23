@@ -245,15 +245,15 @@ def layout():
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='reach_map_lakes', options=dict(style=param.reach_style))), name='Rivers', checked=True),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='lake_poly', options=dict(style=lake_style_handle), hideout={'classes': [''], 'colorscale': ['#808080'], 'style': param.lake_style, 'colorProp': 'name'})), name='Lakes', checked=True),
                                     # dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='sites_points_lakes', options=dict(pointToLayer=sites_points_handle), hideout=rivers_points_hideout)), name='Monitoring sites', checked=True),
-                                    ], 
+                                    ],
                                     id='layers_gw',
                                     ),
                                 gc.colorbar_power,
                                 # html.Div(id='colorbar', children=colorbar_base),
                                 # dmc.Group(id='colorbar', children=colorbar_base),
                                 dcc.Markdown(id="info_lakes", className="info", style={"position": "absolute", "top": "10px", "right": "160px", "z-index": "1000"})
-                                ], 
-                                style={'width': '100%', 'height': param.map_height, 'margin': "auto", "display": "block"}, 
+                                ],
+                                style={'width': '100%', 'height': param.map_height, 'margin': "auto", "display": "block"},
                                 id="map2",
                                 ),
 
@@ -433,6 +433,10 @@ def update_land_reductions(contents, filename, lake_id):
             if isinstance(data, list):
                 error_text = data[0]
                 data = None
+            else:
+                error_text = 'Upload sucessful'
+    else:
+        error_text = 'You need to select a lake before uploading a file. Please refresh the page and start from step (1).'
 
     return data, error_text
 
@@ -461,31 +465,35 @@ def update_reach_reductions(click, base_reductions_obj, lake_id, reductions_obj)
             new_reductions = utils.decode_obj(reductions_obj)
             base_reductions = utils.decode_obj(base_reductions_obj)
 
-            new_props = utils.calc_lake_reach_reductions(lake_id, new_reductions, base_reductions)
-            new_props1 = new_props.combine_first(base_props).load().copy()
-            red1.close()
-            del red1
-            base_props.close()
-            del base_props
+            diff_cols = utils.diff_reductions(new_reductions, base_reductions, param.lakes_reduction_cols)
 
-            data = utils.encode_obj(new_props1)
-            text_out = 'Routing complete'
+            if diff_cols:
+                new_props = utils.calc_lake_reach_reductions(lake_id, new_reductions, base_reductions, diff_cols)
+                new_props1 = new_props.combine_first(base_props).load().copy()
+                red1.close()
+                del red1
+                base_props.close()
+                del base_props
+
+                data = utils.encode_obj(new_props1)
+                text_out = 'Routing complete'
+            else:
+                data = utils.set_default_lakes_reach_reductions(lake_id)
+                text_out = 'The improvements values are identical to the originals. Either skip this step, or modify the improvements values.'
+        elif lake_id != '':
+            data = utils.set_default_lakes_reach_reductions(lake_id)
+            text_out = 'Please upload a polygon improvements file in step (2b)'
         else:
             data = ''
-            text_out = 'Not all inputs have been selected'
+            text_out = 'Please select a lake before proceding'
     else:
         if lake_id != '':
-            red1 = xr.open_dataset(param.lakes_reductions_model_path)
-
-            base_props = red1.sel(LFENZID=int(lake_id), drop=True).load().copy()
-            red1.close()
-            del red1
-
-            data = utils.encode_obj(base_props)
+            # print('trigger')
+            data = utils.set_default_lakes_reach_reductions(lake_id)
             text_out = ''
         else:
             data = ''
-            text_out = ''
+            text_out = 'Please select a lake before proceding'
 
     return data, text_out
 

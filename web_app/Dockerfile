@@ -2,12 +2,16 @@
 FROM mullenkamp/tethys-dash-base:1.8
 
 # RUN apt-get update && apt-get install -y libspatialindex-dev python-rtree
+ENV PYTHONUNBUFFERED True
+ENV APP_HOME /app
+WORKDIR $APP_HOME
 
 COPY requirements.txt ./
 RUN pip install --no-cache-dir -r requirements.txt
 
-COPY ./app/pages/*.py /app/pages/
-COPY ./app/*.ini /app/
-COPY ./app/*.py /app/
+COPY ./app/pages/*.py ./pages/
+COPY ./app/utils/*.py ./utils/
+COPY ./app/*.ini ./
+COPY ./app/*.py ./
 
-CMD ["gunicorn", "--conf", "app/gunicorn_conf.py", "--bind", "0.0.0.0:80", "app.main:server"]
+CMD ["gunicorn", "--conf", "gunicorn_conf.py", "--bind", "0.0.0.0:80", "main:server"]

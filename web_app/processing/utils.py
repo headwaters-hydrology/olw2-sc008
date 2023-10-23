@@ -243,7 +243,7 @@ eco_sites_catch_path = assets_path.joinpath('eco_sites_catchments.blt')
 eco_moni_stdev_path = eco_data_path.joinpath('eco_moni_stdev.csv')
 eco_catch_stdev_path = eco_data_path.joinpath('eco_catch_stdev.csv')
 
-eco_reach_weights_h5_path = assets_path.joinpath('eco_reach_weights.h5')
+eco_reach_weights_h5_path = assets_path.joinpath('eco_reaches_weights.h5')
 
 eco_sims_path = output_path.joinpath('eco_sims')
 eco_sims_path.mkdir(parents=True, exist_ok=True)

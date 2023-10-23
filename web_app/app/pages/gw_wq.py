@@ -115,9 +115,11 @@ def layout():
                                 ),
 
                             dmc.AccordionItem([
-                                dmc.AccordionControl('(2) Select an improvement', style={'font-size': 18}),
+                                dmc.AccordionControl('(2) Define Indicator and an improvement', style={'font-size': 18}),
                                 dmc.AccordionPanel([
-                                    html.Label('(2a) Select an improvement:'),
+                                    dmc.Text('(2a) Select Indicator:'),
+                                    dcc.Dropdown(options=indicators, id='indicator_gw', optionHeight=40, clearable=False, style={'margin-bottom': 20}),
+                                    html.Label('(2b) Select an improvement:'),
                                     dmc.Slider(id='reductions_slider_gw',
                                                value=25,
                                                mb=35,
@@ -140,8 +142,6 @@ def layout():
                             dmc.AccordionItem([
                                 dmc.AccordionControl('(3) Query Options', style={'font-size': 18}),
                                 dmc.AccordionPanel([
-                                    dmc.Text('(3a) Select Indicator:'),
-                                    dcc.Dropdown(options=indicators, id='indicator_gw', optionHeight=40, clearable=False),
                                     dmc.Group(
                                         [dmc.Text('(3b) Select sampling length (years):', color="black"),
                                         dmc.HoverCard(
@@ -219,15 +219,15 @@ def layout():
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(url=str(param.rc_bounds_gbuf), format="geobuf", id='rc_map', zoomToBoundsOnClick=True, options=dict(style=rc_style_handle),  hideout={})), name='Regional Councils', checked=True),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='gw_points', zoomToBounds=True, zoomToBoundsOnClick=True, cluster=False, options=dict(pointToLayer=gw_points_style_handle), hideout=param.gw_points_hideout)), name='GW wells', checked=True),
                                     # dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='sites_points_gw', options=dict(pointToLayer=sites_points_handle), hideout=rivers_points_hideout)), name='Monitoring sites', checked=True),
-                                    ], 
+                                    ],
                                     id='layers_gw'
                                     ),
                                 gc.colorbar_power,
                                 # html.Div(id='colorbar', children=colorbar_base),
                                 # dmc.Group(id='colorbar', children=colorbar_base),
                                 dcc.Markdown(id="info_gw", className="info", style={"position": "absolute", "top": "10px", "right": "160px", "z-index": "1000"})
-                                ], 
-                                style={'width': '100%', 'height': param.map_height, 'margin': "auto", "display": "block"}, 
+                                ],
+                                style={'width': '100%', 'height': param.map_height, 'margin': "auto", "display": "block"},
                                 id="map2",
                                 ),
 

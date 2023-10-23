@@ -76,7 +76,7 @@ sites_points_handle = assign("""function rivers_sites_points_handle(feature, lat
 draw_marae = assign("""function(feature, latlng){
 const flag = L.icon({iconUrl: '/assets/nzta-marae.svg', iconSize: [20, 30]});
 return L.marker(latlng, {icon: flag});
-}""", name='eco_marae_handle')
+}""", name='eco_sites_marae_handle')
 
 
 # catch_id = 3076139
@@ -242,7 +242,7 @@ def layout():
                                     ),
                                 gc.colorbar_power,
                                 dcc.Markdown(id="info_eco_sites", className="info", style={"position": "absolute", "top": "10px", "right": "160px", "z-index": "1000"})
-                                ], 
+                                ],
                                 style={'width': '100%', 'height': param.map_height, 'margin': "auto", "display": "block"}
                                 ),
 

@@ -41,7 +41,8 @@ rivers_catch_lc_gpkg_str = '{base_url}olw-data/olw-sc008/rivers_land_cover_gpkg/
 
 ##  Ecology
 eco_power_moni_path = assets_path.joinpath('eco_reaches_power_monitored.h5')
-eco_reach_weights_path = assets_path.joinpath('eco_reach_weights.h5')
+eco_power_catch_path = assets_path.joinpath('eco_reaches_power_modelled.h5')
+eco_reach_weights_path = assets_path.joinpath('eco_reaches_weights.h5')
 eco_sites_path = assets_path.joinpath('eco_sites_catchments.blt')
 
 
@@ -119,6 +120,15 @@ rivers_reduction_cols = list(rivers_indicator_dict.values())
 eco_indicator_dict = {'peri': 'Periphyton', 'mci': 'MCI', 'sediment': 'Percent deposited sediment'}
 
 eco_reduction_cols = list(eco_indicator_dict.values())
+
+# eco_reductions_values = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
+# eco_reductions_options = [{'value': v, 'label': str(v)+'%'} for v in eco_reductions_values]
+
+eco_reductions_values = np.arange(10, 101, 10)
+eco_reductions_options = [{'value': v, 'label': str(v)+'%'} for v in eco_reductions_values]
+
+eco_bins_weights = [0, 10, 30, 101]
+colorscale_weights = ['#edf8b1','#7fcdbb','#2c7fb8']
 
 lakes_indicator_dict = {'CHLA': 'Chlorophyll a', 'Secchi': 'Secchi Depth', 'TN': 'Total nitrogen', 'TP': 'Total phosphorus'}
 

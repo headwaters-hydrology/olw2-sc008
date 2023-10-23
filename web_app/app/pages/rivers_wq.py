@@ -194,6 +194,7 @@ def layout():
                                             ]
                                         ),
                                     dcc.Markdown('', style={
+                                        'margin-top': 10,
                                         'textAlign': 'left',
                                                     }, id='upload_error_text'),
                                     html.Label('(2c) Process the improvements layer and route the improvements downstream:', style={
@@ -206,7 +207,7 @@ def layout():
                                     children=html.Div([dmc.Button('Process reductions', id='process_reductions_rivers',
                                                                   # className="me-1",
                                                                   n_clicks=0),
-                                                        html.Div(id='process_text')],
+                                                        html.Div(id='process_text', style={'margin-top': 10})],
                                                       style={'margin-top': 10, 'margin-bottom': 10}
                                                       )
                                     ),
@@ -296,14 +297,14 @@ def layout():
                                     # dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='reductions_poly')), name='Land use reductions', checked=False),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='reach_map', options={}, hideout={}, hoverStyle=arrow_function(dict(weight=10, color='black', dashArray='')))), name='Rivers', checked=True),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='sites_points', options=dict(pointToLayer=sites_points_handle), hideout=param.rivers_points_hideout)), name='Monitoring sites', checked=True),
-                                    ], 
+                                    ],
                                     id='layers_rivers'
                                     ),
                                 gc.colorbar_power,
                                 # html.Div(id='colorbar', children=colorbar_base),
                                 # dmc.Group(id='colorbar', children=colorbar_base),
                                 dcc.Markdown(id="info", className="info", style={"position": "absolute", "top": "10px", "right": "160px", "z-index": "1000"})
-                                ], 
+                                ],
                                 style={'width': '100%', 'height': param.map_height, 'margin': "auto", "display": "block"},
                                 id="map2",
                                 ),
@@ -469,6 +470,10 @@ def update_land_reductions(contents, filename, catch_id):
             if isinstance(data, list):
                 error_text = data[0]
                 data = None
+            else:
+                error_text = 'Upload sucessful'
+    else:
+        error_text = 'You need to select a catchment before uploading a file. Please refresh the page and start from step (1).'
 
     return data, error_text
 
@@ -490,7 +495,7 @@ def update_reach_reductions(click, base_reductions_obj, catch_id, reductions_obj
 
     if (trig == 'process_reductions_rivers'):
         if (catch_id != '') and (reductions_obj != '') and (reductions_obj is not None):
-            red1 = xr.open_dataset(param.rivers_reductions_model_path)
+            red1 = xr.open_dataset(param.rivers_reductions_model_path, engine='h5netcdf')
 
             with booklet.open(param.rivers_reach_mapping_path) as f:
                 branches = f[int(catch_id)][int(catch_id)]
@@ -500,36 +505,35 @@ def update_reach_reductions(click, base_reductions_obj, catch_id, reductions_obj
             new_reductions = utils.decode_obj(reductions_obj)
             base_reductions = utils.decode_obj(base_reductions_obj)
 
-            new_props = utils.calc_river_reach_reductions(catch_id, new_reductions, base_reductions)
-            new_props1 = new_props.combine_first(base_props).sortby('nzsegment').load().copy()
-            red1.close()
-            del red1
-            base_props.close()
-            del base_props
+            diff_cols = utils.diff_reductions(new_reductions, base_reductions, param.rivers_reduction_cols)
 
-            data = utils.encode_obj(new_props1)
-            text_out = 'Routing complete'
+            if diff_cols:
+                new_props = utils.calc_river_reach_reductions(catch_id, new_reductions, base_reductions, diff_cols)
+                new_props1 = new_props.combine_first(base_props).sortby('nzsegment').copy().load()
+                red1.close()
+                del red1
+                base_props.close()
+                del base_props
+
+                data = utils.encode_obj(new_props1)
+                text_out = 'Routing complete'
+            else:
+                data = utils.set_default_rivers_reach_reductions(catch_id)
+                text_out = 'The improvements values are identical to the originals. Either skip this step, or modify the improvements values.'
+        elif catch_id != '':
+            data = utils.set_default_rivers_reach_reductions(catch_id)
+            text_out = 'Please upload a polygon improvements file in step (2b)'
         else:
             data = ''
-            text_out = 'Not all inputs have been selected'
+            text_out = 'Please select a catchment before proceding'
     else:
         if catch_id != '':
             # print('trigger')
-            red1 = xr.open_dataset(param.rivers_reductions_model_path)
-
-            with booklet.open(param.rivers_reach_mapping_path) as f:
-                branches = f[int(catch_id)][int(catch_id)]
-
-            base_props = red1.sel(nzsegment=branches).sortby('nzsegment').load().copy()
-            red1.close()
-            del red1
-            # print(base_props)
-
-            data = utils.encode_obj(base_props)
+            data = utils.set_default_rivers_reach_reductions(catch_id)
             text_out = ''
         else:
             data = ''
-            text_out = ''
+            text_out = 'Please select a catchment before proceding'
 
     return data, text_out
 
@@ -558,7 +562,7 @@ def update_powers_data(reaches_obj, indicator, n_years, n_samples_year, prop_red
         with booklet.open(param.rivers_reach_mapping_path) as f:
             branches = f[int(catch_id)][int(catch_id)]
 
-        power_data1 = power_data.sel(indicator=indicator, nzsegment=branches, n_samples=n_samples, drop=True).load().sortby('nzsegment').copy()
+        power_data1 = power_data.sel(indicator=indicator, nzsegment=branches, n_samples=n_samples, drop=True).copy().load().sortby('nzsegment')
         power_data.close()
         del power_data
 
