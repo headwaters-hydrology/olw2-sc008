@@ -77,6 +77,7 @@ lc_catch_pbf_path = assets_path.joinpath('rivers_catch_lc_pbf.blt')
 
 ### Layout
 map_height = '80vh'
+# map_height = '100vh'
 center = [-41.1157, 172.4759]
 zoom = 6
 
