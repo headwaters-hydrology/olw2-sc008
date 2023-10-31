@@ -39,6 +39,11 @@ rivers_marae_path = assets_path.joinpath('rivers_catchments_marae.blt')
 
 rivers_catch_lc_gpkg_str = '{base_url}olw-data/olw-sc008/rivers_land_cover_gpkg/{catch_id}_rivers_land_cover_reductions.gpkg'
 
+## High flow load
+rivers_high_loads_reaches_path = assets_path.joinpath('rivers_high_flow_loads.h5')
+rivers_perc_load_above_90_flow_moni_path = assets_path.joinpath('rivers_perc_load_above_90_flow.h5')
+
+
 ##  Ecology
 eco_power_moni_path = assets_path.joinpath('eco_reaches_power_monitored.h5')
 eco_power_catch_path = assets_path.joinpath('eco_reaches_power_modelled.h5')
@@ -148,6 +153,11 @@ gw_reductions_options = [{'value': v, 'label': str(v)+'%'} for v in gw_reduction
 gw_time_periods = [5, 10, 20, 30]
 
 
+hfl_indicator_dict = {'EC': 'E.coli', 'DRP': 'Dissolved reactive phosporus', 'NO': 'Nitrate', 'TN': 'Total nitrogen', 'TP': 'Total phosphorus'}
+
+hfl_reduction_cols = list(hfl_indicator_dict.values())
+
+
 ### Improvements Slider marks
 marks = []
 for i in range(0, 101, 10):
@@ -157,10 +167,10 @@ for i in range(0, 101, 10):
         marks.append({'value': i})
 
 
-
-
-
-
+### high flow colobar
+hfl_colorscale = ['#fef0d9','#fdcc8a','#fc8d59','#e34a33','#b30000']
+hfl_bins_weights = [0, 20, 40, 60, 80, 101]
+hfl_ctg = ["{}%+".format(weights) for i, weights in enumerate(hfl_bins_weights[:-1])]
 
 
 

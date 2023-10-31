@@ -24,3 +24,11 @@ ctg_weights = ['Low', 'Moderate', 'High']
 
 indices = list(range(len(ctg_weights) + 1))
 colorbar_weights = dl.Colorbar(min=0, max=len(ctg_weights), classes=indices, colorscale=param.colorscale_weights, tooltip=True, tickValues=[item + 0.5 for item in indices[:-1]], tickText=ctg_weights, width=300, height=30, position="bottomright")
+
+## High flow load
+indices = list(range(len(param.hfl_ctg) + 1))
+colorbar_hfl = dl.Colorbar(min=0, max=len(param.ctg), classes=indices, colorscale=param.hfl_colorscale, tooltip=True, tickValues=[item + 0.5 for item in indices[:-1]], tickText=param.hfl_ctg, width=300, height=30, position="bottomright")
+
+
+
+

@@ -132,6 +132,13 @@ river_loads_rec_path = assets_path.joinpath('rivers_loads_rec.blt')
 # major_catch_file = output_path.joinpath('rivers_major_catch.feather')
 # catch_file = output_path.joinpath('rivers_catch.feather')
 
+rivers_high_loads_reaches_csv_path = rivers_conc_base_path.joinpath('high_flow_loads.csv')
+rivers_high_loads_reaches_path = assets_path.joinpath('rivers_high_flow_loads.h5')
+
+high_res_moni_dir = rivers_conc_base_path.joinpath('high_res')
+high_res_moni_feather_path = rivers_conc_base_path.joinpath('high_res_sites_load.feather')
+rivers_perc_load_above_90_flow_h5_path = assets_path.joinpath('rivers_perc_load_above_90_flow.h5')
+
 # Individual catchment land covers
 rivers_catch_lc_dir = assets_path.joinpath('rivers_land_cover_gpkg')
 rivers_catch_lc_dir.mkdir(parents=True, exist_ok=True)
@@ -357,6 +364,12 @@ def gpd_to_feather(gdf, output):
     """
     gdf.to_feather(output, compression='zstd', compression_level=1)
 
+
+def df_to_feather(df, output):
+    """
+
+    """
+    df.to_feather(output, compression='zstd', compression_level=1)
 
 
 def read_pkl_zstd(obj, unpickle=False):
