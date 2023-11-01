@@ -458,18 +458,18 @@ def update_reach_reductions(click, base_reductions_obj, lake_id, reductions_obj)
 
     if (trig == 'process_reductions_lakes'):
         if (lake_id != '') and (reductions_obj != '') and (reductions_obj is not None):
-            red1 = xr.open_dataset(param.lakes_reductions_model_path)
+            red1 = xr.open_dataset(param.lakes_reductions_model_path, engine='h5netcdf')
 
             base_props = red1.sel(LFENZID=int(lake_id), drop=True)
 
             new_reductions = utils.decode_obj(reductions_obj)
             base_reductions = utils.decode_obj(base_reductions_obj)
 
-            diff_cols = utils.diff_reductions(new_reductions, base_reductions, param.lakes_reduction_cols)
+            diff_cols = utils.diff_reductions(new_reductions, base_reductions, param.lakes_lc_params)
 
             if diff_cols:
                 new_props = utils.calc_lake_reach_reductions(lake_id, new_reductions, base_reductions, diff_cols)
-                new_props1 = new_props.combine_first(base_props).load().copy()
+                new_props1 = new_props.combine_first(base_props).copy().load()
                 red1.close()
                 del red1
                 base_props.close()
@@ -582,7 +582,7 @@ def update_powers_data_lakes(reaches_obj, indicator, n_years, n_samples_year, pr
 
         power_data = xr.open_dataset(param.lakes_power_combo_path, engine='h5netcdf')
         try:
-            power_data1 = power_data.sel(indicator=indicator, LFENZID=int(lake_id), n_samples=n_samples, conc_perc=conc_perc).load()
+            power_data1 = power_data.sel(indicator=indicator, LFENZID=int(lake_id), n_samples=n_samples, conc_perc=conc_perc).copy().load()
 
             power_data2 = [int(power_data1.power_modelled.values), float(power_data1.power_monitored.values)]
         except:

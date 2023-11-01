@@ -86,7 +86,7 @@ def lakes_land_cover():
     catches.close()
 
     print('save file')
-    with booklet.open(utils.lakes_lc_path, 'n', value_serializer='gpd_zstd', key_serializer='uint4', n_buckets=400) as land_cover_dict:
+    with booklet.open(utils.lakes_lc_path, 'n', value_serializer='gpd_zstd', key_serializer='uint4', n_buckets=401) as land_cover_dict:
         for i, lc2 in lc_dict.items():
             land_cover_dict[i] = lc2
 

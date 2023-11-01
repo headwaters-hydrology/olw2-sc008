@@ -207,13 +207,13 @@ def land_cover_reductions():
 
     dairy4 = dairy_geo.merge(dairy3.drop(features_cols, axis=1), on='typology')
 
-    combo1 = pd.concat([snb3, dairy4])
-    for param, col in param_mapping.items():
-        combo1[param] = combo1[col].copy()
+    combo1 = pd.concat([snb3, dairy4]).reset_index(drop=True)
 
-    combo2 = combo1.drop(set(param_mapping.values()), axis=1).reset_index(drop=True)
+    # for param, col in param_mapping.items():
+    #     combo1[param] = combo1[col].copy()
 
-    # combo1['default_reductions'] = combo1[['phosphorus', 'nitrogen']].mean(axis=1).round().astype('int8')
+    # combo2 = combo1.drop(set(param_mapping.values()), axis=1)
+    combo2 = combo1.rename(columns={'nitrogen': 'total nitrogen', 'phosphorus': 'total phosphorus', 'sediment': 'suspended sediment'})
 
     utils.gpd_to_feather(combo2, utils.snb_dairy_red_path)
 
@@ -232,11 +232,13 @@ def land_cover_reductions():
 
     lcdb_red = pd.concat(lcdb_red_list, axis=1).reset_index()
 
-    lcdb1 = lcdb0.merge(lcdb_red, on='typology')
-    for param, col in param_mapping.items():
-        lcdb1[param] = lcdb1[col].copy()
+    lcdb1 = lcdb0.merge(lcdb_red, on='typology').reset_index(drop=True)
 
-    lcdb2 = lcdb1.drop(set(param_mapping.values()), axis=1).reset_index(drop=True)
+    # for param, col in param_mapping.items():
+    #     lcdb1[param] = lcdb1[col].copy()
+
+    # lcdb2 = lcdb1.drop(set(param_mapping.values()), axis=1)
+    lcdb2 = lcdb1.rename(columns={'nitrogen': 'total nitrogen', 'phosphorus': 'total phosphorus', 'sediment': 'suspended sediment'})
 
     lcdb2.loc[lcdb2.land_cover == 'Low Producing Grassland', lcdb_extras.columns] = lcdb_extras.loc['Sheep and Beef'].values
     lcdb2.loc[lcdb2.land_cover == 'High Producing Exotic Grassland', lcdb_extras.columns] = lcdb_extras.loc['Dairy'].values
@@ -252,22 +254,6 @@ def land_cover_reductions():
 
     lc_red.to_csv(utils.lc_red_csv_path, index=False)
 
-
-
-
-    # combo2 = pd.concat([snb2, combo1.drop(features_cols, axis=1), lcdb_red])
-
-    # combo3 = lc0.merge(combo2, on='typology', how='left')
-    # combo3['default_reductions'] = combo3[['phosphorus', 'nitrogen']].mean(axis=1).round().astype('int8')
-
-    # combo3.to_file(utils.lc_red_gpkg_path)
-
-    # ## Simplify for app
-    # combo4 = combo3[combo3.default_reductions > 0].copy()
-    # combo4['geometry'] = combo4['geometry'].buffer(1).simplify(1)
-    # combo4 = combo4.dissolve('typology')
-
-    # utils.gpd_to_feather(combo4.reset_index(), utils.lc_red_feather_path)
 
 
 

@@ -79,6 +79,57 @@ rivers_red_url = '{}olw-data/olw-sc008/olw_rivers_reductions.csv.zip'.format(bas
 
 lc_catch_pbf_path = assets_path.joinpath('rivers_catch_lc_pbf.blt')
 
+# lc_param_mapping = {
+#     'Visual Clarity': 'suspended sediment',
+#     'E.coli': 'e.coli',
+#     'Dissolved reactive phosporus': 'total phosphorus',
+#     'Ammoniacal nitrogen': 'total nitrogen',
+#     'Nitrate': 'total nitrogen',
+#     'Total nitrogen': 'total nitrogen',
+#     'Total phosphorus': 'total phosphorus',
+#     'Chlorophyll a': 'e.coli',
+#     # 'Total Cyanobacteria': 'e.coli',
+#     'Secchi Depth': 'suspended sediment'
+#     }
+
+rivers_lc_param_mapping = {
+    'Visual Clarity': 'suspended sediment',
+    'E.coli': 'e.coli',
+    'Dissolved reactive phosporus': 'total phosphorus',
+    'Ammoniacal nitrogen': 'total nitrogen',
+    'Nitrate': 'total nitrogen',
+    'Total nitrogen': 'total nitrogen',
+    'Total phosphorus': 'total phosphorus',
+    }
+
+rivers_lc_param_effects = {
+    'total nitrogen': ['Total nitrogen', 'Ammoniacal nitrogen', 'Nitrate'],
+    'total phosphorus': ['Total phosphorus', 'Dissolved reactive phosporus'],
+    'e.coli': ['E.coli'],
+    'suspended sediment': ['Visual Clarity']
+    }
+
+lakes_lc_param_mapping = {
+    # 'E.coli': 'e.coli',
+    'Total nitrogen': 'total nitrogen',
+    'Total phosphorus': 'total phosphorus',
+    'Chlorophyll a': 'e.coli',
+    # 'Total Cyanobacteria': 'e.coli',
+    'Secchi Depth': 'suspended sediment'
+    }
+
+lakes_lc_param_effects = {
+    'suspended sediment': ['Secchi Depth'],
+    'e.coli': ['Chlorophyll a'],
+    'total phosphorus': ['Total phosphorus'],
+    'total nitrogen': ['Total nitrogen']
+    }
+
+rivers_lc_params = list(set(rivers_lc_param_mapping.values()))
+rivers_lc_params.sort()
+
+lakes_lc_params = list(set(lakes_lc_param_mapping.values()))
+lakes_lc_params.sort()
 
 ### Layout
 map_height = '80vh'

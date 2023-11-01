@@ -41,9 +41,27 @@ param_weights = {
         },
     }
 
+# param_weights = {
+#     'peri': {
+#         'total nitrogen': 0.4,
+#         'total phosphorus': 0.4,
+#         'suspended sediment': 0.2
+#         },
+#     'mci': {
+#         'total nitrogen': 0.5,
+#         'total phosphorus': 0.2,
+#         'suspended sediment': 0.3
+#         },
+#     'sediment': {
+#         'total nitrogen': 0,
+#         'total phosphorus': 0,
+#         'suspended sediment': 1
+#         },
+#     }
+
 weights_encoding = {'missing_value': -99, 'dtype': 'int16', 'scale_factor': 0.1}
 
-weights_params = list(param_weights['peri'].keys())
+weights_params = ['total nitrogen', 'total phosphorus', 'suspended sediment']
 
 
 ###############################################
@@ -214,7 +232,7 @@ def diff_reductions(new_reductions, base_reductions, reduction_cols):
     base_reductions1 = base_reductions.set_index('typology').sort_index()[reduction_cols]
     temp1 = new_reductions1.compare(base_reductions1, align_axis=0)
 
-    return list(temp1.columns)
+    return temp1.columns.tolist()
 
 
 def set_default_rivers_reach_reductions(catch_id):
@@ -274,6 +292,10 @@ def calc_river_reach_reductions(catch_id, new_reductions, base_reductions, diff_
     """
     This assumes that the concentration is the same throughout the entire greater catchment. If it's meant to be different, then each small catchment must be set and multiplied by the area to weight the contribution downstream.
     """
+    indicators = []
+    for col in diff_cols:
+        indicators.extend(param.rivers_lc_param_effects[col])
+
     with booklet.open(param.rivers_catch_path) as f:
         catches1 = f[int(catch_id)]
 
@@ -281,7 +303,7 @@ def calc_river_reach_reductions(catch_id, new_reductions, base_reductions, diff_
         branches = f[int(catch_id)]
 
     with booklet.open(param.rivers_loads_rec_path) as f:
-        loads = f[int(catch_id)][diff_cols]
+        loads = f[int(catch_id)][indicators]
 
     new_reductions0 = new_reductions[diff_cols + ['geometry']]
     not_all_zeros = new_reductions0[diff_cols].sum(axis=1) > 0
@@ -311,13 +333,20 @@ def calc_river_reach_reductions(catch_id, new_reductions, base_reductions, diff_
         results_list.append(c5)
 
     results = pd.concat(results_list, axis=1)
+    old_cols = results.columns
+
+    for ind, col in param.rivers_lc_param_mapping.items():
+        if col in old_cols:
+            results[ind] = results[col]
+
+    results.drop(old_cols, axis=1, inplace=True)
 
     ## Scale the reductions
     props_index = np.array(list(branches.keys()), dtype='int32')
     props_val = np.zeros((len(param.red_ratios), len(props_index)))
 
     reach_red = {}
-    for ind in diff_cols:
+    for ind in results.columns:
         c4 = results[[ind]].merge(loads[[ind]], on='nzsegment')
 
         c4['base'] = c4[ind + '_y'] * 100
@@ -363,6 +392,10 @@ def calc_river_reach_eco_weights(catch_id, new_reductions, base_reductions):
     """
     diff_cols = weights_params
 
+    indicators = []
+    for col in diff_cols:
+        indicators.extend(param.rivers_lc_param_effects[col])
+
     with booklet.open(param.rivers_catch_path) as f:
         catches1 = f[int(catch_id)]
 
@@ -370,7 +403,7 @@ def calc_river_reach_eco_weights(catch_id, new_reductions, base_reductions):
         branches = f[int(catch_id)]
 
     with booklet.open(param.rivers_loads_rec_path) as f:
-        loads = f[int(catch_id)][diff_cols]
+        loads = f[int(catch_id)][indicators]
 
     new_reductions0 = new_reductions[diff_cols + ['geometry']]
     not_all_zeros = new_reductions0[diff_cols].sum(axis=1) > 0
@@ -400,13 +433,20 @@ def calc_river_reach_eco_weights(catch_id, new_reductions, base_reductions):
         results_list.append(c5)
 
     results = pd.concat(results_list, axis=1)
+    old_cols = results.columns
+
+    for ind, col in param.rivers_lc_param_mapping.items():
+        if col in old_cols:
+            results[ind] = results[col]
+
+    results.drop(old_cols, axis=1, inplace=True)
 
     ## Scale the reductions
     props_index = np.array(list(branches.keys()), dtype='int32')
     props_val = np.zeros((len(param.red_ratios), len(props_index)))
 
     reach_red = {}
-    for ind in diff_cols:
+    for ind in results.columns:
         c4 = results[[ind]].merge(loads[[ind]], on='nzsegment')
 
         c4['base'] = c4[ind + '_y'] * 100
@@ -459,6 +499,10 @@ def calc_lake_reach_reductions(lake_id, new_reductions, base_reductions, diff_co
     """
     This assumes that the concentration is the same throughout the entire greater catchment. If it's meant to be different, then each small catchment must be set and multiplied by the area to weight the contribution downstream.
     """
+    indicators = []
+    for col in diff_cols:
+        indicators.extend(param.lakes_lc_param_effects[col])
+
     with booklet.open(param.lakes_catches_minor_path, 'r') as f:
         catches1 = f[str(lake_id)]
 
@@ -466,7 +510,7 @@ def calc_lake_reach_reductions(lake_id, new_reductions, base_reductions, diff_co
         branches = f[int(lake_id)]
 
     with booklet.open(param.lakes_loads_rec_path) as f:
-        loads = f[int(lake_id)][diff_cols]
+        loads = f[int(lake_id)][indicators]
 
     new_reductions0 = new_reductions[diff_cols + ['geometry']]
     not_all_zeros = new_reductions0[diff_cols].sum(axis=1) > 0
@@ -496,12 +540,19 @@ def calc_lake_reach_reductions(lake_id, new_reductions, base_reductions, diff_co
         results_list.append(c5)
 
     results = pd.concat(results_list, axis=1)
+    old_cols = results.columns
+
+    for ind, col in param.lakes_lc_param_mapping.items():
+        if col in old_cols:
+            results[ind] = results[col]
+
+    results.drop(old_cols, axis=1, inplace=True)
 
     ## Scale the reductions
     props_val = np.zeros((len(param.red_ratios)))
 
     reach_red = {}
-    for ind in diff_cols:
+    for ind in results.columns:
         c4 = results[[ind]].merge(loads[[ind]], on='nzsegment')
 
         c4['base'] = c4[ind + '_y'] * 100

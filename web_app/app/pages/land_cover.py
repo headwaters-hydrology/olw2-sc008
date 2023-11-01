@@ -18,6 +18,7 @@ import pandas as pd
 import numpy as np
 import base64
 import booklet
+import hdf5plugin
 
 # from .app import app
 # from . import utils
@@ -107,8 +108,10 @@ with booklet.open(param.rivers_reach_gbuf_path, 'r') as f:
     catches = [int(c) for c in f]
 
 catches.sort()
-indicators = list(param.rivers_indicator_dict.keys())
+indicators = list(set(param.rivers_lc_param_mapping.values()))
 indicators.sort()
+
+lc_mapping_inverse = {value: key for key, value in param.rivers_lc_param_mapping.items()}
 
 ###############################################
 ### App layout
@@ -167,7 +170,7 @@ def layout():
                                 dmc.AccordionControl('(2) Query Options', style={'font-size': 18}),
                                 dmc.AccordionPanel([
                                     dmc.Text('(2a) Select Indicator:'),
-                                    dcc.Dropdown(options=[{'label': param.rivers_indicator_dict[d], 'value': d} for d in indicators], id='indicator_lc', optionHeight=40, clearable=False),
+                                    dcc.Dropdown(options=[{'label': d.capitalize(), 'value': d} for d in indicators], id='indicator_lc', optionHeight=40, clearable=False),
 
                                     dmc.Text('(2b) Change the percent of the improvements applied. 100% is the max realistic improvement (This option only applies to the river segments):', style={'margin-top': 20}),
                                     dmc.Slider(id='Reductions_slider_lc',
@@ -424,12 +427,12 @@ def update_reach_reductions(base_reductions_obj, catch_id):
     """
     if catch_id != '':
         # print('trigger')
-        red1 = xr.open_dataset(param.rivers_reductions_model_path)
+        red1 = xr.open_dataset(param.rivers_reductions_model_path, engine='h5netcdf')
 
         with booklet.open(param.rivers_reach_mapping_path) as f:
             branches = f[int(catch_id)][int(catch_id)]
 
-        base_props = red1.sel(nzsegment=branches).sortby('nzsegment').load().copy()
+        base_props = red1.sel(nzsegment=branches).sortby('nzsegment').copy().load()
         red1.close()
         del red1
         # print(base_props)
@@ -453,14 +456,14 @@ def update_reach_hideout(reaches_obj, indicator, prop_red):
 
     """
     if (reaches_obj != '') and (reaches_obj is not None) and isinstance(indicator, str):
-        ind_name = param.rivers_indicator_dict[indicator]
+        ind_name = lc_mapping_inverse[indicator]
 
         props = utils.decode_obj(reaches_obj)[[ind_name]].sel(reduction_perc=prop_red, drop=True).rename({ind_name: 'reduction'})
 
         ## Modelled
         color_arr = pd.cut(props.reduction.values, param.bins, labels=param.colorscale_power, right=False).tolist()
 
-        hideout = {'colorscale': color_arr, 'classes': props.nzsegment.values.tolist(), 'style': param.reach_style, 'colorProp': 'nzsegment'}
+        hideout = {'colorscale': color_arr, 'classes': props.nzsegment.values, 'style': param.reach_style, 'colorProp': 'nzsegment'}
 
     else:
         hideout = {}
@@ -480,9 +483,7 @@ def update_lc_hideout(indicator):
 
     """
     if isinstance(indicator, str):
-        ind_name = param.rivers_indicator_dict[indicator]
-
-        hideout = {'colorscale': param.colorscale_power, 'classes': param.classes, 'style': param.lc_style, 'colorProp': ind_name}
+        hideout = {'colorscale': param.colorscale_power, 'classes': param.classes, 'style': param.lc_style, 'colorProp': indicator}
 
     else:
         hideout = {}
@@ -508,7 +509,7 @@ def update_map_info(reaches_obj, reach_feature, lc_feature, indicator, prop_red)
     # print(trig)
 
     if isinstance(indicator, str):
-        ind_name = param.rivers_indicator_dict[indicator]
+        ind_name = lc_mapping_inverse[indicator]
 
         if trig == 'reach_map_lc':
             props = utils.decode_obj(reaches_obj)[[ind_name]].sel(reduction_perc=prop_red, drop=True).rename({ind_name: 'reduction'})
@@ -530,7 +531,7 @@ def update_map_info(reaches_obj, reach_feature, lc_feature, indicator, prop_red)
             feature = lc_feature['properties']
             # print(feature)
 
-            info_str = """**Typology**: {typo}\n\n**Land Cover**: {lc}\n\n**Improvement**: {red}%""".format(red=int(feature[ind_name]), typo=feature['typology'], lc=feature['land_cover'])
+            info_str = """**Typology**: {typo}\n\n**Land Cover**: {lc}\n\n**Improvement**: {red}%""".format(red=int(feature[indicator]), typo=feature['typology'], lc=feature['land_cover'])
 
             info = info + info_str
 

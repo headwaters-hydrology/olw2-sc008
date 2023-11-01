@@ -102,11 +102,11 @@ def rivers_land_cover():
     catches.close()
 
     print('save files')
-    with booklet.open(utils.catch_lc_path, 'n', value_serializer='gpd_zstd', key_serializer='uint4', n_buckets=1600) as land_cover_dict:
+    with booklet.open(utils.catch_lc_path, 'n', value_serializer='gpd_zstd', key_serializer='uint4', n_buckets=1601) as land_cover_dict:
         for i, lc2 in lc_dict.items():
             land_cover_dict[i] = lc2
 
-    with booklet.open(utils.catch_lc_pbf_path, 'n', value_serializer=None, key_serializer='uint4', n_buckets=1600) as lc_gbuf:
+    with booklet.open(utils.catch_lc_pbf_path, 'n', value_serializer=None, key_serializer='uint4', n_buckets=1601) as lc_gbuf:
         for i, lc2 in lc_dict.items():
             lc2['tooltip'] = lc2.apply(lambda x: make_tooltip(x), axis=1)
             gdf = lc2.to_crs(4326)
@@ -114,10 +114,9 @@ def rivers_land_cover():
             gbuf = geobuf.encode(gjson)
             lc_gbuf[i] = gbuf
 
-    # with booklet.open(utils.catch_lc_path) as lc:
     for i, data in lc_dict.items():
         path = utils.rivers_catch_lc_dir.joinpath(utils.rivers_catch_lc_gpkg_str.format(i))
-        data.to_file(path)
+        data.drop('tooltip', axis=1).to_file(path)
 
     combo_list = []
     with booklet.open(utils.catch_lc_path) as lc:

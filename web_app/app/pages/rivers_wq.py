@@ -100,8 +100,6 @@ catches.sort()
 indicators = list(param.rivers_indicator_dict.keys())
 indicators.sort()
 
-
-
 ###############################################
 ### App layout
 
@@ -505,7 +503,7 @@ def update_reach_reductions(click, base_reductions_obj, catch_id, reductions_obj
             new_reductions = utils.decode_obj(reductions_obj)
             base_reductions = utils.decode_obj(base_reductions_obj)
 
-            diff_cols = utils.diff_reductions(new_reductions, base_reductions, param.rivers_reduction_cols)
+            diff_cols = utils.diff_reductions(new_reductions, base_reductions, param.rivers_lc_params)
 
             if diff_cols:
                 new_props = utils.calc_river_reach_reductions(catch_id, new_reductions, base_reductions, diff_cols)
@@ -581,7 +579,7 @@ def update_powers_data(reaches_obj, indicator, n_years, n_samples_year, prop_red
         sites.sort()
         if len(sites) > 0:
             conc_perc1 = conc_perc.sel(nzsegment=sites)
-            power_data1 = power_data.sel(indicator=indicator, nzsegment=sites, n_samples=n_samples, drop=True).load().sortby('nzsegment').copy()
+            power_data1 = power_data.sel(indicator=indicator, nzsegment=sites, n_samples=n_samples, drop=True).copy().load().sortby('nzsegment')
             power_data1 = power_data1.rename({'power': 'power_monitored'})
             power_data.close()
             del power_data
