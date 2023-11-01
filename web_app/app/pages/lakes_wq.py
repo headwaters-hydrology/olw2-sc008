@@ -64,7 +64,7 @@ catch_style_handle = assign("""function style(feature) {
     };
 }""", name='rivers_catch_style_handle')
 
-# lake_id = 48177
+# lake_id = 11133
 
 ###############################################
 ### Initial processing

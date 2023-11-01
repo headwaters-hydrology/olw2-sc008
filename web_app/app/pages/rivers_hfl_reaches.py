@@ -32,13 +32,13 @@ from utils import utils
 ##########################################
 ### Parameters
 
-dash.register_page(
-    __name__,
-    path='/rivers-hfl-reaches',
-    title='High Res Flow Reaches',
-    name='rivers_hfl_reaches',
-    description='River High Res Flow Reaches'
-)
+# dash.register_page(
+#     __name__,
+#     path='/rivers-hfl-reaches',
+#     title='High Res Flow Reaches',
+#     name='rivers_hfl_reaches',
+#     description='River High Res Flow Reaches'
+# )
 
 ### Handles
 catch_style_handle = assign("""function style(feature) {

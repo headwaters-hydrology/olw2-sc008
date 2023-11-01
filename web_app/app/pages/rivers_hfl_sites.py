@@ -34,15 +34,13 @@ from utils import utils
 ##########################################
 ### Parameters
 
-# assets_path = pathlib.Path(os.path.split(os.path.realpath(os.path.dirname(__file__)))[0]).joinpath('assets')
-
-dash.register_page(
-    __name__,
-    path='/rivers-hfl-wq-sites',
-    title='High Res Flow Sites',
-    name='rivers_hfl_wq_sites',
-    description='River High Res Flow Sites'
-)
+# dash.register_page(
+#     __name__,
+#     path='/rivers-hfl-wq-sites',
+#     title='High Res Flow Sites',
+#     name='rivers_hfl_wq_sites',
+#     description='River High Res Flow Sites'
+# )
 
 ### Handles
 catch_style_handle = assign("""function style(feature) {
