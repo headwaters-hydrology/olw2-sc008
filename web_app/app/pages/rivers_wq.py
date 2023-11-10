@@ -18,6 +18,7 @@ import pandas as pd
 import numpy as np
 import base64
 import booklet
+import hdf5plugin
 
 # from .utils import parameters as param
 # from . import utils
@@ -89,6 +90,7 @@ return L.marker(latlng, {icon: flag});
 
 
 # catch_id = 3076139
+# catch_id = 10007979
 
 ###############################################
 ### Initial processing
@@ -293,7 +295,7 @@ def layout():
 
                                     # dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='sites_points', options=dict(pointToLayer=sites_points_handle), hideout={'circleOptions': dict(fillOpacity=1, stroke=False, radius=5, color='black')})), name='Monitoring sites', checked=True),
                                     # dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='reductions_poly')), name='Land use reductions', checked=False),
-                                    dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='reach_map', options={}, hideout={}, hoverStyle=arrow_function(dict(weight=10, color='black', dashArray='')))), name='Rivers', checked=True),
+                                    dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='reach_map', options=dict(style=base_reach_style_handle), hideout={}, hoverStyle=arrow_function(dict(weight=10, color='black', dashArray='')))), name='Rivers', checked=True),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='sites_points', options=dict(pointToLayer=sites_points_handle), hideout=param.rivers_points_hideout)), name='Monitoring sites', checked=True),
                                     ],
                                     id='layers_rivers'
@@ -406,22 +408,6 @@ def update_marae(catch_id):
 
 
 @callback(
-        Output('reach_map', 'options'),
-        Input('reach_map', 'hideout'),
-        Input('catch_id', 'data')
-        )
-def update_reaches_option(hideout, catch_id):
-    trig = ctx.triggered_id
-
-    if (len(hideout) == 0) or (trig == 'catch_id'):
-        options = dict(style=base_reach_style_handle)
-    else:
-        options = dict(style=reach_style_handle)
-
-    return options
-
-
-@callback(
         Output('base_reductions_obj', 'data'),
         Input('catch_id', 'data'),
         prevent_initial_call=True
@@ -480,10 +466,8 @@ def update_land_reductions(contents, filename, catch_id):
     Output('reaches_obj', 'data'), Output('process_text', 'children'),
     Input('process_reductions_rivers', 'n_clicks'),
     Input('base_reductions_obj', 'data'),
-    [
-      State('catch_id', 'data'),
-      State('custom_reductions_obj', 'data'),
-      ],
+    State('catch_id', 'data'),
+    State('custom_reductions_obj', 'data'),
     prevent_initial_call=True)
 def update_reach_reductions(click, base_reductions_obj, catch_id, reductions_obj):
     """
@@ -574,21 +558,21 @@ def update_powers_data(reaches_obj, indicator, n_years, n_samples_year, prop_red
         new_powers['reduction'] = new_powers['reduction'].astype('int8')
 
         ## Monitored
-        power_data = xr.open_dataset(param.rivers_power_moni_path, engine='h5netcdf')
-        sites = power_data.nzsegment.values[power_data.nzsegment.isin(branches)].astype('int32')
-        sites.sort()
-        if len(sites) > 0:
-            conc_perc1 = conc_perc.sel(nzsegment=sites)
-            power_data1 = power_data.sel(indicator=indicator, nzsegment=sites, n_samples=n_samples, drop=True).copy().load().sortby('nzsegment')
-            power_data1 = power_data1.rename({'power': 'power_monitored'})
-            power_data.close()
-            del power_data
+        # power_data = xr.open_dataset(param.rivers_power_moni_path, engine='h5netcdf')
+        # sites = power_data.nzsegment.values[power_data.nzsegment.isin(branches)].astype('int32')
+        # sites.sort()
+        # if len(sites) > 0:
+        #     conc_perc1 = conc_perc.sel(nzsegment=sites)
+        #     power_data1 = power_data.sel(indicator=indicator, nzsegment=sites, n_samples=n_samples, drop=True).copy().load().sortby('nzsegment')
+        #     power_data1 = power_data1.rename({'power': 'power_monitored'})
+        #     power_data.close()
+        #     del power_data
 
-            power_data2 = power_data1.sel(conc_perc=conc_perc1).drop('conc_perc')
+        #     power_data2 = power_data1.sel(conc_perc=conc_perc1).drop('conc_perc')
 
-            new_powers = utils.xr_concat([new_powers, power_data2])
-        else:
-            new_powers = new_powers.assign(power_monitored=(('nzsegment'), xr.full_like(new_powers.reduction, np.nan, dtype='float32').values))
+        #     new_powers = utils.xr_concat([new_powers, power_data2])
+        # else:
+        #     new_powers = new_powers.assign(power_monitored=(('nzsegment'), xr.full_like(new_powers.reduction, np.nan, dtype='float32').values))
 
         data = utils.encode_obj(new_powers)
     else:
@@ -615,8 +599,8 @@ def update_powers_data(reaches_obj, indicator, n_years, n_samples_year, prop_red
 
 @callback(
     Output('reach_map', 'hideout'),
-    Output('sites_points', 'hideout'),
-    [Input('powers_obj', 'data')],
+    Output('reach_map', 'options'),
+    Input('powers_obj', 'data'),
     prevent_initial_call=True
     )
 def update_hideout(powers_obj):
@@ -630,21 +614,12 @@ def update_hideout(powers_obj):
         color_arr = pd.cut(props.power_modelled.values, param.bins, labels=param.colorscale_power, right=False).tolist()
 
         hideout_model = {'colorscale': color_arr, 'classes': props.nzsegment.values.tolist(), 'style': param.style_power, 'colorProp': 'nzsegment'}
-
-        ## Monitored
-        props_moni = props.dropna('nzsegment')
-        if len(props_moni.nzsegment) > 0:
-            # print(props_moni)
-            color_arr2 = pd.cut(props_moni.power_monitored.values, param.bins, labels=param.colorscale_power, right=False).tolist()
-
-            hideout_moni = {'classes': props_moni.nzsegment.values.astype(int), 'colorscale': color_arr2, 'circleOptions': dict(fillOpacity=1, stroke=True, color='black', weight=1, radius=param.site_point_radius), 'colorProp': 'nzsegment'}
-        else:
-            hideout_moni = param.rivers_points_hideout
+        options = dict(style=reach_style_handle)
     else:
         hideout_model = {}
-        hideout_moni = param.rivers_points_hideout
+        options = dict(style=base_reach_style_handle)
 
-    return hideout_model, hideout_moni
+    return hideout_model, options
 
 
 @callback(
@@ -684,24 +659,24 @@ def update_map_info(powers_obj, reach_feature, sites_feature, old_info):
             info_str = """\n\n**nzsegment**: {seg}\n\n**Improvement**: {red}%\n\n**Likelihood of observing an improvement (power)**: {t_stat}%""".format(red=int(reach_data.reduction), t_stat=int(reach_data.power_modelled), seg=feature_id)
 
             info += info_str
-        elif (trig == 'sites_points'):
-            feature_id = int(sites_feature['properties']['nzsegment'])
-            # print(sites_feature)
+        # elif (trig == 'sites_points'):
+        #     feature_id = int(sites_feature['properties']['nzsegment'])
+        #     # print(sites_feature)
 
-            reach_data = props.sel(nzsegment=feature_id)
+        #     reach_data = props.sel(nzsegment=feature_id)
 
-            info_str = """\n\n**nzsegment**: {seg}\n\n**Site name**: {site}\n\n**Improvement**: {red}%\n\n**Likelihood of observing an improvement (power)**: {t_stat}%""".format(red=int(reach_data.reduction), t_stat=int(reach_data.power_monitored), seg=feature_id, site=sites_feature['id'])
+        #     info_str = """\n\n**nzsegment**: {seg}\n\n**Site name**: {site}\n\n**Improvement**: {red}%\n\n**Likelihood of observing an improvement (power)**: {t_stat}%""".format(red=int(reach_data.reduction), t_stat=int(reach_data.power_monitored), seg=feature_id, site=sites_feature['id'])
 
-            info += info_str
+        #     info += info_str
         else:
-            if 'Site name' in old_info:
-                feature_id = int(sites_feature['properties']['nzsegment'])
-                reach_data = props.sel(nzsegment=feature_id)
+            # if 'Site name' in old_info:
+            #     feature_id = int(sites_feature['properties']['nzsegment'])
+            #     reach_data = props.sel(nzsegment=feature_id)
 
-                info_str = """\n\n**nzsegment**: {seg}\n\n**Site name**: {site}\n\n**Improvement**: {red}%\n\n**Likelihood of observing an improvement (power)**: {t_stat}%""".format(red=int(reach_data.reduction), t_stat=int(reach_data.power_monitored), seg=feature_id, site=sites_feature['id'])
+            #     info_str = """\n\n**nzsegment**: {seg}\n\n**Site name**: {site}\n\n**Improvement**: {red}%\n\n**Likelihood of observing an improvement (power)**: {t_stat}%""".format(red=int(reach_data.reduction), t_stat=int(reach_data.power_monitored), seg=feature_id, site=sites_feature['id'])
 
-                info += info_str
-            elif 'nzsegment' in old_info:
+            #     info += info_str
+            if 'nzsegment' in old_info:
                 feature_id = int(reach_feature['id'])
                 reach_data = props.sel(nzsegment=feature_id)
 

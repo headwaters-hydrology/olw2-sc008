@@ -185,7 +185,7 @@ def layout():
                                                          color=1,
                                                          ),
                                     dmc.Text('(3b) Select sampling frequency:', style={'margin-top': 20}),
-                                    dmc.SegmentedControl(data=[{'label': v, 'value': str(k)} for k, v in param.eco_freq_mapping.items()],
+                                    dmc.SegmentedControl(data=param.eco_freq_data_dict['peri'],
                                                         id='freq_eco_sites',
                                                         value='12',
                                                         fullWidth=True,
@@ -346,14 +346,28 @@ def update_marae(catch_id):
 
 
 @callback(
-    Output("freq_eco_sites", "value"),
+    Output("freq_eco_sites", "data"),
     Input('indicator_eco_sites', 'value'),
     prevent_initial_call=True,
     )
-def update_freq(indicator):
+def update_freq_options(indicator):
 
     if isinstance(indicator, str):
-        n_samples_year = param.eco_freq_dict[indicator]
+        freq_data = param.eco_freq_data_dict[indicator]
+
+        return freq_data
+
+
+@callback(
+    Output("freq_eco_sites", "value"),
+    Input("freq_eco_sites", "data"),
+    State('indicator_eco_sites', 'value'),
+    prevent_initial_call=True,
+    )
+def update_freq_value(freq_data, indicator):
+
+    if isinstance(indicator, str):
+        n_samples_year = param.eco_freq_value_dict[indicator]
 
         return str(n_samples_year)
 
@@ -386,7 +400,10 @@ def update_monitor_sites(catch_id):
 
 @callback(
     Output('sites_powers_obj_eco_sites', 'data'),
-    [Input('tbl_eco_sites', 'data'), Input('indicator_eco_sites', 'value'), Input('time_period_eco_sites', 'value'), Input('freq_eco_sites', 'value')],
+    Input('tbl_eco_sites', 'data'),
+    Input('indicator_eco_sites', 'value'),
+    Input('time_period_eco_sites', 'value'),
+    Input('freq_eco_sites', 'value'),
     prevent_initial_call=True
     )
 def update_sites_powers_obj(tbl_data, indicator, n_years, n_samples_year):
@@ -412,6 +429,8 @@ def update_sites_powers_obj(tbl_data, indicator, n_years, n_samples_year):
             if seg in power_data1.nzsegment:
                 power = int(power_data1.sel(nzsegment=seg, conc_perc=conc_perc).power.values)
                 power_data2.append({'conc_perc': conc_perc, 'nzsegment': seg, 'power': power})
+            else:
+                power_data2.append({'conc_perc': conc_perc, 'nzsegment': seg, 'power': -1})
 
         # print(power_data1)
         power_data.close()
@@ -441,6 +460,7 @@ def update_sites_hideout(powers_obj):
         if props:
             # print(props_moni)
             color_arr2 = pd.cut([p['power'] for p in props], param.bins, labels=param.colorscale_power, right=False).tolist()
+            color_arr2 = [color if isinstance(color, str) else '#252525' for color in color_arr2]
 
             hideout_moni = {'classes': [p['nzsegment'] for p in props], 'colorscale': color_arr2, 'circleOptions': dict(fillOpacity=1, stroke=True, color='black', weight=1, radius=param.site_point_radius), 'colorProp': 'nzsegment'}
 
@@ -476,11 +496,15 @@ def update_map_info(sites_powers_obj, sites_feature, old_info):
         reach_data = [p for p in props if p['nzsegment'] == feature_id]
         if reach_data:
             power = reach_data[0]['power']
+            if power == -1:
+                power = 'NA'
+            else:
+                power = str(power) + '%'
             red = 100 - reach_data[0]['conc_perc']
 
             info += """##### Monitoring Site:
 
-                \n\n**nzsegment**: {seg}\n\n**Site name**: {site}\n\n**Improvement %**: {conc}\n\n**Likelihood of observing an improvement (power)**: {t_stat}%""".format(t_stat=power, conc=red, seg=feature_id, site=sites_feature['id'])
+                \n\n**nzsegment**: {seg}\n\n**Site name**: {site}\n\n**Improvement %**: {conc}\n\n**Likelihood of observing an improvement (power)**: {t_stat}""".format(t_stat=power, conc=red, seg=feature_id, site=sites_feature['id'])
 
     # if info == """""":
     #     info = old_info

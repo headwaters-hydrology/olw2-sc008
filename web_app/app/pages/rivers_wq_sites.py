@@ -249,14 +249,14 @@ def layout():
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='marae_map_sites', zoomToBoundsOnClick=False, zoomToBounds=False, options=dict(pointToLayer=draw_marae))), name='Marae', checked=False),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='reach_map_sites', options=dict(style=base_reach_style_handle), hideout={})), name='Rivers', checked=True),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='sites_points_sites', options=dict(pointToLayer=sites_points_handle), hideout=param.rivers_points_hideout)), name='Monitoring sites', checked=True),
-                                    ], 
+                                    ],
                                     id='layers_sites'
                                     ),
                                 gc.colorbar_power,
                                 # html.Div(id='colorbar', children=colorbar_base),
                                 # dmc.Group(id='colorbar', children=colorbar_base),
                                 dcc.Markdown(id="info_sites", className="info", style={"position": "absolute", "top": "10px", "right": "160px", "z-index": "1000"})
-                                ], 
+                                ],
                                 style={'width': '100%', 'height': param.map_height, 'margin': "auto", "display": "block"}
                                 ),
 
@@ -394,6 +394,8 @@ def update_sites_powers_obj(indicator, n_years, n_samples_year, tbl_data):
             if seg in power_data1.nzsegment:
                 power = int(power_data1.sel(nzsegment=seg, conc_perc=conc_perc).power.values)
                 power_data2.append({'conc_perc': conc_perc, 'nzsegment': seg, 'power': power})
+            else:
+                power_data2.append({'conc_perc': conc_perc, 'nzsegment': seg, 'power': -1})
 
         # print(power_data1)
         power_data.close()
@@ -423,6 +425,7 @@ def update_sites_hideout(powers_obj):
         if props:
             # print(props_moni)
             color_arr2 = pd.cut([p['power'] for p in props], param.bins, labels=param.colorscale_power, right=False).tolist()
+            color_arr2 = [color if isinstance(color, str) else '#252525' for color in color_arr2]
 
             hideout_moni = {'classes': [p['nzsegment'] for p in props], 'colorscale': color_arr2, 'circleOptions': dict(fillOpacity=1, stroke=True, color='black', weight=1, radius=param.site_point_radius), 'colorProp': 'nzsegment'}
 
@@ -452,17 +455,21 @@ def update_map_info(sites_powers_obj, sites_feature, old_info):
 
         feature_id = int(sites_feature['properties']['nzsegment'])
         # print(sites_feature)
-        # print(props.nzsegment)
+        # print(props)
         # print(feature_id)
 
         reach_data = [p for p in props if p['nzsegment'] == feature_id]
         if reach_data:
             power = reach_data[0]['power']
+            if power == -1:
+                power = 'NA'
+            else:
+                power = str(power) + '%'
             red = 100 - reach_data[0]['conc_perc']
 
             info += """##### Monitoring Site:
 
-                \n\n**nzsegment**: {seg}\n\n**Site name**: {site}\n\n**Improvement %**: {conc}\n\n**Likelihood of observing an improvement (power)**: {t_stat}%""".format(t_stat=power, conc=red, seg=feature_id, site=sites_feature['id'])
+                \n\n**nzsegment**: {seg}\n\n**Site name**: {site}\n\n**Improvement %**: {conc}\n\n**Likelihood of observing an improvement (power)**: {t_stat}""".format(t_stat=power, conc=red, seg=feature_id, site=sites_feature['id'])
 
     # if info == """""":
     #     info = old_info

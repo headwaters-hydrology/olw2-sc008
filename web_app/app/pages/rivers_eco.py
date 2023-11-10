@@ -303,7 +303,7 @@ def layout():
                                     dl.BaseLayer(dl.TileLayer(url='https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', attribution='Map data: © OpenStreetMap contributors, SRTM | Map style: © OpenTopoMap (CC-BY-SA)', opacity=0.6), checked=False, name='OpenTopoMap'),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(url=str(param.rivers_catch_pbf_path), format="geobuf", id='catch_map_eco', zoomToBoundsOnClick=True, zoomToBounds=False, options=dict(style=catch_style_handle))), name='Catchments', checked=True),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='marae_map_eco', zoomToBoundsOnClick=False, zoomToBounds=False, options=dict(pointToLayer=draw_marae))), name='Marae', checked=False),
-                                    dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='reach_map_eco', options={}, hideout={})), name='Rivers', checked=True),
+                                    dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='reach_map_eco', options=dict(style=base_reach_style_handle), hideout={})), name='Rivers', checked=True),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='sites_points_eco', options=dict(pointToLayer=sites_points_handle), hideout=param.rivers_points_hideout)), name='Monitoring sites', checked=True),
                                     ],
                                     id='layers_eco'
@@ -413,23 +413,6 @@ def update_marae(catch_id):
         data = ''
 
     return data
-
-
-@callback(
-        Output('reach_map_eco', 'options'),
-        Input('reach_map_eco', 'hideout'),
-        Input('catch_id_eco', 'data')
-        )
-# @cache.memoize()
-def update_reaches_option(hideout, catch_id):
-    trig = ctx.triggered_id
-
-    if (len(hideout) == 0) or (trig == 'catch_id_eco'):
-        options = dict(style=base_reach_style_handle)
-    else:
-        options = dict(style=reach_style_handle)
-
-    return options
 
 
 @callback(
@@ -579,6 +562,7 @@ def update_catch_power_obj(reductions, indicator, n_years, n_sites, catch_id):
 
 @callback(
     Output('reach_map_eco', 'hideout'),
+    Output('reach_map_eco', 'options'),
     Input('reaches_weights_obj_eco', 'data'),
     prevent_initial_call=True
     )
@@ -596,11 +580,13 @@ def update_reach_hideout(reaches_obj):
         color_arr = pd.cut(values, bins_weights, labels=param.colorscale_weights, right=False).tolist()
 
         hideout_model = {'colorscale': color_arr, 'classes': props.nzsegment.values.astype(int), 'style': param.style_power, 'colorProp': 'nzsegment'}
+        options = dict(style=reach_style_handle)
 
     else:
         hideout_model = {}
+        options = dict(style=base_reach_style_handle)
 
-    return hideout_model
+    return hideout_model, options
 
 
 @callback(

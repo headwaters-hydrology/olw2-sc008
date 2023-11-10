@@ -145,7 +145,16 @@ rivers_time_periods = [5, 10, 20, 30]
 eco_freq_mapping = {1: 'yearly', 4: 'quarterly', 12: 'monthly'}
 eco_time_periods = [5, 10, 20, 30]
 eco_n_sites = [5, 10, 20, 30]
-eco_freq_dict = {'mci': 1, 'peri': 12, 'sediment': 12}
+eco_freq_value_dict = {'mci': 1, 'peri': 12, 'sediment': 12}
+
+eco_freq_data_dict = {}
+for ind in eco_freq_value_dict:
+    eco_freq_data_dict[ind] = []
+    if ind == 'mci':
+        eco_freq_data_dict[ind].extend([{'label': 'yearly', 'value': str(1)}])
+    else:
+        for key, value in eco_freq_mapping.items():
+            eco_freq_data_dict[ind].extend([{'label': value, 'value': str(key)}])
 
 lakes_freq_mapping = {4: 'quarterly', 12: 'monthly', 26: 'fortnightly', 52: 'weekly', 104: 'biweekly', 364: 'daily'}
 lakes_time_periods = [5, 10, 20, 30]

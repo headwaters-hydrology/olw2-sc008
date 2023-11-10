@@ -12,7 +12,7 @@ volumes:
 
 services:
   assets:
-    image: mullenkamp/olw-monitoring-app-assets:1.14
+    image: mullenkamp/olw-monitoring-app-assets:1.15
     volumes:
       - olw-assets:/app/assets
     networks:
@@ -27,7 +27,7 @@ services:
           - node.hostname == uswest3.tethys-ts.xyz
 
   dash:
-    image: mullenkamp/olw-monitoring-app:2.2
+    image: mullenkamp/olw-monitoring-app:2.3
     volumes:
       - olw-assets:/app/assets
     networks:
