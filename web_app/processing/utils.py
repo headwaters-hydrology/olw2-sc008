@@ -48,9 +48,13 @@ output_path.mkdir(parents=True, exist_ok=True)
 assets_path = output_path.joinpath('assets')
 assets_path.mkdir(parents=True, exist_ok=True)
 
-indicators = {'rivers': ['Visual Clarity', 'E.coli', 'Dissolved reactive phosporus', 'Ammoniacal nitrogen', 'Nitrate', 'Total nitrogen', 'Total phosphorus'],
-              'lakes': ['E.coli', 'Ammoniacal nitrogen', 'Total nitrogen', 'Total phosphorus', 'Chlorophyll a', 'Total Cyanobacteria', 'Secchi Depth']
+indicators_mapping = {'rivers': {'Visual Clarity': 'suspended sediment', 'E.coli': 'e.coli', 'Dissolved reactive phosporus': 'total phosphorus', 'Ammoniacal nitrogen': 'total nitrogen', 'Nitrate': 'total nitrogen', 'Total nitrogen': 'total nitrogen', 'Total phosphorus': 'total phosphorus'},
+              'lakes': {'E.coli': 'e.coli', 'Ammoniacal nitrogen': 'total nitrogen', 'Total nitrogen': 'total nitrogen', 'Total phosphorus': 'total phosphorus', 'Chlorophyll a': 'e.coli', 'Total Cyanobacteria': 'e.coli', 'Secchi Depth': 'suspended sediment'}
               }
+
+# indicators = {'rivers': ['total phosphorus', 'total nitrogen', 'suspended sediment', 'e.coli'],
+#               'lakes': ['E.coli', 'Ammoniacal nitrogen', 'Total nitrogen', 'Total phosphorus', 'Chlorophyll a', 'Total Cyanobacteria', 'Secchi Depth']
+#               }
 
 indicator_dict = {
     'Visual Clarity': 'sediment',
@@ -748,7 +752,9 @@ def calc_river_reach_reductions(feature, catch_id, reduction_ratios=range(10, 10
     print(catch_id)
 
     red_ratios = np.array(list(reduction_ratios), dtype='int8')
-    reduction_cols = indicators[feature]
+    indicators = indicators_mapping[feature]
+    inds = list(indicators.keys())
+    reduction_cols = list(set(indicators.values()))
 
     with booklet.open(river_catch_path) as f:
         catches1 = f[int(catch_id)]
@@ -757,7 +763,7 @@ def calc_river_reach_reductions(feature, catch_id, reduction_ratios=range(10, 10
         branches = f[int(catch_id)]
 
     with booklet.open(river_loads_rec_path) as f:
-        loads = f[int(catch_id)][reduction_cols]
+        loads = f[int(catch_id)][inds]
 
     with booklet.open(catch_lc_path) as f:
         reductions = f[int(catch_id)]
@@ -795,13 +801,14 @@ def calc_river_reach_reductions(feature, catch_id, reduction_ratios=range(10, 10
     props_val = np.zeros((len(red_ratios), len(props_index)))
 
     reach_red = {}
-    for ind in reduction_cols:
-        c4 = results[[ind]].merge(loads[[ind]], on='nzsegment')
+    for ind in inds:
+        red_col = indicators[ind]
+        c4 = results[[red_col]].merge(loads[[ind]], on='nzsegment')
 
-        c4['base'] = c4[ind + '_y'] * 100
+        c4['base'] = c4[ind] * 100
 
         for r, ratio in enumerate(red_ratios):
-            c4['prop'] = c4[ind + '_y'] * c4[ind + '_x'] * ratio * 0.01
+            c4['prop'] = c4[ind] * c4[red_col] * ratio * 0.01
             c4b = c4[['base', 'prop']]
             c5 = {r: list(v.values()) for r, v in c4b.to_dict('index').items()}
 
@@ -832,10 +839,6 @@ def calc_river_reach_reductions(feature, catch_id, reduction_ratios=range(10, 10
                                 'reduction_perc': red_ratios}
                        )
 
-    # file1 = tempfile.NamedTemporaryFile()
-    # hdf5tools.xr_to_hdf5(props, file1)
-    # props = props.assign_coords(catch_id=catch_id).expand_dims('catch_id').sortby(['nzsegment', 'reduction_perc'])
-
     return props
 
 
@@ -846,7 +849,9 @@ def calc_lakes_reach_reductions(feature, lake_id, reduction_ratios=range(10, 101
     print(lake_id)
 
     red_ratios = np.array(list(reduction_ratios), dtype='int8')
-    reduction_cols = indicators[feature]
+    indicators = indicators_mapping[feature]
+    inds = list(indicators.keys())
+    reduction_cols = list(set(indicators.values()))
 
     with booklet.open(lakes_catches_minor_path) as f:
         catches1 = f[int(lake_id)]
@@ -855,7 +860,7 @@ def calc_lakes_reach_reductions(feature, lake_id, reduction_ratios=range(10, 101
         branches = f[int(lake_id)]
 
     with booklet.open(lakes_loads_rec_path) as f:
-        loads = f[int(lake_id)][reduction_cols]
+        loads = f[int(lake_id)][inds]
 
     with booklet.open(lakes_lc_path) as f:
         reductions = f[int(lake_id)]
@@ -892,13 +897,14 @@ def calc_lakes_reach_reductions(feature, lake_id, reduction_ratios=range(10, 101
     props_val = np.zeros((len(red_ratios)))
 
     reach_red = {}
-    for ind in reduction_cols:
-        c4 = results[[ind]].merge(loads[[ind]], on='nzsegment')
+    for ind in inds:
+        red_col = indicators[ind]
+        c4 = results[[red_col]].merge(loads[[ind]], on='nzsegment')
 
-        c4['base'] = c4[ind + '_y'] * 100
+        c4['base'] = c4[ind] * 100
 
         for r, ratio in enumerate(red_ratios):
-            c4['prop'] = c4[ind + '_y'] * c4[ind + '_x'] * ratio * 0.01
+            c4['prop'] = c4[ind] * c4[red_col] * ratio * 0.01
             c4b = c4[['base', 'prop']]
             c5 = {r: list(v.values()) for r, v in c4b.to_dict('index').items()}
 
@@ -923,19 +929,12 @@ def calc_lakes_reach_reductions(feature, lake_id, reduction_ratios=range(10, 101
 
             reach_red[ind] = np.round(props_val*100).astype('int8') # Round to nearest even number
 
-    # props = xr.Dataset(data_vars={ind: (('reduction_perc', 'LFENZID'), values)  for ind, values in reach_red.items()},
-    #                    coords={'LFENZID': lake_id,
-    #                             'reduction_perc': red_ratios}
-    #                    )
     props = xr.Dataset(data_vars={ind: (('reduction_perc'), values)  for ind, values in reach_red.items()},
                        coords={
                                 'reduction_perc': red_ratios}
                        )
     props = props.assign_coords(LFENZID=np.array(lake_id, dtype='int32')).expand_dims('LFENZID')
 
-    # file1 = tempfile.NamedTemporaryFile()
-    # hdf5tools.xr_to_hdf5(props, file1)
-    # props = props.assign_coords(catch_id=catch_id).expand_dims('catch_id').sortby(['nzsegment', 'reduction_perc'])
 
     return props
 

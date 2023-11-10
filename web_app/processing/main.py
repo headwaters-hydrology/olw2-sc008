@@ -24,6 +24,14 @@ from rivers.rivers_process_loads import process_loads
 from rivers.rivers_monitoring_sites import rivers_monitoring_sites_processing
 from rivers.rivers_assign_power_monitored import rivers_process_power_monitored
 from rivers.rivers_assign_power_modelled import rivers_process_power_modelled
+from rivers.rivers_catch_names import rivers_assign_catch_names
+from rivers.rivers_marae import rivers_marae_processing
+
+from ecology.eco_assign_power_modelled import eco_process_power_modelled
+from ecology.eco_assign_power_monitored import eco_process_power_monitored
+from ecology.eco_assign_reach_weights import eco_calc_river_reach_weights
+from ecology.eco_monitoring_sites import eco_monitoring_sites_processing
+from ecology.eco_catchment_stdev import eco_catchment_stdev_processing
 
 from lakes.lakes_geo_processing import lakes_geo_process
 from lakes.lakes_delineation import lakes_catch_delin
@@ -32,7 +40,7 @@ from lakes.lakes_process_loads import process_loads_lakes
 from lakes.lakes_power_all import lakes_power_combo_processing
 
 from gw.gw_geo_processing import gw_geo_process
-from gw.gw_assign_errors import gw_process_errors_points
+from gw.gw_assign_power_monitored import gw_process_power_monitored
 
 #####################################################
 ### Land use/cover
@@ -55,6 +63,12 @@ rivers_monitoring_sites_processing()
 ## REC delineate all catchments that start at the sea and have a greater than 2 stream order
 rec_delin()
 
+## Assign catch names
+rivers_assign_catch_names()
+
+## process marae locations
+rivers_marae_processing()
+
 ## Land cover
 rivers_land_cover()
 
@@ -69,8 +83,33 @@ process_loads()
 
 # rivers_sims.py should be run via the terminal
 
+## Process the powers associated with the other parameters
 rivers_process_power_monitored()
 rivers_process_power_modelled()
+
+####################################################
+### Ecology
+
+## Monitoring sites
+eco_monitoring_sites_processing()
+
+## Catchment scale stdev
+eco_catchment_stdev_processing()
+
+## Reach weights
+eco_calc_river_reach_weights()
+
+## Sims for the catchment scale power calcs
+
+# eco_sims_catch.py should be run via the terminal
+
+## River error/power sims
+
+# eco_sims.py should be run via the terminal
+
+## Process the powers associated with the other parameters
+eco_process_power_monitored()
+eco_process_power_modelled()
 
 ###################################################
 ### Lakes
@@ -95,6 +134,7 @@ process_loads_lakes()
 
 # lakes_sims.py should be run via the terminal
 
+## Process the powers associated with the other parameters
 lakes_power_combo_processing()
 
 
@@ -108,7 +148,8 @@ gw_geo_process()
 
 # gw_sims.py should be run via the terminal
 
-gw_process_errors_points()
+## Process the powers associated with the other parameters
+gw_process_power_monitored()
 
 
 

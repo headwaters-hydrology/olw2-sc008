@@ -45,7 +45,7 @@ def rivers_monitoring_sites_processing():
     catches0 = booklet.open(utils.river_catch_major_path)
     # sites1 = sites0.to_crs(4326)
 
-    with booklet.open(utils.river_sites_catch_path, 'n', key_serializer='uint4', value_serializer='zstd', n_buckets=1600) as f:
+    with booklet.open(utils.river_sites_catch_path, 'n', key_serializer='uint4', value_serializer='zstd', n_buckets=1607) as f:
         for k, v in catches0.items():
             sites3 = sites2[sites2.within(v)]
             sites4 = sites3.set_index('site_id', drop=False).rename(columns={'site_id': 'tooltip'}).__geo_interface__

@@ -134,7 +134,7 @@ def rec_delin():
     #     reaches_dict[int(way_id)] = branches
 
     ## Delineate the end segments but excluding the 2nd and 1st reaches
-    with booklet.open(utils.river_reach_mapping_path, 'n', value_serializer='pickle_zstd', key_serializer='uint4') as reaches:
+    with booklet.open(utils.river_reach_mapping_path, 'n', value_serializer='pickle_zstd', key_serializer='uint4', n_buckets=1607) as reaches:
         for way_id, branches in reaches_dict.items():
             reaches[way_id] = branches
 

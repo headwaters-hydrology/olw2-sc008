@@ -71,20 +71,6 @@ def eco_monitoring_sites_processing():
     stdev1 = stdev0.drop('mean', axis=1)
     stdev1.to_csv(utils.eco_moni_stdev_path, index=False)
 
-    # stdev_ind = stdev1.groupby('indicator')['stdev'].mean()
-
-    # catch_stdev_list = []
-    # with booklet.open(utils.eco_sites_catch_path) as f:
-    #     for k, v in f.items():
-    #         s1 = geobuf.decode(v)
-    #         if s1['features']:
-    #             segs = [s['properties']['nzsegment'] for s in s1['features']]
-    #             stdev2 = stdev1[stdev1.nzsegment.isin(segs)].groupby('indicator')['stdev'].mean()
-    #             stdev2 = pd.concat([stdev2, stdev_ind]).reset_index().drop_duplicates(subset=['indicator'], keep='first')
-    #         else:
-    #             stdev2 = stdev_ind.copy().reset_index()
-
-    #         catch_stdev_list.append(stdev2)
 
 
 

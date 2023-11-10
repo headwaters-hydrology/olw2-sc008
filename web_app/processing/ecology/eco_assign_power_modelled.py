@@ -26,7 +26,7 @@ pd.options.display.max_columns = 10
 ### Assign conc
 
 
-def rivers_process_power_modelled():
+def eco_process_power_modelled():
     list1 = utils.error_cats(0.03, 5.6, 0.1)
 
     stdev0 = pd.read_csv(utils.eco_catch_stdev_path)

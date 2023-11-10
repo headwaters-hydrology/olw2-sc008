@@ -173,7 +173,7 @@ def layout():
                                         children=[
                                             dcc.Upload(
                                                 id='upload_data_rivers_eco',
-                                                children=dmc.Button('Upload reductions',
+                                                children=dmc.Button('Upload improvements',
                                                                      # className="me-1"
                                                                       # style={
                                                                       #     'width': '50%',
@@ -197,7 +197,7 @@ def layout():
                                     dcc.Loading(
                                     id="loading-1",
                                     type="default",
-                                    children=html.Div([dmc.Button('Process reductions', id='process_reductions_rivers_eco',
+                                    children=html.Div([dmc.Button('Process improvements', id='process_reductions_rivers_eco',
                                                                   # className="me-1",
                                                                   n_clicks=0),
                                                         html.Div(id='process_text_eco', style={'margin-top': 10})],
