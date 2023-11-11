@@ -40,7 +40,7 @@ pd.options.display.max_columns = 10
 
 # catch_id = 3076139
 
-reduction_ratios = range(10, 101, 10)
+reduction_ratios = range(5, 101, 5)
 feature = 'rivers'
 
 with booklet.open(utils.river_reach_mapping_path) as f:
@@ -48,7 +48,7 @@ with booklet.open(utils.river_reach_mapping_path) as f:
 
 if __name__ == '__main__':
 
-    with concurrent.futures.ProcessPoolExecutor(max_workers=8, mp_context=mp.get_context("spawn")) as executor:
+    with concurrent.futures.ProcessPoolExecutor(max_workers=7, mp_context=mp.get_context("spawn")) as executor:
         futures = []
         for catch_id in catches:
             f = executor.submit(utils.calc_river_reach_reductions, feature, catch_id, reduction_ratios)
@@ -62,4 +62,50 @@ if __name__ == '__main__':
 
     # h5 = hdf5tools.H5(files)
     # h5.to_hdf5(utils.river_reductions_model_path)
+
+    ## Combine into csv
+    combo1['nzsegment'] = combo1['nzsegment'].astype('int32')
+    combo1['reduction_perc'] = combo1['reduction_perc'].astype('int8')
+    for p in combo1.data_vars:
+        combo1[p] = combo1[p].astype('int8')
+
+    combo2 = combo1.to_dataframe()
+    combo2.to_csv(utils.rivers_red_csv_path)
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 

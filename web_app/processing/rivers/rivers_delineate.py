@@ -34,6 +34,7 @@ extra_end_segs = [3076139]
 
 
 def rec_delin():
+    # break_points = gpd.read_file(utils.catch_break_points_gpkg).to_crs(4326)
     w0 = nzrec.Water(utils.nzrec_data_path)
 
     stream_orders = {way_id: v['Strahler stream order'] for way_id, v in w0._way_tag.items()}
@@ -53,6 +54,17 @@ def rec_delin():
             append(way_id)
 
     end_segs.extend(extra_end_segs)
+
+    ## Get the segs associated with the break points and remove he end ones from the end_segs
+    # break_segs = set()
+    # for i, row in break_points.iterrows():
+    #     coords = np.array(row.geometry.coords)[0]
+    #     way1 = w0.nearest_way(coords)
+    #     break_segs.update(way1.ways)
+
+    # for seg in break_segs:
+    #     if seg in end_segs:
+    #         end_segs.remove(seg)
 
     ways_1st_2nd = set([i for i, v in stream_orders.items() if v < 3])
 
@@ -101,8 +113,28 @@ def rec_delin():
 
         reaches_dict[int(way_id)] = branches
 
+    ## Delineate all the special subcatchments
+    # way_list = []
+    # for way_id in break_segs:
+    #     way1 = w0.add_way(way_id)
+    #     all_up_ways = way1.upstream()
+    #     way_list.append(all_up_ways)
+
+    # between_list = nzrec.between(way_list)
+
+    # for way in between_list:
+    #     way_id = way.id
+    #     all_up_ways = way.ways.copy()
+    #     branches = {way_id: np.asarray(list(all_up_ways), dtype='int32')}
+    #     all_up_ways.remove(way_id)
+    #     for up_way in all_up_ways:
+    #         new_up = nzrec.utils.find_upstream(up_way, node_way, way, way_index_3rd_up)
+    #         branches[up_way] = np.asarray(list(new_up), dtype='int32')
+
+    #     reaches_dict[int(way_id)] = branches
+
     ## Delineate the end segments but excluding the 2nd and 1st reaches
-    with booklet.open(utils.river_reach_mapping_path, 'n', value_serializer='pickle_zstd', key_serializer='uint4') as reaches:
+    with booklet.open(utils.river_reach_mapping_path, 'n', value_serializer='pickle_zstd', key_serializer='uint4', n_buckets=1607) as reaches:
         for way_id, branches in reaches_dict.items():
             reaches[way_id] = branches
 
@@ -137,12 +169,12 @@ def rec_delin():
 
 
     # Reach geobufs in blt
-    with booklet.open(utils.river_reach_gbuf_path, 'n', key_serializer='uint4', value_serializer='zstd', n_buckets=1600) as f:
+    with booklet.open(utils.river_reach_gbuf_path, 'n', key_serializer='uint4', value_serializer='zstd', n_buckets=1607) as f:
         for way_id, gbuf in reach_gbuf_dict.items():
             f[way_id] = gbuf
 
     # Catchment gpds in blt
-    with booklet.open(utils.river_catch_major_path, 'n', key_serializer='uint4', value_serializer='wkb_zstd', n_buckets=1600) as f:
+    with booklet.open(utils.river_catch_major_path, 'n', key_serializer='uint4', value_serializer='wkb_zstd', n_buckets=1607) as f:
         for way_id, catches in catches_major_dict.items():
             f[way_id] = catches
 
@@ -157,7 +189,7 @@ def rec_delin():
         f.write(geobuf.encode(gjson))
 
     ## Produce a file grouped by all catchments as geodataframes
-    with booklet.open(utils.river_catch_path, 'n', key_serializer='uint4', value_serializer='gpd_zstd', n_buckets=1600) as f:
+    with booklet.open(utils.river_catch_path, 'n', key_serializer='uint4', value_serializer='gpd_zstd', n_buckets=1607) as f:
         for way_id, branches in catches_minor_dict.items():
             f[way_id] = branches.to_crs(2193)
 
@@ -170,6 +202,16 @@ def rec_delin():
     #         segs = branches[way_id]
     #         catches1 = rec_catch0[rec_catch0.nzsegment.isin(segs)].copy()
     #         f[way_id] = catches1
+
+    # catch_list = []
+    # with booklet.open(utils.river_catch_path) as c1:
+    #     for catch in c1.values():
+    #         catch_list.append(catch)
+
+    # catch1 = pd.concat(catch_list)
+    # catch1.to_file('/home/mike/data/OLW/web_app/rivers/agg_3rd_order_catches.gpkg')
+
+
 
 
 

@@ -1,0 +1,55 @@
+version: '3.3'
+
+networks:
+  net:
+    driver: overlay
+    attachable: true
+  traefik-public:
+    external: true
+
+volumes:
+  olw-assets:
+
+services:
+  assets:
+    image: mullenkamp/olw-monitoring-app-assets:1.7
+    volumes:
+      - olw-assets:/app/assets
+    networks:
+      - net
+      # - traefik-public
+    deploy:
+      restart_policy:
+        condition: none
+      placement:
+        constraints:
+          - node.labels.function == web_server
+          - node.hostname == uswest3.tethys-ts.xyz
+
+  dash:
+    image: mullenkamp/olw-monitoring-app:1.31
+    volumes:
+      - olw-assets:/app/assets
+    networks:
+      # - net
+      - traefik-public
+    depends_on:
+      - assets
+    deploy:
+      replicas: 1
+      placement:
+        constraints:
+          - node.labels.function == web_server
+          - node.hostname == uswest3.tethys-ts.xyz
+      labels:
+        - traefik.enable=true
+        - traefik.docker.network=traefik-public
+        - traefik.constraint-label=traefik-public
+        - traefik.http.routers.olw-vis-test-http.rule=Host(`test.monitoringfreshwater.co.nz`)
+        - traefik.http.routers.olw-vis-test-http.entrypoints=http
+        - traefik.http.routers.olw-vis-test-http.middlewares=https-redirect
+        - traefik.http.routers.olw-vis-test-https.rule=Host(`test.monitoringfreshwater.co.nz`)
+        - traefik.http.routers.olw-vis-test-https.entrypoints=https
+        - traefik.http.routers.olw-vis-test-https.tls=true
+        # - traefik.http.routers.olw-vis-test-https.tls.certresolver=le
+        - traefik.http.services.olw-vis-test.loadbalancer.server.port=80

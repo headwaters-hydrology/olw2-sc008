@@ -48,12 +48,32 @@ output_path.mkdir(parents=True, exist_ok=True)
 assets_path = output_path.joinpath('assets')
 assets_path.mkdir(parents=True, exist_ok=True)
 
-indicators = {'rivers': ['Black disk', 'E.coli', 'Dissolved reactive phosporus', 'Ammoniacal nitrogen', 'Nitrate', 'Total nitrogen', 'Total phosphorus'],
-              'lakes': ['E.coli', 'Ammoniacal nitrogen', 'Total nitrogen', 'Total phosphorus', 'Chlorophyll a', 'Total Cyanobacteria', 'Secchi Depth']
+indicators_mapping = {'rivers': {'Visual Clarity': 'suspended sediment', 'E.coli': 'e.coli', 'Dissolved reactive phosporus': 'total phosphorus', 'Ammoniacal nitrogen': 'total nitrogen', 'Nitrate': 'total nitrogen', 'Total nitrogen': 'total nitrogen', 'Total phosphorus': 'total phosphorus'},
+              'lakes': {'E.coli': 'e.coli', 'Ammoniacal nitrogen': 'total nitrogen', 'Total nitrogen': 'total nitrogen', 'Total phosphorus': 'total phosphorus', 'Chlorophyll a': 'e.coli', 'Total Cyanobacteria': 'e.coli', 'Secchi Depth': 'suspended sediment'}
               }
+
+# indicators = {'rivers': ['total phosphorus', 'total nitrogen', 'suspended sediment', 'e.coli'],
+#               'lakes': ['E.coli', 'Ammoniacal nitrogen', 'Total nitrogen', 'Total phosphorus', 'Chlorophyll a', 'Total Cyanobacteria', 'Secchi Depth']
+#               }
+
+indicator_dict = {
+    'Visual Clarity': 'sediment',
+    'E.coli': 'e.coli',
+    'Dissolved reactive phosporus': 'DRP',
+    'Ammoniacal nitrogen': 'NNN',
+    'Nitrate': 'NNN',
+    'Total nitrogen': 'TN',
+    'Total phosphorus': 'TP',
+    'Chlorophyll a': 'e.coli',
+    'Total Cyanobacteria': 'e.coli',
+    'Secchi Depth': 'sediment',
+    }
 
 ### RC boundaries
 rc_bounds_gbuf = assets_path.joinpath('rc_bounds.pbf')
+
+### Marae locations
+marae_gpkg = base_path.joinpath('marae.gpkg')
 
 ### Land use/cover
 lc_base_path = base_path.joinpath('land_use')
@@ -80,6 +100,7 @@ lc_clean_gpkg_path = base_path.joinpath('land_cover_clean.gpkg')
 lc_red_gpkg_path = base_path.joinpath('land_cover_reductions.gpkg')
 lc_red_feather_path = base_path.joinpath('land_cover_reductions.feather')
 
+lc_red_csv_path = lc_base_path.joinpath('typology_reductions.csv')
 
 ### Rivers
 sites_loc_csv = base_path.joinpath('olw_river_sites_locations.csv')
@@ -90,7 +111,14 @@ sites_names_csv = base_path.joinpath('LAWARiverSiteswithRCIDs.csv')
 rivers_conc_base_path = base_path.joinpath('rivers')
 rivers_conc_csv_path1 = rivers_conc_base_path.joinpath('NutrientConcsYields.csv')
 rivers_conc_csv_path2 = rivers_conc_base_path.joinpath('EcoliConcsYields.csv')
-rivers_conc_csv_path3 = rivers_conc_base_path.joinpath('river-water-quality-clarity-and-turbidity-modelled-2016-2020.csv')
+rivers_conc_csv_path3 = rivers_conc_base_path.joinpath('updated-suspended-sediment-yield-estimator-and-estuarine-tra.csv')
+
+rivers_ref_conc3_csv_path = rivers_conc_base_path.joinpath('reference_conc_rec_level_3.csv')
+rivers_ref_conc2_csv_path = rivers_conc_base_path.joinpath('reference_conc_rec_level_2.csv')
+rivers_ref_conc_csv_path = rivers_conc_base_path.joinpath('reference_conc_rec_clean.csv')
+rivers_ref_load_csv_path = rivers_conc_base_path.joinpath('reference_load_rec_clean.csv')
+
+# catch_break_points_gpkg = rivers_conc_base_path.joinpath('catch_management_points.gpkg')
 
 ## Errors and powers
 river_errors_model_path = base_path.joinpath('rivers_errors_modelled_v02.csv')
@@ -108,17 +136,28 @@ river_loads_rec_path = assets_path.joinpath('rivers_loads_rec.blt')
 # major_catch_file = output_path.joinpath('rivers_major_catch.feather')
 # catch_file = output_path.joinpath('rivers_catch.feather')
 
+rivers_high_loads_reaches_csv_path = rivers_conc_base_path.joinpath('high_flow_loads.csv')
+rivers_high_loads_reaches_path = assets_path.joinpath('rivers_high_flow_loads.h5')
+
+high_res_moni_dir = rivers_conc_base_path.joinpath('high_res')
+high_res_moni_feather_path = rivers_conc_base_path.joinpath('high_res_sites_load.feather')
+rivers_perc_load_above_90_flow_h5_path = assets_path.joinpath('rivers_perc_load_above_90_flow.h5')
+
 # Individual catchment land covers
 rivers_catch_lc_dir = assets_path.joinpath('rivers_land_cover_gpkg')
 rivers_catch_lc_dir.mkdir(parents=True, exist_ok=True)
 
 rivers_catch_lc_gpkg_str = '{}_rivers_land_cover_reductions.gpkg'
+rivers_catch_lc_gpkg_path = output_path.joinpath('olw_land_cover_reductions.gpkg')
+rivers_red_csv_path = output_path.joinpath('olw_rivers_reductions.csv')
 
 river_sites_catch_path = assets_path.joinpath('rivers_sites_catchments.blt')
 river_reach_mapping_path = assets_path.joinpath('rivers_reaches_mapping.blt')
 river_reach_gbuf_path = assets_path.joinpath('rivers_reaches.blt')
 river_catch_path = assets_path.joinpath('rivers_catchments_minor.blt')
 river_catch_major_path = assets_path.joinpath('rivers_catchments_major.blt')
+river_catch_name_path = assets_path.joinpath('rivers_catchments_names.blt')
+river_marae_path = assets_path.joinpath('rivers_catchments_marae.blt')
 
 river_sims_path = output_path.joinpath('rivers_sims')
 river_sims_path.mkdir(parents=True, exist_ok=True)
@@ -135,7 +174,8 @@ river_power_model_path = assets_path.joinpath('rivers_reaches_power_modelled.h5'
 ## Sims params
 # conc_perc = np.arange(2, 101, 2, dtype='int8')
 conc_perc = np.arange(1, 101, 1, dtype='int8')
-n_samples_year = [12, 26, 52, 104, 364]
+n_samples_year = [4, 12, 26, 52, 104, 364]
+n_samples_year_eco = [1, 4, 12]
 n_years = [5, 10, 20, 30]
 
 ## Reductions
@@ -145,10 +185,105 @@ river_reductions_model_path = assets_path.joinpath('rivers_reductions_modelled.h
 
 # catch_lc_clean_path = assets_path.joinpath('rivers_catch_lc.blt')
 
+### Ecology
+eco_data_path = base_path.joinpath('ecology')
+eco_moni_data_dict = {
+    'mci': {
+        'file_name': 'MCI_variability_within_site.csv',
+        'site_id': 'site_name',
+        'nzsegment': 'NZSegment',
+        'nztmx': 'NZTM_Easting',
+        'nztmy': 'NZTM_Northing',
+        'stdev': 'MCI_score_sd',
+        'mean': 'mean',
+        'n_sites': 'n'
+        },
+    'sediment': {
+        'file_name': 'Sediment_variability_within_site.csv',
+        'site_id': 'site_name',
+        'nzsegment': 'NZSegment',
+        'nztmx': 'NZTM_Easting',
+        'nztmy': 'NZTM_Northing',
+        'stdev': 'percent_sediment_sd',
+        'mean': 'mean',
+        'n_sites': 'n'
+        },
+    'peri': {
+        'file_name': 'Periphyton_variability_within_site.csv',
+        'site_id': 'SiteName',
+        'nzsegment': 'NZSegment',
+        'nztmx': 'NZTM_Easting',
+        'nztmy': 'NZTM_Northing',
+        'stdev': 'detrended_Chla_gam2_sd',
+        'mean': 'mean',
+        'n_sites': 'n'
+        },
+    }
+
+eco_catch_data_dict = {
+    'mci': {
+        'file_name': 'mci_by_catchment.csv',
+        'nzsegment': 'nzsegment',
+        'stdev': 'MCI_score_catchment_sd',
+        'mean': 'mean_catchmentmci',
+        },
+    'sediment': {
+        'file_name': 'sed_by_catchment.csv',
+        'nzsegment': 'nzsegment',
+        'stdev': 'percent_sediment_catchment_sd',
+        'mean': 'mean_catchment_percent_sediment',
+        },
+    'peri': {
+        'file_name': 'peri_by_catchment.csv',
+        'nzsegment': 'nzsegment.y',
+        'stdev': 'Chla_catchment_sd',
+        'mean': 'mean_catchment_Chla',
+        }
+    }
+
+eco_catch_stdev_defaults = {
+    'mci': 18.5/104.5,
+    'peri': 85.7/31.5,
+    'sediment': 31/21.2
+    }
+
+
+
+eco_sites_gpkg_path = eco_data_path.joinpath('olw_eco_sites.gpkg')
+eco_sites_catch_path = assets_path.joinpath('eco_sites_catchments.blt')
+eco_moni_stdev_path = eco_data_path.joinpath('eco_moni_stdev.csv')
+eco_catch_stdev_path = eco_data_path.joinpath('eco_catch_stdev.csv')
+
+eco_reach_weights_h5_path = assets_path.joinpath('eco_reaches_weights.h5')
+
+eco_sims_path = output_path.joinpath('eco_sims')
+eco_sims_path.mkdir(parents=True, exist_ok=True)
+
+eco_sims_h5_path = eco_sims_path.joinpath('eco_sims.h5')
+eco_sims_catch_h5_path = eco_sims_path.joinpath('eco_sims_catch.h5')
+
+eco_power_moni_path = assets_path.joinpath('eco_reaches_power_monitored.h5')
+eco_power_model_path = assets_path.joinpath('eco_reaches_power_modelled.h5')
 
 ### Lakes
+## Source data processing
+lakes_source_path = base_path.joinpath('lakes')
+
+lakes_raw_moni_data_csv_path = lakes_source_path.joinpath('lakewqmonitoringdataandstatetrendresults_sept2021.csv')
+
+lakes_source_data_path = lakes_source_path.joinpath('lakes_cleaned_source_data.csv')
+lakes_filtered_data_path = lakes_source_path.joinpath('lakes_cleaned_filtered_data.csv')
+lakes_deseason_path = lakes_source_path.joinpath('lakes_deseason_data.csv')
+lakes_deseason_comp_path = lakes_source_path.joinpath('lakes_deseason_comparison.csv')
+lakes_trend_comp_path = lakes_source_path.joinpath('lakes_trend_deseason_comparison.csv')
+lakes_interp_test_results_path = lakes_source_path.joinpath('lakes_interp_test_results.csv')
+lakes_interp_test_summ_path = lakes_source_path.joinpath('lakes_interp_test_summary.csv')
+lakes_dtl_ratios_path = lakes_source_path.joinpath('lakes_dtl_ratios.csv')
+
 lakes_fenz_catch_path = base_path.joinpath('lakes_catchments_fenz.gpkg')
 lakes_fenz_poly_path = base_path.joinpath('lakes_polygons_fenz.gpkg')
+
+## Geo processing
 lakes_points_path = output_path.joinpath('lakes_points.feather')
 lakes_poly_path = output_path.joinpath('lakes_poly.feather')
 lakes_catch_path = output_path.joinpath('lakes_catch.feather')
@@ -181,22 +316,29 @@ lakes_lc_path = assets_path.joinpath('lakes_catch_lc.blt')
 lakes_loads_rec_path = assets_path.joinpath('lakes_loads_rec.blt')
 
 ## Model data
+lakes_rupesh_stdev_path = base_path.joinpath('lakes_stdev_v04.csv')
 lakes_data_path = base_path.joinpath('lakes_wq_data.csv')
-lakes_data_clean_path = base_path.joinpath('lakes_wq_data_clean.feather')
+# lakes_data_clean_path = base_path.joinpath('lakes_wq_data_clean.feather')
 lakes_class_csv = base_path.joinpath('fenz_lakes_classification.csv')
-lakes_stdev_model_path = output_path.joinpath('lakes_stdev_modelled.h5')
-lakes_stdev_moni_path = output_path.joinpath('lakes_stdev_monitored.h5')
+lakes_stdev_model_path = output_path.joinpath('lakes_stdev_modelled_v06.h5')
+lakes_stdev_moni_path = output_path.joinpath('lakes_stdev_monitored_v06.csv')
+lakes_stdev_model_summ_path = lakes_source_path.joinpath('lakes_stdev_modelled_summary.csv')
+lakes_stdev_model_importances_path = lakes_source_path.joinpath('lakes_stdev_modelled_importances.csv')
+lakes_stdev_model_input_path = lakes_source_path.joinpath('lakes_FENZ_model_input.csv')
+lakes_stdev_model_input_sites_path = lakes_source_path.joinpath('lakes_FENZ_model_input_at_sites.csv')
+lakes_conc_moni_path = lakes_source_path.joinpath('lakes_conc_monitored.csv')
 
+lakes_missing_3rd_path = output_path.joinpath('lakes_stdev_missing.gpkg')
 
 ### GW
 
 ## Source data
 # gw_data_path = base_path.joinpath('gw_points_data.hdf')
-gw_monitoring_data_path = base_path.joinpath('gw_monitoring_data_v03.nc')
+gw_monitoring_data_path = base_path.joinpath('gw_monitoring_data_v04.nc')
 
 ## Spatial data
 # gw_points_gbuf_path = assets_path.joinpath('gw_points.pbf')
-gw_points_path = output_path.joinpath('gw_points.feather')
+gw_points_path = output_path.joinpath('gw_points.gpkg')
 gw_points_rc_blt = assets_path.joinpath('gw_points_rc.blt')
 
 ## Power calcs
@@ -226,6 +368,12 @@ def gpd_to_feather(gdf, output):
     """
     gdf.to_feather(output, compression='zstd', compression_level=1)
 
+
+def df_to_feather(df, output):
+    """
+
+    """
+    df.to_feather(output, compression='zstd', compression_level=1)
 
 
 def read_pkl_zstd(obj, unpickle=False):
@@ -360,7 +508,7 @@ def power_test(x, Y, min_p_value=0.05):
     return power
 
 
-def power_sims(error, n_years, n_samples_year, n_sims, output_path):
+def power_sims_rivers(error, n_years, n_samples_year, n_sims, output_path):
     """
     Power simulation function.
     Given an error (float), a number of sampling years (list of int), a number of samples per year (list of int), and the conc percentages (list of int), run n simulations (int) on all possible combinations.
@@ -382,6 +530,144 @@ def power_sims(error, n_years, n_samples_year, n_sims, output_path):
 
         for pi, perc in enumerate(conc_perc):
             red1 = np.log(np.interp(np.arange(n), [0, n-1], [1, perc*0.01]))
+
+            rand_shape = (n_sims, n)
+            red2 = np.tile(red1, n_sims).reshape(rand_shape)
+            r2 = rng.normal(0, error, rand_shape)
+
+            p2 = power_test(np.arange(n), red2 + r2, min_p_value=0.05)
+
+            filler[0][ni][pi] = p2
+
+    error1 = int(error*1000)
+
+    props = xr.Dataset(data_vars={'power': (('error', 'n_samples', 'conc_perc'), filler)
+                                  },
+                       coords={'error': np.array([error1], dtype='int16'),
+                               'n_samples': np.array(n_samples, dtype='int16'),
+                               'conc_perc': conc_perc}
+                       )
+
+    output = os.path.join(output_path, str(error1) + '.h5')
+    hdf5tools.xr_to_hdf5(props, output)
+
+    return output
+
+
+def power_sims_lakes(error, n_years, n_samples_year, n_sims, output_path):
+    """
+    Power simulation function.
+    Given an error (float), a number of sampling years (list of int), a number of samples per year (list of int), and the conc percentages (list of int), run n simulations (int) on all possible combinations.
+    """
+    print(error)
+
+    conc_perc = np.arange(1, 101, 1, dtype='int8')
+
+    n_samples = np.prod(hdf5tools.utils.cartesian([n_samples_year, n_years]), axis=1)
+    n_samples = list(set(n_samples))
+    n_samples.sort()
+
+    filler = np.empty((1, len(n_samples), len(conc_perc)), dtype='int8')
+
+    rng = np.random.default_rng()
+
+    for ni, n in enumerate(n_samples):
+        # print(n)
+
+        for pi, perc in enumerate(conc_perc):
+            red1 = np.log(np.interp(np.arange(n), [0, n-1], [1, perc*0.01]))
+
+            rand_shape = (n_sims, n)
+            red2 = np.tile(red1, n_sims).reshape(rand_shape)
+            r2 = rng.normal(0, error, rand_shape)
+
+            p2 = power_test(np.arange(n), red2 + r2, min_p_value=0.05)
+
+            filler[0][ni][pi] = p2
+
+    error1 = int(error*1000)
+
+    props = xr.Dataset(data_vars={'power': (('error', 'n_samples', 'conc_perc'), filler)
+                                  },
+                       coords={'error': np.array([error1], dtype='int16'),
+                               'n_samples': np.array(n_samples, dtype='int16'),
+                               'conc_perc': conc_perc}
+                       )
+
+    output = os.path.join(output_path, str(error1) + '.h5')
+    hdf5tools.xr_to_hdf5(props, output)
+
+    return output
+
+
+def power_sims_gw(error, n_years, n_samples_year, n_sims, output_path):
+    """
+    Power simulation function.
+    Given an error (float), a number of sampling years (list of int), a number of samples per year (list of int), and the conc percentages (list of int), run n simulations (int) on all possible combinations.
+    """
+    print(error)
+
+    conc_perc = np.arange(1, 101, 1, dtype='int8')
+
+    n_samples = np.prod(hdf5tools.utils.cartesian([n_samples_year, n_years]), axis=1)
+    n_samples = list(set(n_samples))
+    n_samples.sort()
+
+    filler = np.empty((1, len(n_samples), len(conc_perc)), dtype='int8')
+
+    rng = np.random.default_rng()
+
+    for ni, n in enumerate(n_samples):
+        # print(n)
+
+        for pi, perc in enumerate(conc_perc):
+            red1 = np.interp(np.arange(n), [0, n-1], [5, 5*perc*0.01])
+
+            rand_shape = (n_sims, n)
+            red2 = np.tile(red1, n_sims).reshape(rand_shape)
+            r2 = rng.normal(0, error, rand_shape)
+
+            p2 = power_test(np.arange(n), red2 + r2, min_p_value=0.05)
+
+            filler[0][ni][pi] = p2
+
+    error1 = int(error*1000)
+
+    props = xr.Dataset(data_vars={'power': (('error', 'n_samples', 'conc_perc'), filler)
+                                  },
+                       coords={'error': np.array([error1], dtype='int16'),
+                               'n_samples': np.array(n_samples, dtype='int16'),
+                               'conc_perc': conc_perc}
+                       )
+
+    output = os.path.join(output_path, str(error1) + '.h5')
+    hdf5tools.xr_to_hdf5(props, output)
+
+    return output
+
+
+def power_sims_ecology(error, n_years, n_samples_year, n_sims, output_path):
+    """
+    Power simulation function.
+    Given an error (float), a number of sampling years (list of int), a number of samples per year (list of int), and the conc percentages (list of int), run n simulations (int) on all possible combinations.
+    """
+    print(error)
+
+    conc_perc = np.arange(1, 101, 1, dtype='int8')
+
+    n_samples = np.prod(hdf5tools.utils.cartesian([n_samples_year, n_years]), axis=1)
+    n_samples = list(set(n_samples))
+    n_samples.sort()
+
+    filler = np.empty((1, len(n_samples), len(conc_perc)), dtype='int8')
+
+    rng = np.random.default_rng()
+
+    for ni, n in enumerate(n_samples):
+        # print(n)
+
+        for pi, perc in enumerate(conc_perc):
+            red1 = np.interp(np.arange(n), [0, n-1], [1, 1*perc*0.01])
 
             rand_shape = (n_sims, n)
             red2 = np.tile(red1, n_sims).reshape(rand_shape)
@@ -466,7 +752,9 @@ def calc_river_reach_reductions(feature, catch_id, reduction_ratios=range(10, 10
     print(catch_id)
 
     red_ratios = np.array(list(reduction_ratios), dtype='int8')
-    reduction_cols = indicators[feature]
+    indicators = indicators_mapping[feature]
+    inds = list(indicators.keys())
+    reduction_cols = list(set(indicators.values()))
 
     with booklet.open(river_catch_path) as f:
         catches1 = f[int(catch_id)]
@@ -475,7 +763,7 @@ def calc_river_reach_reductions(feature, catch_id, reduction_ratios=range(10, 10
         branches = f[int(catch_id)]
 
     with booklet.open(river_loads_rec_path) as f:
-        loads = f[int(catch_id)][reduction_cols]
+        loads = f[int(catch_id)][inds]
 
     with booklet.open(catch_lc_path) as f:
         reductions = f[int(catch_id)]
@@ -513,13 +801,14 @@ def calc_river_reach_reductions(feature, catch_id, reduction_ratios=range(10, 10
     props_val = np.zeros((len(red_ratios), len(props_index)))
 
     reach_red = {}
-    for ind in reduction_cols:
-        c4 = results[[ind]].merge(loads[[ind]], on='nzsegment')
+    for ind in inds:
+        red_col = indicators[ind]
+        c4 = results[[red_col]].merge(loads[[ind]], on='nzsegment')
 
-        c4['base'] = c4[ind + '_y'] * 100
+        c4['base'] = c4[ind] * 100
 
         for r, ratio in enumerate(red_ratios):
-            c4['prop'] = c4[ind + '_y'] * c4[ind + '_x'] * ratio * 0.01
+            c4['prop'] = c4[ind] * c4[red_col] * ratio * 0.01
             c4b = c4[['base', 'prop']]
             c5 = {r: list(v.values()) for r, v in c4b.to_dict('index').items()}
 
@@ -550,10 +839,6 @@ def calc_river_reach_reductions(feature, catch_id, reduction_ratios=range(10, 10
                                 'reduction_perc': red_ratios}
                        )
 
-    # file1 = tempfile.NamedTemporaryFile()
-    # hdf5tools.xr_to_hdf5(props, file1)
-    # props = props.assign_coords(catch_id=catch_id).expand_dims('catch_id').sortby(['nzsegment', 'reduction_perc'])
-
     return props
 
 
@@ -564,7 +849,9 @@ def calc_lakes_reach_reductions(feature, lake_id, reduction_ratios=range(10, 101
     print(lake_id)
 
     red_ratios = np.array(list(reduction_ratios), dtype='int8')
-    reduction_cols = indicators[feature]
+    indicators = indicators_mapping[feature]
+    inds = list(indicators.keys())
+    reduction_cols = list(set(indicators.values()))
 
     with booklet.open(lakes_catches_minor_path) as f:
         catches1 = f[int(lake_id)]
@@ -573,7 +860,7 @@ def calc_lakes_reach_reductions(feature, lake_id, reduction_ratios=range(10, 101
         branches = f[int(lake_id)]
 
     with booklet.open(lakes_loads_rec_path) as f:
-        loads = f[int(lake_id)][reduction_cols]
+        loads = f[int(lake_id)][inds]
 
     with booklet.open(lakes_lc_path) as f:
         reductions = f[int(lake_id)]
@@ -610,13 +897,14 @@ def calc_lakes_reach_reductions(feature, lake_id, reduction_ratios=range(10, 101
     props_val = np.zeros((len(red_ratios)))
 
     reach_red = {}
-    for ind in reduction_cols:
-        c4 = results[[ind]].merge(loads[[ind]], on='nzsegment')
+    for ind in inds:
+        red_col = indicators[ind]
+        c4 = results[[red_col]].merge(loads[[ind]], on='nzsegment')
 
-        c4['base'] = c4[ind + '_y'] * 100
+        c4['base'] = c4[ind] * 100
 
         for r, ratio in enumerate(red_ratios):
-            c4['prop'] = c4[ind + '_y'] * c4[ind + '_x'] * ratio * 0.01
+            c4['prop'] = c4[ind] * c4[red_col] * ratio * 0.01
             c4b = c4[['base', 'prop']]
             c5 = {r: list(v.values()) for r, v in c4b.to_dict('index').items()}
 
@@ -641,19 +929,12 @@ def calc_lakes_reach_reductions(feature, lake_id, reduction_ratios=range(10, 101
 
             reach_red[ind] = np.round(props_val*100).astype('int8') # Round to nearest even number
 
-    # props = xr.Dataset(data_vars={ind: (('reduction_perc', 'LFENZID'), values)  for ind, values in reach_red.items()},
-    #                    coords={'LFENZID': lake_id,
-    #                             'reduction_perc': red_ratios}
-    #                    )
     props = xr.Dataset(data_vars={ind: (('reduction_perc'), values)  for ind, values in reach_red.items()},
                        coords={
                                 'reduction_perc': red_ratios}
                        )
     props = props.assign_coords(LFENZID=np.array(lake_id, dtype='int32')).expand_dims('LFENZID')
 
-    # file1 = tempfile.NamedTemporaryFile()
-    # hdf5tools.xr_to_hdf5(props, file1)
-    # props = props.assign_coords(catch_id=catch_id).expand_dims('catch_id').sortby(['nzsegment', 'reduction_perc'])
 
     return props
 
@@ -674,6 +955,109 @@ def get_directly_upstream_ways(way_id, node_way, way, way_index):
     return new_ways
 
 
+def discrete_resample(df, freq_code, agg_fun, remove_inter=False, **kwargs):
+    """
+    Function to properly set up a resampling class for discrete data. This assumes a linear interpolation between data points.
+
+    Parameters
+    ----------
+    df: DataFrame or Series
+        DataFrame or Series with a time index.
+    freq_code: str
+        Pandas frequency code. e.g. 'D'.
+    agg_fun : str
+        The aggregation function to be applied on the resampling object.
+    **kwargs
+        Any keyword args passed to Pandas resample.
+
+    Returns
+    -------
+    Pandas DataFrame or Series
+    """
+    if isinstance(df, (pd.Series, pd.DataFrame)):
+        if isinstance(df.index, pd.DatetimeIndex):
+            reg1 = pd.date_range(df.index[0].ceil(freq_code), df.index[-1].floor(freq_code), freq=freq_code)
+            reg2 = reg1[~reg1.isin(df.index)]
+            if isinstance(df, pd.Series):
+                s1 = pd.Series(np.nan, index=reg2)
+            else:
+                s1 = pd.DataFrame(np.nan, index=reg2, columns=df.columns)
+            s2 = pd.concat([df, s1]).sort_index()
+            s3 = s2.interpolate('time')
+            s4 = (s3 + s3.shift(-1))/2
+            s5 = s4.resample(freq_code, **kwargs).agg(agg_fun).dropna()
+
+            if remove_inter:
+                index1 = df.index.floor(freq_code).unique()
+                s6 = s5[s5.index.isin(index1)].copy()
+            else:
+                s6 = s5
+        else:
+            raise ValueError('The index must be a datetimeindex')
+    else:
+        raise TypeError('The object must be either a DataFrame or a Series')
+
+    return s6
+
+
+def dtl_correction(data, dtl_method='trend'):
+    """
+    The method to use to convert values below a detection limit to numeric. Used for water quality results. Options are 'half' or 'trend'. 'half' simply halves the detection limit value, while 'trend' uses half the highest detection limit across the results when more than 40% of the values are below the detection limit. Otherwise it uses half the detection limit.
+    """
+    new_data_list = []
+    append = new_data_list.append
+    for i, df in data.groupby(['lawa_id', 'parameter']):
+        if df.censor_code.isin(['greater_than', 'less_than']).any():
+            greater1 = df.censor_code == 'greater_than'
+            df.loc[greater1, 'value'] = df.loc[greater1, 'value'] * 1.5
+
+            less1 = df.censor_code == 'less_than'
+            if less1.sum() > 0:
+                df.loc[less1, 'value'] = df.loc[less1, 'value'] * 0.5
+                if dtl_method == 'trend':
+                    df1 = df.loc[less1]
+                    count1 = len(df)
+                    count_dtl = len(df1)
+                    # count_dtl_val = df1['value'].nunique()
+                    dtl_ratio = np.round(count_dtl / float(count1), 2)
+                    if dtl_ratio >= 0.4:
+                        dtl_val = df1['value'].max()
+                        df.loc[(df['value'] < dtl_val) | less1, 'value'] = dtl_val
+
+        append(df)
+
+    new_data = pd.concat(new_data_list)
+
+    return new_data
+
+
+        #     greater1 = data_df['Value'].str.contains('>')
+        #     if greater1.sum() > 0:
+        #         greater1.loc[greater1.isnull()] = False
+        #         data_df = data_df.copy()
+        #         data_df.loc[greater1, 'Value'] = pd.to_numeric(data_df.loc[greater1, 'Value'].str.replace('>', ''), errors='coerce') * 2
+        #     data_df['Value'] = pd.to_numeric(data_df['Value'], errors='ignore')
+
+        # if data_df['Value'].dtype == 'object':
+        #     less1 = data_df['Value'].str.contains('<')
+        #     if less1.sum() > 0:
+        #         less1.loc[less1.isnull()] = False
+        #         data_df = data_df.copy()
+        #         data_df.loc[less1, 'Value'] = pd.to_numeric(data_df.loc[less1, 'Value'].str.replace('<', ''), errors='coerce') * 0.5
+        #     data_df['Value'] = pd.to_numeric(data_df['Value'], errors='coerce')
+        #     if (dtl_method == 'trend') and (less1.sum() > 0):
+        #         df1 = data_df.loc[less1]
+        #         count1 = len(data_df)
+        #         count_dtl = len(df1)
+        #         count_dtl_val = df1['Value'].nunique()
+        #         dtl_ratio = np.round(count_dtl / float(count1), 2)
+
+        #         if dtl_ratio > 0.7:
+        #             print('More than 70% of the values are less than the detection limit! Be careful...')
+
+        #         if (dtl_ratio >= 0.4) or (count_dtl_val != 1):
+        #             dtl_val = df1['Value'].max()
+        #             data_df.loc[(data_df['Value'] < dtl_val) | less1, 'Value'] = dtl_val
 
 # import matplotlib.pyplot as plt
 # count, bins, ignored = plt.hist(s, 100, density=True, align='mid')

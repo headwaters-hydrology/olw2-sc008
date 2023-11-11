@@ -12,7 +12,7 @@ volumes:
 
 services:
   assets:
-    image: mullenkamp/olw-monitoring-app-assets:1.4
+    image: mullenkamp/olw-monitoring-app-assets:1.14
     volumes:
       - olw-assets:/app/assets
     networks:
@@ -24,10 +24,10 @@ services:
       placement:
         constraints:
           - node.labels.function == web_server
-          - node.hostname == uswest3.tethys-ts.xyz
+          # - node.hostname == uswest3.tethys-ts.xyz
 
   dash:
-    image: mullenkamp/olw-monitoring-app:1.27
+    image: mullenkamp/olw-monitoring-app:3.1
     volumes:
       - olw-assets:/app/assets
     networks:
@@ -36,20 +36,20 @@ services:
     depends_on:
       - assets
     deploy:
-      replicas: 1
+      replicas: 2
       placement:
         constraints:
           - node.labels.function == web_server
-          - node.hostname == uswest3.tethys-ts.xyz
+          # - node.hostname == uswest3.tethys-ts.xyz
       labels:
         - traefik.enable=true
         - traefik.docker.network=traefik-public
         - traefik.constraint-label=traefik-public
-        - traefik.http.routers.olw-vis-test-http.rule=Host(`olw-vis-test.nzrivers.xyz`)
-        - traefik.http.routers.olw-vis-test-http.entrypoints=http
-        - traefik.http.routers.olw-vis-test-http.middlewares=https-redirect
-        - traefik.http.routers.olw-vis-test-https.rule=Host(`olw-vis-test.nzrivers.xyz`)
-        - traefik.http.routers.olw-vis-test-https.entrypoints=https
-        - traefik.http.routers.olw-vis-test-https.tls=true
+        - traefik.http.routers.olw-app-base-http.rule=Host(`olw-app.nzrivers.xyz`)
+        - traefik.http.routers.olw-app-base-http.entrypoints=http
+        - traefik.http.routers.olw-app-base-http.middlewares=https-redirect
+        - traefik.http.routers.olw-app-base-https.rule=Host(`olw-app.nzrivers.xyz`)
+        - traefik.http.routers.olw-app-base-https.entrypoints=https
+        - traefik.http.routers.olw-app-base-https.tls=true
         # - traefik.http.routers.es-dash-https.tls.certresolver=le
-        - traefik.http.services.olw-vis-test.loadbalancer.server.port=80
+        - traefik.http.services.olw-app-base.loadbalancer.server.port=80

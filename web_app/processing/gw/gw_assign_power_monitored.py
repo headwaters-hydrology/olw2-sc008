@@ -27,11 +27,11 @@ pd.options.display.max_columns = 10
 
 
 def gw_process_power_monitored():
-    list1 = utils.error_cats(0.01, 15.31, 0.1)
+    list1 = utils.error_cats(0.01, 15.31, 0.2)
     list1.insert(0, 0.001)
 
-    errors0 = xr.open_dataset(utils.gw_monitoring_data_path).load()
-    errors0 = errors0.n_se.to_dataframe().rename(columns={'n_se': 'error'}).reset_index()
+    errors0 = xr.load_dataset(utils.gw_monitoring_data_path)
+    errors0 = errors0.n_se.to_dataframe().rename(columns={'n_se': 'stdev'}).reset_index()
 
     # for param in errors0:
     #     attrs = errors0[param].attrs
@@ -51,7 +51,7 @@ def gw_process_power_monitored():
     ## Create rough values from all reaches per indicator
     grp1 = errors1.groupby('indicator')
 
-    median1 = grp1['error'].median().round(3)
+    median1 = grp1['stdev'].median().round(3)
 
     ## Assign init conc and errors to each location
     # indicators = errors1.indicator.unique()
@@ -60,13 +60,13 @@ def gw_process_power_monitored():
     for ind, errors in grp1:
         miss_error = median1.loc[ind]
 
-        null_rows = errors.error.isnull()
-        errors.loc[null_rows, 'error'] = miss_error
+        null_rows = errors.stdev.isnull()
+        errors.loc[null_rows, 'stdev'] = miss_error
 
-        errors.loc[errors.error <= list1[0], 'error'] = list1[0]*1.05
-        errors.loc[errors.error > list1[-1], 'error'] = list1[-1]
+        errors.loc[errors.stdev <= list1[0], 'stdev'] = list1[0]*1.05
+        errors.loc[errors.stdev > list1[-1], 'stdev'] = list1[-1]
 
-        errors2 = pd.cut(errors.error, list1, labels=list1[:-1])
+        errors2 = pd.cut(errors.stdev, list1, labels=list1[:-1])
 
         error_dict[ind] = errors2
 
