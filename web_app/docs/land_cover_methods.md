@@ -48,6 +48,15 @@ flowchart TB
 
 ```
 
+### Scripts
+
+The scripts to run all the processing can be found here:
+https://github.com/headwaters-hydrology/olw2-sc008/tree/main/web_app/processing/land_cover
+
+The sequence to run the three scripts can be found in the main.py file which includes all of the other (non land cover) processing script sequences:
+https://github.com/headwaters-hydrology/olw2-sc008/blob/main/web_app/processing/main.py 
+
+
 #### The land cover categories and typologies reductions
 
 
