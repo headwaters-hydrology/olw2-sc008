@@ -520,18 +520,26 @@ def update_map_info(sites_powers_obj, sites_feature, old_info):
     State('indicator_eco_sites', 'value'),
     State('time_period_eco_sites', 'value'),
     State('freq_eco_sites', 'value'),
+    State('tbl_eco_sites', 'data'),
     prevent_initial_call=True,
     )
-def download_power(n_clicks, catch_id, powers_obj, indicator, n_years, n_samples_year):
+def download_power(n_clicks, catch_id, powers_obj, indicator, n_years, n_samples_year, tbl_data):
 
     if (catch_id != '') and (powers_obj != '') and (powers_obj is not None) and isinstance(n_samples_year, str):
         power_data = utils.decode_obj(powers_obj)
 
         df1 = pd.DataFrame.from_dict(power_data)
+
+        if tbl_data:
+            sites_tbl_df = pd.DataFrame(tbl_data).drop('improvement %', axis=1)
+            df1 = pd.merge(sites_tbl_df, df1, on='nzsegment')
+
         df1['improvement'] = 100 - df1['conc_perc']
         df1['indicator'] = param.eco_indicator_dict[indicator]
         df1['n_years'] = n_years
         df1['n_samples_per_year'] = n_samples_year
+
+        df1.loc[df1.power < 0, 'power'] = 'NA'
 
         df2 = df1.drop('conc_perc', axis=1).set_index(['nzsegment', 'improvement', 'indicator', 'n_years', 'n_samples_per_year']).sort_index()
 
