@@ -211,7 +211,7 @@ app.layout = html.Div(
             size="xl",
             # pt=20,
             # style={"margin-top": 0, 'margin-left': 0, 'margin-right': 0, 'margin-bottom': 0},
-            style={"margin-top": 80, 'margin-left': 200, 'margin-right': 20},
+            style={"margin-top": 80, 'margin-left': 180, 'margin-right': 20},
         ),
     ],
 )
@@ -234,8 +234,8 @@ def updated_title(path):
         raise dash.exceptions.PreventUpdate
 
 
-if __name__ == '__main__':
-    app.run_server(host='0.0.0.0', port=80)
-
 # if __name__ == '__main__':
-#     app.run_server(debug=True, host='0.0.0.0', port=8000)
+#     app.run_server(host='0.0.0.0', port=80)
+
+if __name__ == '__main__':
+    app.run_server(debug=True, host='0.0.0.0', port=8000)

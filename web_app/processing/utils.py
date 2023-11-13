@@ -833,7 +833,7 @@ def calc_river_reach_reductions(feature, catch_id, reduction_ratios=range(10, 10
                     props_val[r, h] = p1
 
         if ind == 'Visual Clarity':
-            reach_red[ind] = np.round((props_val*100)**0.76).astype('int8')
+            reach_red[ind] = np.round((props_val**0.76)*100).astype('int8')
         else:
             reach_red[ind] = np.round(props_val*100).astype('int8')
 
@@ -931,7 +931,7 @@ def calc_lakes_reach_reductions(feature, lake_id, reduction_ratios=range(10, 101
                 props_val[r] = p1
 
         if ind == 'Secchi Depth':
-            reach_red[ind] = np.round((props_val*100)**0.76).astype('int8')
+            reach_red[ind] = np.round((props_val**0.76)*100).astype('int8')
         else:
             reach_red[ind] = np.round(props_val*100).astype('int8')
 

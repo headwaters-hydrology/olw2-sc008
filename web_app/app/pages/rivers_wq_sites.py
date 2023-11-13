@@ -151,7 +151,10 @@ def layout():
                                     dmc.Text('(2a) Select Indicator:'),
                                     dcc.Dropdown(options=[{'label': param.rivers_indicator_dict[d], 'value': d} for d in indicators], id='indicator_sites', optionHeight=40, clearable=False, style={'margin-bottom': 20}),
                                     html.Label('(2b) Type in a percent improvement by site under the "improvement %" column then press enter to confirm:'),
-                                    dash_table.DataTable(data=[], columns=[{'name': n, 'id': n, 'editable': (n == 'improvement %')} for n in ['site name', 'improvement %']], id='sites_tbl', style_cell={'font-size': 11}, style_header_conditional=[{
+                                    dash_table.DataTable(data=[], style_data={
+        'whiteSpace': 'normal',
+        'height': 'auto',
+    }, columns=[{'name': n, 'id': n, 'editable': (n == 'improvement %')} for n in ['site name', 'improvement %']], id='sites_tbl', style_cell={'font-size': 11}, style_header_conditional=[{
         'if': {'column_id': 'improvement %'},
         'font-weight': 'bold'
     }]),
@@ -354,7 +357,13 @@ def update_monitor_sites(catch_id):
 
         features = geobuf.decode(sites)['features']
         if features:
-            tbl_data = [{'site name': f['id'], 'nzsegment': f['properties']['nzsegment'], 'improvement %': 25} for f in features]
+            tbl_data = []
+            for f in features:
+                name = f['id']
+                nzsegment = f['properties']['nzsegment']
+                # if len(name) > 40:
+                #     name = name[:40] + '...'
+                tbl_data.append({'site name': name, 'nzsegment': nzsegment, 'improvement %': 25})
         else:
             tbl_data = []
 

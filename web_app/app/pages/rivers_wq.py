@@ -549,10 +549,10 @@ def update_powers_data(reaches_obj, indicator, n_years, n_samples_year, prop_red
         power_data.close()
         del power_data
 
-        conc_perc = 100 - props.reduction
+        conc_perc = (100 - props.reduction).round().astype('int8')
 
-        if indicator in ['BD']:
-            conc_perc = (((conc_perc*0.01)**0.76) * 100).astype('int8')
+        # if indicator in ['BD']:
+        #     conc_perc = (((conc_perc*0.01)**0.76) * 100).astype('int8')
 
         new_powers = props.assign(power_modelled=(('nzsegment'), power_data1.sel(conc_perc=conc_perc).power.values.astype('int8')))
         new_powers['nzsegment'] = new_powers['nzsegment'].astype('int32')
@@ -629,10 +629,11 @@ def update_hideout(powers_obj):
       # Input('reductions_obj', 'data'),
       # Input('map_checkboxes_rivers', 'value'),
       Input("reach_map", "click_feature"),
-      Input('sites_points', 'click_feature')],
+      Input('sites_points', 'click_feature'),
+      Input('catch_id', 'data')],
     State("info", "children")
     )
-def update_map_info(powers_obj, reach_feature, sites_feature, old_info):
+def update_map_info(powers_obj, reach_feature, sites_feature, catch_id, old_info):
     """
 
     """
@@ -645,7 +646,10 @@ def update_map_info(powers_obj, reach_feature, sites_feature, old_info):
     trig = ctx.triggered_id
     # print(trig)
 
-    if (powers_obj != '') and (powers_obj is not None):
+    if trig == 'catch_id':
+        pass
+
+    elif (powers_obj != '') and (powers_obj is not None):
 
         props = utils.decode_obj(powers_obj)
         # print(reach_feature)
