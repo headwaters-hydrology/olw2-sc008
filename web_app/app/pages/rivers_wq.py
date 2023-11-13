@@ -100,6 +100,7 @@ with booklet.open(param.rivers_reach_gbuf_path, 'r') as f:
 
 catches.sort()
 indicators = list(param.rivers_indicator_dict.keys())
+indicators.remove('NH')
 indicators.sort()
 
 ###############################################
@@ -222,7 +223,7 @@ def layout():
                                 dmc.AccordionPanel([
                                     dmc.Text('(3a) Select Indicator:'),
                                     dcc.Dropdown(options=[{'label': param.rivers_indicator_dict[d], 'value': d} for d in indicators], id='indicator_rivers', optionHeight=40, clearable=False),
-                                    dmc.Text('(3b) Select sampling length (years):', style={'margin-top': 20}),
+                                    dmc.Text('(3b) Select sampling duration (years):', style={'margin-top': 20}),
                                     dmc.SegmentedControl(data=[{'label': d, 'value': str(d)} for d in param.rivers_time_periods],
                                                          id='time_period',
                                                          value='5',

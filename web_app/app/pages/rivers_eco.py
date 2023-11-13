@@ -226,7 +226,7 @@ def layout():
                                                disabled=False,
                                                marks=param.eco_reductions_options
                                                ),
-                                    dmc.Text('(3c) Select sampling length (years):', style={'margin-top': 20}),
+                                    dmc.Text('(3c) Select sampling duration (years):', style={'margin-top': 20}),
                                     dmc.SegmentedControl(data=[{'label': d, 'value': str(d)} for d in param.eco_time_periods],
                                                          id='time_period_eco',
                                                          value='5',

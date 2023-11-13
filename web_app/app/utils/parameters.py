@@ -79,31 +79,18 @@ rivers_red_url = '{}olw-data/olw-sc008/olw_rivers_reductions.csv.zip'.format(bas
 
 lc_catch_pbf_path = assets_path.joinpath('rivers_catch_lc_pbf.blt')
 
-# lc_param_mapping = {
-#     'Visual Clarity': 'suspended sediment',
-#     'E.coli': 'e.coli',
-#     'Dissolved reactive phosporus': 'total phosphorus',
-#     'Ammoniacal nitrogen': 'total nitrogen',
-#     'Nitrate': 'total nitrogen',
-#     'Total nitrogen': 'total nitrogen',
-#     'Total phosphorus': 'total phosphorus',
-#     'Chlorophyll a': 'e.coli',
-#     # 'Total Cyanobacteria': 'e.coli',
-#     'Secchi Depth': 'suspended sediment'
-#     }
-
 rivers_lc_param_mapping = {
     'Visual Clarity': 'suspended sediment',
     'E.coli': 'e.coli',
     'Dissolved reactive phosporus': 'total phosphorus',
     'Ammoniacal nitrogen': 'total nitrogen',
-    'Nitrate': 'total nitrogen',
+    'Nitrate nitrogen': 'total nitrogen',
     'Total nitrogen': 'total nitrogen',
     'Total phosphorus': 'total phosphorus',
     }
 
 rivers_lc_param_effects = {
-    'total nitrogen': ['Total nitrogen', 'Ammoniacal nitrogen', 'Nitrate'],
+    'total nitrogen': ['Total nitrogen', 'Nitrate nitrogen', 'Ammoniacal nitrogen'],
     'total phosphorus': ['Total phosphorus', 'Dissolved reactive phosporus'],
     'e.coli': ['E.coli'],
     'suspended sediment': ['Visual Clarity']
@@ -179,11 +166,11 @@ red_ratios = np.array(list(reduction_ratios), dtype='int8')
 
 rivers_points_hideout = {'classes': [], 'colorscale': ['#232323'], 'circleOptions': dict(fillOpacity=1, stroke=True, weight=1, color='black', radius=site_point_radius), 'colorProp': 'nzsegment'}
 
-rivers_indicator_dict = {'BD': 'Visual Clarity', 'EC': 'E.coli', 'DRP': 'Dissolved reactive phosporus', 'NH': 'Ammoniacal nitrogen', 'NO': 'Nitrate', 'TN': 'Total nitrogen', 'TP': 'Total phosphorus'}
+rivers_indicator_dict = {'BD': 'Visual Clarity', 'EC': 'E.coli', 'DRP': 'Dissolved reactive phosporus', 'NH': 'Ammoniacal nitrogen', 'NO': 'Nitrate nitrogen', 'TN': 'Total nitrogen', 'TP': 'Total phosphorus'}
 
 rivers_reduction_cols = list(rivers_indicator_dict.values())
 
-eco_indicator_dict = {'peri': 'Periphyton', 'mci': 'MCI', 'sediment': 'Percent deposited sediment'}
+eco_indicator_dict = {'peri': 'Periphyton', 'mci': 'MCI', 'sediment': 'Deposited fine sediment'}
 
 eco_reduction_cols = list(eco_indicator_dict.values())
 
@@ -204,7 +191,7 @@ gw_points_hideout = {'classes': [], 'colorscale': ['#808080'], 'circleOptions': 
 
 gw_freq_mapping = {1: 'Yearly', 4: 'Quarterly', 12: 'monthly', 26: 'fortnightly', 52: 'weekly'}
 
-gw_indicator_dict = {'Nitrate': 'Nitrate'}
+gw_indicator_dict = {'Nitrate': 'Nitrate nitrogen'}
 
 gw_reductions_values = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
 
@@ -212,8 +199,7 @@ gw_reductions_options = [{'value': v, 'label': str(v)+'%'} for v in gw_reduction
 
 gw_time_periods = [5, 10, 20, 30]
 
-
-hfl_indicator_dict = {'EC': 'E.coli', 'DRP': 'Dissolved reactive phosporus', 'NO': 'Nitrate', 'TN': 'Total nitrogen', 'TP': 'Total phosphorus'}
+hfl_indicator_dict = {'EC': 'E.coli', 'DRP': 'Dissolved reactive phosporus', 'NO': 'Nitrate nitrogen', 'NH': 'Ammoniacal nitrogen', 'TN': 'Total nitrogen', 'TP': 'Total phosphorus'}
 
 hfl_reduction_cols = list(hfl_indicator_dict.values())
 

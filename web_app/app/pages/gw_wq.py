@@ -143,7 +143,7 @@ def layout():
                                 dmc.AccordionControl('(3) Query Options', style={'font-size': 18}),
                                 dmc.AccordionPanel([
                                     dmc.Group(
-                                        [dmc.Text('(3b) Select sampling length (years):', color="black"),
+                                        [dmc.Text('(3b) Select sampling duration (years):', color="black"),
                                         dmc.HoverCard(
                                             withArrow=True,
                                             width=300,
@@ -163,7 +163,7 @@ def layout():
                                         ],
                                         style={'margin-top': 20}
                                     ),
-                                    # dmc.Text('(3b) Select sampling length (years):', style={'margin-top': 20}),
+                                    # dmc.Text('(3b) Select sampling duration (years):', style={'margin-top': 20}),
                                     dmc.SegmentedControl(data=[{'label': d, 'value': str(d)} for d in param.gw_time_periods],
                                                          id='time_period_gw',
                                                          value='5',

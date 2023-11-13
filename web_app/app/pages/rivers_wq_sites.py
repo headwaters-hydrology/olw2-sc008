@@ -177,7 +177,7 @@ def layout():
                             dmc.AccordionItem([
                                 dmc.AccordionControl('(3) Query Options', style={'font-size': 18}),
                                 dmc.AccordionPanel([
-                                    dmc.Text('(3a) Select sampling length (years):', style={'margin-top': 20}),
+                                    dmc.Text('(3a) Select sampling duration (years):', style={'margin-top': 20}),
                                     dmc.SegmentedControl(data=[{'label': d, 'value': str(d)} for d in param.rivers_time_periods],
                                                          id='time_period_sites',
                                                          value='5',

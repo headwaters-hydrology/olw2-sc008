@@ -376,7 +376,10 @@ def calc_river_reach_reductions(catch_id, new_reductions, base_reductions, diff_
                     p1 = np.sum(prop_area)/t_area_sum
                     props_val[r, h] = p1
 
-            reach_red[ind] = np.round(props_val*100).astype('int8') # Round to nearest even number
+        if ind == 'Visual Clarity':
+            reach_red[ind] = np.round((props_val*100)**0.76).astype('int8')
+        else:
+            reach_red[ind] = np.round(props_val*100).astype('int8')
 
     new_props = xr.Dataset(data_vars={ind: (('reduction_perc', 'nzsegment'), values)  for ind, values in reach_red.items()},
                        coords={'nzsegment': props_index,
@@ -476,7 +479,7 @@ def calc_river_reach_eco_weights(catch_id, new_reductions, base_reductions):
                     p1 = np.sum(prop_area)/t_area_sum
                     props_val[r, h] = p1
 
-            reach_red[ind] = np.round(props_val*100).astype('int8') # Round to nearest even number
+        reach_red[ind] = np.round(props_val*100).astype('int8')
 
     new_props = xr.Dataset(data_vars={ind: (('reduction_perc', 'nzsegment'), values)  for ind, values in reach_red.items()},
                        coords={'nzsegment': props_index,
@@ -581,7 +584,10 @@ def calc_lake_reach_reductions(lake_id, new_reductions, base_reductions, diff_co
                 p1 = np.sum(prop_area)/t_area_sum
                 props_val[r] = p1
 
-            reach_red[ind] = np.round(props_val*100).astype('int8') # Round to nearest even number
+        if ind == 'Secchi Depth':
+            reach_red[ind] = np.round((props_val*100)**0.76).astype('int8')
+        else:
+            reach_red[ind] = np.round(props_val*100).astype('int8')
 
     props = xr.Dataset(data_vars={ind: (('reduction_perc'), values)  for ind, values in reach_red.items()},
                        coords={

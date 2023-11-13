@@ -177,7 +177,7 @@ def layout():
                                 dmc.AccordionPanel([
                                     dmc.Text('(3a) Select Indicator:'),
                                     dcc.Dropdown(options=indicators, id='indicator_lakes', optionHeight=40, clearable=False),
-                                    dmc.Text('(3b) Select sampling length (years):', style={'margin-top': 20}),
+                                    dmc.Text('(3b) Select sampling duration (years):', style={'margin-top': 20}),
                                     dmc.SegmentedControl(data=[{'label': d, 'value': str(d)} for d in param.lakes_time_periods],
                                                          id='time_period_lakes',
                                                          value='5',

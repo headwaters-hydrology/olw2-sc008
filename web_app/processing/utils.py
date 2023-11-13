@@ -48,8 +48,8 @@ output_path.mkdir(parents=True, exist_ok=True)
 assets_path = output_path.joinpath('assets')
 assets_path.mkdir(parents=True, exist_ok=True)
 
-indicators_mapping = {'rivers': {'Visual Clarity': 'suspended sediment', 'E.coli': 'e.coli', 'Dissolved reactive phosporus': 'total phosphorus', 'Ammoniacal nitrogen': 'total nitrogen', 'Nitrate': 'total nitrogen', 'Total nitrogen': 'total nitrogen', 'Total phosphorus': 'total phosphorus'},
-              'lakes': {'E.coli': 'e.coli', 'Ammoniacal nitrogen': 'total nitrogen', 'Total nitrogen': 'total nitrogen', 'Total phosphorus': 'total phosphorus', 'Chlorophyll a': 'e.coli', 'Total Cyanobacteria': 'e.coli', 'Secchi Depth': 'suspended sediment'}
+indicators_mapping = {'rivers': {'Visual Clarity': 'suspended sediment', 'E.coli': 'e.coli', 'Dissolved reactive phosporus': 'total phosphorus', 'Nitrate nitrogen': 'total nitrogen', 'Total nitrogen': 'total nitrogen', 'Total phosphorus': 'total phosphorus'},
+              'lakes': {'E.coli': 'e.coli', 'Total nitrogen': 'total nitrogen', 'Total phosphorus': 'total phosphorus', 'Chlorophyll a': 'e.coli', 'Total Cyanobacteria': 'e.coli', 'Secchi Depth': 'suspended sediment'}
               }
 
 # indicators = {'rivers': ['total phosphorus', 'total nitrogen', 'suspended sediment', 'e.coli'],
@@ -61,7 +61,7 @@ indicator_dict = {
     'E.coli': 'e.coli',
     'Dissolved reactive phosporus': 'DRP',
     'Ammoniacal nitrogen': 'NNN',
-    'Nitrate': 'NNN',
+    'Nitrate nitrogen': 'NNN',
     'Total nitrogen': 'TN',
     'Total phosphorus': 'TP',
     'Chlorophyll a': 'e.coli',
@@ -798,7 +798,7 @@ def calc_river_reach_reductions(feature, catch_id, reduction_ratios=range(10, 10
 
     ## Scale the reductions
     props_index = np.array(list(branches.keys()), dtype='int32')
-    props_val = np.zeros((len(red_ratios), len(props_index)))
+    props_val = np.zeros((len(red_ratios), len(branches)))
 
     reach_red = {}
     for ind in inds:
@@ -832,7 +832,10 @@ def calc_river_reach_reductions(feature, catch_id, reduction_ratios=range(10, 10
                     p1 = np.sum(prop_area)/t_area_sum
                     props_val[r, h] = p1
 
-            reach_red[ind] = np.round(props_val*100).astype('int8') # Round to nearest even number
+        if ind == 'Visual Clarity':
+            reach_red[ind] = np.round((props_val*100)**0.76).astype('int8')
+        else:
+            reach_red[ind] = np.round(props_val*100).astype('int8')
 
     props = xr.Dataset(data_vars={ind: (('reduction_perc', 'nzsegment'), values)  for ind, values in reach_red.items()},
                        coords={'nzsegment': props_index,
@@ -927,14 +930,16 @@ def calc_lakes_reach_reductions(feature, lake_id, reduction_ratios=range(10, 101
                 p1 = np.sum(prop_area)/t_area_sum
                 props_val[r] = p1
 
-            reach_red[ind] = np.round(props_val*100).astype('int8') # Round to nearest even number
+        if ind == 'Secchi Depth':
+            reach_red[ind] = np.round((props_val*100)**0.76).astype('int8')
+        else:
+            reach_red[ind] = np.round(props_val*100).astype('int8')
 
     props = xr.Dataset(data_vars={ind: (('reduction_perc'), values)  for ind, values in reach_red.items()},
                        coords={
                                 'reduction_perc': red_ratios}
                        )
     props = props.assign_coords(LFENZID=np.array(lake_id, dtype='int32')).expand_dims('LFENZID')
-
 
     return props
 
