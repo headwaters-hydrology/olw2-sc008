@@ -97,7 +97,7 @@ return L.marker(latlng, {icon: flag});
 indicators = list(param.eco_indicator_dict.keys())
 indicators.sort()
 
-
+bins_weights_plus = np.array([0.001, 0.002, 0.003, 0.004])
 
 ###############################################
 ### App layout
@@ -576,7 +576,7 @@ def update_reach_hideout(reaches_obj):
         ## Modelled
         values = props.weights.values
         bins_weights = np.quantile(values, [0, 0.50, 0.75, 1])
-        bins_weights[-1] += 0.01
+        bins_weights += bins_weights_plus
         color_arr = pd.cut(values, bins_weights, labels=param.colorscale_weights, right=False).tolist()
 
         hideout_model = {'colorscale': color_arr, 'classes': props.nzsegment.values.astype(int), 'style': param.style_power, 'colorProp': 'nzsegment'}
