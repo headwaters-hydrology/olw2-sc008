@@ -24,6 +24,14 @@ pd.options.display.max_columns = 10
 ######################################################
 ### Parameters
 
+test_sites = {
+    'Rai River at Rai Falls': 11015032,
+    'Opouri River at Tunakino Valley Road': 11012404,
+    'Ronga River at Upstream Rai River': 11012146
+    }
+
+
+
 #####################################################
 ### Process data
 

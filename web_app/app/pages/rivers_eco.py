@@ -97,7 +97,7 @@ return L.marker(latlng, {icon: flag});
 indicators = list(param.eco_indicator_dict.keys())
 indicators.sort()
 
-bins_weights_plus = np.array([0.001, 0.002, 0.003, 0.004])
+bins_weights_plus = np.array([0, 0.001, 0.002, 0.003])
 
 ###############################################
 ### App layout
