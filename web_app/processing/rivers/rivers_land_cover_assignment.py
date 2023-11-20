@@ -36,9 +36,19 @@ typo_corrections = {3076139: {'Warm/Low/Well/Moist': {'total phosphorus': 36, 't
                               },
                     }
 
+special_typo = {3076139: {
+    'recommended': {
+        'Warm/Low/Well/Moist': {'total phosphorus': 27, 'total nitrogen': 18},
+        'Cool/Low/Well/Moist': {'total phosphorus': 12, 'total nitrogen': 7},
+                                  },
+    }
+    }
+
 line_break = '<br />'
 bold_start = '<b>'
 bold_end = '</b>'
+
+special_base_name = '{way_id}_{special_name}_land_reductions.gpkg'
 
 
 def make_tooltip(x):
@@ -106,6 +116,18 @@ def rivers_land_cover():
             for typo, corr in typo_corr.items():
                 for ind, val in corr.items():
                     combo2.loc[combo2.typology == typo, ind] = val
+
+        if way_id in special_typo:
+            combo3 = combo2.copy()
+            for special_name, typo_corr in special_typo[way_id].items():
+                for typo, corr in typo_corr.items():
+                    for ind, val in corr.items():
+                        combo3.loc[combo3.typology == typo, ind] = val
+
+            file_name = special_base_name.format(way_id=way_id, special_name=special_name)
+            file_path = utils.lc_special_layers_path.joinpath(file_name)
+            combo3.to_file(file_path)
+
 
         # lc2['geometry'] = lc2['geometry'].simplify(30)
         lc_dict[way_id] = combo2

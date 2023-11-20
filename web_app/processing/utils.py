@@ -102,6 +102,8 @@ lc_red_feather_path = base_path.joinpath('land_cover_reductions.feather')
 
 lc_red_csv_path = lc_base_path.joinpath('typology_reductions.csv')
 
+lc_special_layers_path = lc_base_path.joinpath('special_layers')
+
 ### Rivers
 sites_loc_csv = base_path.joinpath('olw_river_sites_locations.csv')
 sites_rec_csv = base_path.joinpath('lawa_to_nzsegment.csv')
@@ -152,6 +154,7 @@ rivers_catch_lc_gpkg_path = output_path.joinpath('olw_land_cover_reductions.gpkg
 rivers_red_csv_path = output_path.joinpath('olw_rivers_reductions.csv')
 
 river_sites_catch_path = assets_path.joinpath('rivers_sites_catchments.blt')
+river_sites_catch_3rd_path = assets_path.joinpath('rivers_sites_catchments_3rd.blt')
 river_reach_mapping_path = assets_path.joinpath('rivers_reaches_mapping.blt')
 river_reach_gbuf_path = assets_path.joinpath('rivers_reaches.blt')
 river_catch_path = assets_path.joinpath('rivers_catchments_minor.blt')

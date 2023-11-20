@@ -57,11 +57,11 @@ land_cover_reductions()
 ####################################################
 ### Rivers
 
-## Monitoring sites
-rivers_monitoring_sites_processing()
-
 ## REC delineate all catchments that start at the sea and have a greater than 2 stream order
 rec_delin()
+
+## Monitoring sites
+rivers_monitoring_sites_processing()
 
 ## Assign catch names
 rivers_assign_catch_names()

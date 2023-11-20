@@ -33,6 +33,7 @@ rivers_lc_clean_path = assets_path.joinpath('rivers_catch_lc.blt')
 rivers_catch_path = assets_path.joinpath('rivers_catchments_minor.blt')
 rivers_reach_mapping_path = assets_path.joinpath('rivers_reaches_mapping.blt')
 rivers_sites_path = assets_path.joinpath('rivers_sites_catchments.blt')
+rivers_sites_3rd_path = assets_path.joinpath('rivers_sites_catchments_3rd.blt')
 rivers_loads_rec_path = assets_path.joinpath('rivers_loads_rec.blt')
 rivers_catch_name_path = assets_path.joinpath('rivers_catchments_names.blt')
 rivers_marae_path = assets_path.joinpath('rivers_catchments_marae.blt')
@@ -199,7 +200,7 @@ gw_reductions_options = [{'value': v, 'label': str(v)+'%'} for v in gw_reduction
 
 gw_time_periods = [5, 10, 20, 30]
 
-hfl_indicator_dict = {'EC': 'E.coli', 'DRP': 'Dissolved reactive phosporus', 'NO': 'Nitrate nitrogen', 'NH': 'Ammoniacal nitrogen', 'TN': 'Total nitrogen', 'TP': 'Total phosphorus'}
+hfl_indicator_dict = {'EC': 'E.coli', 'DRP': 'Dissolved reactive phosporus', 'NO': 'Nitrate nitrogen', 'TN': 'Total nitrogen', 'TP': 'Total phosphorus'}
 
 hfl_reduction_cols = list(hfl_indicator_dict.values())
 

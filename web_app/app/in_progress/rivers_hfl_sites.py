@@ -34,13 +34,13 @@ from utils import utils
 ##########################################
 ### Parameters
 
-# dash.register_page(
-#     __name__,
-#     path='/rivers-hfl-wq-sites',
-#     title='High Res Flow Sites',
-#     name='rivers_hfl_wq_sites',
-#     description='River High Res Flow Sites'
-# )
+dash.register_page(
+    __name__,
+    path='/rivers-hfl-wq-sites',
+    title='High Res Flow Sites',
+    name='rivers_hfl_wq_sites',
+    description='River High Res Flow Sites'
+)
 
 ### Handles
 catch_style_handle = assign("""function style(feature) {
@@ -400,7 +400,7 @@ def update_sites_hideout(nzsegments_obj, indicator, catch_id):
 
             combo_sites = np.concatenate((new_sites, other_sites))
 
-            color_arr3 = color_arr2 + ['#808080'] * len(other_sites)
+            color_arr3 = color_arr2 + ['#252525'] * len(other_sites)
 
             hideout_moni = {'classes': combo_sites, 'colorscale': color_arr3, 'circleOptions': dict(fillOpacity=1, stroke=True, color='black', weight=1, radius=param.site_point_radius), 'colorProp': 'nzsegment'}
 
@@ -438,13 +438,13 @@ def update_map_info(perc_loads_obj, sites_feature):
             # print(feature_id)
 
             if feature_id in data.index:
-                perc_load = int(data.perc_load_above_90_flow.loc[feature_id])
+                perc_load = str(int(data.perc_load_above_90_flow.loc[feature_id])) + '%'
             else:
                 perc_load = 'No continuous flow'
 
             info = """##### Monitoring Site:
 
-                \n\n**Site name**: {site}\n\n**Percent load above flow 90th percentile %**: {perc_load}""".format(perc_load=perc_load, site=feature_id)
+                \n\n**Site name**: {site}\n\n**Percent load above flow 90th percentile**: {perc_load}""".format(perc_load=perc_load, site=feature_id)
 
         # else:
         #     info = """Please select an indicator"""
