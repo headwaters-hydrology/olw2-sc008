@@ -94,13 +94,13 @@ def create_sidebar_children(pages):
                     )
                 ], style={"marginBottom": 10}
             ),
-        # dmc.Group(
-        #     children=[
-        #         create_nav_link(
-        #             label=pages["pages.rivers_hfl_reaches"]['title'], href=pages["pages.rivers_hfl_reaches"]["path"]
-        #             )
-        #         ], style={"marginBottom": 10}
-        #     ),
+        dmc.Group(
+            children=[
+                create_nav_link(
+                    label=pages["pages.rivers_hfl"]['title'], href=pages["pages.rivers_hfl"]["path"]
+                    )
+                ], style={"marginBottom": 10}
+            ),
         # dmc.Group(
         #     children=[
         #         create_nav_link(

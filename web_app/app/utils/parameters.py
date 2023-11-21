@@ -27,6 +27,7 @@ rivers_power_model_path = assets_path.joinpath('rivers_reaches_power_modelled.h5
 rivers_power_moni_path = assets_path.joinpath('rivers_reaches_power_monitored.h5')
 rivers_reductions_model_path = assets_path.joinpath('rivers_reductions_modelled.h5')
 rivers_catch_pbf_path = app_base_path.joinpath('rivers_catchments.pbf')
+rivers_catch_4th_pbf_path = app_base_path.joinpath('rivers_catchments_4th.pbf')
 
 rivers_reach_gbuf_path = assets_path.joinpath('rivers_reaches.blt')
 rivers_lc_clean_path = assets_path.joinpath('rivers_catch_lc.blt')

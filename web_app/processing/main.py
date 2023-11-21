@@ -42,6 +42,8 @@ from lakes.lakes_power_all import lakes_power_combo_processing
 from gw.gw_geo_processing import gw_geo_process
 from gw.gw_assign_power_monitored import gw_process_power_monitored
 
+from high_loads.hl_process_loads import hl_process_loads
+
 #####################################################
 ### Land use/cover
 
@@ -152,8 +154,11 @@ gw_geo_process()
 gw_process_power_monitored()
 
 
+#################################################
+### High flow loads
 
-
+## Process the reaches and sites results
+hl_process_loads()
 
 
 
