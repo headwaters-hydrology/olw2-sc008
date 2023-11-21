@@ -356,146 +356,148 @@ def test_deseason_resampling_2M(data):
 # data0 = pd.concat(data_list).set_index(['site_id', 'parameter', 'date']).sort_index()
 # data0.to_csv(utils.lakes_source_data_path)
 
-## monitoring data from large spreadsheet
-moni0 = pd.read_csv(utils.lakes_raw_moni_data_csv_path, usecols=['LawaSiteID', 'SiteID', 'LFENZID', 'Latitude', 'Longitude', 'Indicator', 'SampleDate', 'Symbol', 'CensoredValue']).rename(columns={'LawaSiteID': 'lawa_id', 'SiteID': 'site_id', 'Latitude': 'lat', 'Longitude': 'lon', 'Indicator': 'parameter', 'SampleDate': 'date', 'CensoredValue': 'value', 'Symbol': 'censor_code'})
-moni1 = moni0.dropna(subset=['LFENZID', 'date', 'lat', 'lon', 'value']).copy()
-moni1 = moni1[(moni1.LFENZID > 0) & (~moni1.parameter.isin(['pH']))].copy()
-moni1['LFENZID'] = moni1['LFENZID'].astype('int32')
-moni1['date'] = pd.to_datetime(moni1['date'], infer_datetime_format=True)
-moni1.loc[moni1.censor_code == 'Right', 'censor_code'] = 'greater_than'
-moni1.loc[moni1.censor_code == 'Left', 'censor_code'] = 'less_than'
-moni1.loc[~moni1.censor_code.isin(['greater_than', 'less_than']), 'censor_code'] = 'not_censored'
 
-site_data0 = moni1[['lawa_id', 'site_id', 'LFENZID', 'lat', 'lon']].drop_duplicates(subset=['LFENZID']).copy()
+def lakes_sd_conc():
+    ## monitoring data from large spreadsheet
+    moni0 = pd.read_csv(utils.lakes_raw_moni_data_csv_path, usecols=['LawaSiteID', 'SiteID', 'LFENZID', 'Latitude', 'Longitude', 'Indicator', 'SampleDate', 'Symbol', 'CensoredValue']).rename(columns={'LawaSiteID': 'lawa_id', 'SiteID': 'site_id', 'Latitude': 'lat', 'Longitude': 'lon', 'Indicator': 'parameter', 'SampleDate': 'date', 'CensoredValue': 'value', 'Symbol': 'censor_code'})
+    moni1 = moni0.dropna(subset=['LFENZID', 'date', 'lat', 'lon', 'value']).copy()
+    moni1 = moni1[(moni1.LFENZID > 0) & (~moni1.parameter.isin(['pH']))].copy()
+    moni1['LFENZID'] = moni1['LFENZID'].astype('int32')
+    moni1['date'] = pd.to_datetime(moni1['date'], infer_datetime_format=True)
+    moni1.loc[moni1.censor_code == 'Right', 'censor_code'] = 'greater_than'
+    moni1.loc[moni1.censor_code == 'Left', 'censor_code'] = 'less_than'
+    moni1.loc[~moni1.censor_code.isin(['greater_than', 'less_than']), 'censor_code'] = 'not_censored'
 
-moni2a = moni1.drop(['site_id', 'LFENZID', 'lat', 'lon'], axis=1).copy()
+    site_data0 = moni1[['lawa_id', 'site_id', 'LFENZID', 'lat', 'lon']].drop_duplicates(subset=['LFENZID']).copy()
 
-grp1 = moni2a.groupby(['lawa_id', 'parameter', 'date'])
-moni_mean = grp1['value'].mean()
-moni_censor = grp1['censor_code'].first()
+    moni2a = moni1.drop(['site_id', 'LFENZID', 'lat', 'lon'], axis=1).copy()
 
-moni2 = pd.concat([moni_censor, moni_mean], axis=1).reset_index()
-moni2.loc[moni2.parameter.isin(['NH4N', 'Secchi']) & (moni2.value == 0), 'value'] = 0.001
-moni2.loc[(moni2.value == 0), 'value'] = 1
-moni2.loc[(moni2.value < 0), 'value'] = moni2.loc[(moni2.value < 0), 'value'].abs()
+    grp1 = moni2a.groupby(['lawa_id', 'parameter', 'date'])
+    moni_mean = grp1['value'].mean()
+    moni_censor = grp1['censor_code'].first()
 
-moni2.to_csv(utils.lakes_source_data_path, index=False)
+    moni2 = pd.concat([moni_censor, moni_mean], axis=1).reset_index()
+    moni2.loc[moni2.parameter.isin(['NH4N', 'Secchi']) & (moni2.value == 0), 'value'] = 0.001
+    moni2.loc[(moni2.value == 0), 'value'] = 1
+    moni2.loc[(moni2.value < 0), 'value'] = moni2.loc[(moni2.value < 0), 'value'].abs()
 
-## Stats on site above/below dtl
-dtl_list = []
-for i, df in moni2.groupby(['lawa_id', 'parameter']):
-    dtl_bool = df.censor_code.isin(['greater_than', 'less_than'])
-    # if dtl_bool.any():
-    ratio = round(dtl_bool.sum()/len(dtl_bool), 3)
-    dtl_list.append([i[0], i[1], ratio])
+    moni2.to_csv(utils.lakes_source_data_path, index=False)
 
-dtl_df0 = pd.DataFrame(dtl_list, columns=['lawa_id', 'parameter', 'dtl_ratio'])
-dtl_df0.to_csv(utils.lakes_dtl_ratios_path, index=False)
+    ## Stats on site above/below dtl
+    dtl_list = []
+    for i, df in moni2.groupby(['lawa_id', 'parameter']):
+        dtl_bool = df.censor_code.isin(['greater_than', 'less_than'])
+        # if dtl_bool.any():
+        ratio = round(dtl_bool.sum()/len(dtl_bool), 3)
+        dtl_list.append([i[0], i[1], ratio])
 
-dtl_df1 = dtl_df0[dtl_df0.dtl_ratio <= 0.4]
+    dtl_df0 = pd.DataFrame(dtl_list, columns=['lawa_id', 'parameter', 'dtl_ratio'])
+    dtl_df0.to_csv(utils.lakes_dtl_ratios_path, index=False)
 
-moni3 = pd.merge(dtl_df1[['lawa_id', 'parameter']], moni2, on=['lawa_id', 'parameter'])
+    dtl_df1 = dtl_df0[dtl_df0.dtl_ratio <= 0.4]
 
-## Filter out parameters with less than 50 sites
-param_count = moni3.drop_duplicates(['lawa_id', 'parameter']).groupby('parameter').lawa_id.count()
-params_index = param_count[param_count >= 50].index.values
+    moni3 = pd.merge(dtl_df1[['lawa_id', 'parameter']], moni2, on=['lawa_id', 'parameter'])
 
-moni4 = moni3[moni3.parameter.isin(params_index)].copy()
+    ## Filter out parameters with less than 50 sites
+    param_count = moni3.drop_duplicates(['lawa_id', 'parameter']).groupby('parameter').lawa_id.count()
+    params_index = param_count[param_count >= 50].index.values
 
-## Convert dtls
-moni5 = utils.dtl_correction(moni4, 'half').drop('censor_code', axis=1)
-# moni5 = moni5.set_index(['parameter', 'lawa_id', 'date']).sort_index()
+    moni4 = moni3[moni3.parameter.isin(params_index)].copy()
 
-## Filter out sites with less than 24 measurements
-meas_count = moni5.groupby(['lawa_id', 'parameter']).date.count()
-meas_index = meas_count[meas_count >= 24].reset_index().drop('date', axis=1)
+    ## Convert dtls
+    moni5 = utils.dtl_correction(moni4, 'half').drop('censor_code', axis=1)
+    # moni5 = moni5.set_index(['parameter', 'lawa_id', 'date']).sort_index()
 
-moni6 = pd.merge(meas_index, moni5, on=['lawa_id', 'parameter'])
+    ## Filter out sites with less than 24 measurements
+    meas_count = moni5.groupby(['lawa_id', 'parameter']).date.count()
+    meas_index = meas_count[meas_count >= 24].reset_index().drop('date', axis=1)
 
-## Filter out data with median freqs of > 90
-moni7 = moni6.set_index(['parameter', 'lawa_id', 'date']).sort_index()
-m_days = moni7.reset_index().groupby(['lawa_id', 'parameter']).apply(est_median_freq)
-m_days.name = 'm_days'
-moni8 = pd.merge(m_days.reset_index().drop('m_days', axis=1), moni5, on=['lawa_id', 'parameter'])
+    moni6 = pd.merge(meas_index, moni5, on=['lawa_id', 'parameter'])
 
-final_param_count = moni8.drop_duplicates(['lawa_id', 'parameter']).groupby('parameter').lawa_id.count()
-print(final_param_count)
+    ## Filter out data with median freqs of > 90
+    moni7 = moni6.set_index(['parameter', 'lawa_id', 'date']).sort_index()
+    m_days = moni7.reset_index().groupby(['lawa_id', 'parameter']).apply(est_median_freq)
+    m_days.name = 'm_days'
+    moni8 = pd.merge(m_days.reset_index().drop('m_days', axis=1), moni5, on=['lawa_id', 'parameter'])
 
-data0 = moni8.set_index(['parameter', 'lawa_id', 'date']).sort_index()['value'].copy()
-data0.name = 'observed'
+    final_param_count = moni8.drop_duplicates(['lawa_id', 'parameter']).groupby('parameter').lawa_id.count()
+    print(final_param_count)
 
-data0.to_csv(utils.lakes_filtered_data_path)
+    data0 = moni8.set_index(['parameter', 'lawa_id', 'date']).sort_index()['value'].copy()
+    data0.name = 'observed'
+
+    data0.to_csv(utils.lakes_filtered_data_path)
 
 
-## Deseasonalize the data - test removing overall trend before/after deseason
-data0a = np.log(data0) # log transformed
+    ## Deseasonalize the data - test removing overall trend before/after deseason
+    data0a = np.log(data0) # log transformed
 
-## Testing interp of the deseasonalize method
-# interp_results, interp_summ = test_deseason_resampling(data0a.reset_index())
+    ## Testing interp of the deseasonalize method
+    # interp_results, interp_summ = test_deseason_resampling(data0a.reset_index())
 
-# interp_results.round(4).to_csv(utils.lakes_interp_test_results_path)
-# interp_summ.round(4).to_csv(utils.lakes_interp_test_summ_path)
+    # interp_results.round(4).to_csv(utils.lakes_interp_test_results_path)
+    # interp_summ.round(4).to_csv(utils.lakes_interp_test_summ_path)
 
-interp_results, interp_summ = test_deseason_resampling_2M(data0a.reset_index())
+    interp_results, interp_summ = test_deseason_resampling_2M(data0a.reset_index())
 
-interp_results.round(4).to_csv(utils.lakes_interp_test_results_path)
-interp_summ.round(4).to_csv(utils.lakes_interp_test_summ_path)
+    interp_results.round(4).to_csv(utils.lakes_interp_test_results_path)
+    interp_summ.round(4).to_csv(utils.lakes_interp_test_summ_path)
 
-## Deseasonalize the data - test removing overall trend before/after deseason
-# data0a = data0.observed.copy() # Not log transformed
-data0b = regress(data0a.reset_index(), date_col='date', data_col='observed')
+    ## Deseasonalize the data - test removing overall trend before/after deseason
+    # data0a = data0.observed.copy() # Not log transformed
+    data0b = regress(data0a.reset_index(), date_col='date', data_col='observed')
 
-all_results1 = deseason(data0b.reset_index())
-all_results2 = deseason(data0a.reset_index())
+    all_results1 = deseason(data0b.reset_index())
+    all_results2 = deseason(data0a.reset_index())
 
-results1 = all_results1['trend'] + all_results1['resid']
-results1.name = 'no_trend_deseasoned'
-results2a = all_results2['trend'] + all_results2['resid']
-results2a.name = 'with_trend_deseasoned'
+    results1 = all_results1['trend'] + all_results1['resid']
+    results1.name = 'no_trend_deseasoned'
+    results2a = all_results2['trend'] + all_results2['resid']
+    results2a.name = 'with_trend_deseasoned'
 
-results2 = regress(results2a.reset_index(), date_col='date', data_col='with_trend_deseasoned')
+    results2 = regress(results2a.reset_index(), date_col='date', data_col='with_trend_deseasoned')
 
-combo1 = pd.merge(results1, results2, on=['parameter', 'lawa_id', 'date'])
-combo2 = combo1.groupby(['parameter', 'lawa_id']).std()
+    combo1 = pd.merge(results1, results2, on=['parameter', 'lawa_id', 'date'])
+    combo2 = combo1.groupby(['parameter', 'lawa_id']).std()
 
-diff1 = 1 - (combo2['no_trend_deseasoned'] / combo2['with_trend_deseasoned'])
-print(diff1.abs().mean())
-print(diff1.mean())
+    diff1 = 1 - (combo2['no_trend_deseasoned'] / combo2['with_trend_deseasoned'])
+    print(diff1.abs().mean())
+    print(diff1.mean())
 
-combo2.round(4).to_csv(utils.lakes_trend_comp_path)
+    combo2.round(4).to_csv(utils.lakes_trend_comp_path)
 
-## Use no trend deseasoned data
-all_results1.round(4).to_csv(utils.lakes_deseason_path)
+    ## Use no trend deseasoned data
+    all_results1.round(4).to_csv(utils.lakes_deseason_path)
 
-stdev0 = combo2['no_trend_deseasoned']
-stdev0.name = 'deseasoned_stdev'
+    stdev0 = combo2['no_trend_deseasoned']
+    stdev0.name = 'deseasoned_stdev'
 
-## Compare to non-deseasonalised results
-obs_stdev0 = data0a.groupby(['parameter', 'lawa_id']).std()
-obs_stdev0.name = 'observed_stdev'
+    ## Compare to non-deseasonalised results
+    obs_stdev0 = data0a.groupby(['parameter', 'lawa_id']).std()
+    obs_stdev0.name = 'observed_stdev'
 
-combo0 = pd.merge(obs_stdev0, stdev0, on=['parameter', 'lawa_id'])
+    combo0 = pd.merge(obs_stdev0, stdev0, on=['parameter', 'lawa_id'])
 
-combo0.round(4).to_csv(utils.lakes_deseason_comp_path)
+    combo0.round(4).to_csv(utils.lakes_deseason_comp_path)
 
-combo0['ratio'] = combo0['deseasoned_stdev']/combo0['observed_stdev']
+    combo0['ratio'] = combo0['deseasoned_stdev']/combo0['observed_stdev']
 
-combo1 = combo0.groupby('parameter')['ratio'].mean()
-print(combo1)
+    combo1 = combo0.groupby('parameter')['ratio'].mean()
+    print(combo1)
 
-# The mean ratio for all parameters is 0.83. It varies little between parameters.
+    # The mean ratio for all parameters is 0.83. It varies little between parameters.
 
-## Add in the LFENZIDs
-wq_data = pd.read_csv(utils.lakes_data_path)
-site_data = wq_data.rename(columns={'LawaSiteID': 'lawa_id', 'SiteID': 'site_id'})[['lawa_id', 'site_id', 'LFENZID']].dropna().drop_duplicates(subset=['lawa_id'])
-site_data['LFENZID'] = site_data['LFENZID'].astype(int)
-site_data = site_data[site_data.LFENZID > 0].copy()
+    ## Add in the LFENZIDs
+    wq_data = pd.read_csv(utils.lakes_data_path)
+    site_data = wq_data.rename(columns={'LawaSiteID': 'lawa_id', 'SiteID': 'site_id'})[['lawa_id', 'site_id', 'LFENZID']].dropna().drop_duplicates(subset=['lawa_id'])
+    site_data['LFENZID'] = site_data['LFENZID'].astype(int)
+    site_data = site_data[site_data.LFENZID > 0].copy()
 
-stdev0.name = 'stdev'
-stdev1 = stdev0.reset_index()
-stdev_df1 = pd.merge(site_data, stdev1, on='lawa_id').rename(columns={'parameter': 'indicator'})
+    stdev0.name = 'stdev'
+    stdev1 = stdev0.reset_index()
+    stdev_df1 = pd.merge(site_data, stdev1, on='lawa_id').rename(columns={'parameter': 'indicator'})
 
-stdev_df1.to_csv(utils.lakes_stdev_moni_path, index=False)
+    stdev_df1.to_csv(utils.lakes_stdev_moni_path, index=False)
 
 
 

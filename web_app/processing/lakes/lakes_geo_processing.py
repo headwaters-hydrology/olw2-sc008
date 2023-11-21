@@ -114,7 +114,7 @@ def lakes_geo_process():
             gbuf = geobuf.encode(geo)
             s[LFENZID] = gbuf
 
-    # Point locations
+    # Point locations of lakes
     sites = lakes_poly2.copy()
     sites['geometry'] = sites.geometry.centroid.to_crs(4326)
 
@@ -126,6 +126,24 @@ def lakes_geo_process():
         f.write(sites_gbuf)
 
     utils.gpd_to_feather(sites, utils.lakes_points_path)
+
+    ## Point locations of monitoring sites
+    stdev0 = pd.read_csv(utils.lakes_stdev_moni_path)
+    site_loc0 = pd.read_csv(utils.lakes_raw_moni_data_csv_path, usecols=['LawaSiteID', 'SiteID', 'LFENZID', 'Latitude', 'Longitude',]).rename(columns={'LawaSiteID': 'lawa_id', 'SiteID': 'site_id', 'Latitude': 'lat', 'Longitude': 'lon'})
+    site_loc1 = site_loc0.drop_duplicates(subset=['lawa_id'])
+    site_loc2 = site_loc1[site_loc1.lawa_id.isin(stdev0.lawa_id.unique())].copy()
+    site_loc2['LFENZID'] = site_loc2['LFENZID'].astype('int32')
+
+    site_loc3 = vector.xy_to_gpd(['lawa_id', 'site_id', 'LFENZID'], 'lon', 'lat', site_loc2, 4326)
+
+    site_loc_geo = site_loc3.set_index('site_id', drop=False).__geo_interface__
+
+    sites_gbuf = geobuf.encode(site_loc_geo)
+
+    with open(utils.lakes_moni_sites_gbuf_path, 'wb') as f:
+        f.write(sites_gbuf)
+
+    site_loc3.to_file(utils.lakes_moni_sites_gpkg_path)
 
 
 

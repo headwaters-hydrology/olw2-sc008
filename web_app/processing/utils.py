@@ -292,6 +292,8 @@ lakes_poly_path = output_path.joinpath('lakes_poly.feather')
 lakes_catch_path = output_path.joinpath('lakes_catch.feather')
 
 lakes_points_gbuf_path = assets_path.joinpath('lakes_points.pbf')
+lakes_moni_sites_gbuf_path = assets_path.joinpath('lakes_moni_sites.pbf')
+lakes_moni_sites_gpkg_path = output_path.joinpath('lakes_moni_sites.gpkg')
 lakes_poly_gbuf_path = assets_path.joinpath('lakes_poly.blt')
 # lakes_poly_path = base_path.joinpath('lakes_locations_fenz.gpkg')
 lakes_delin_points_path = base_path.joinpath('lakes_delineate_points.gpkg')
