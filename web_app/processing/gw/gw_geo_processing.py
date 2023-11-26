@@ -30,12 +30,12 @@ pd.options.display.max_columns = 10
 ##################################################
 ### preprocessing
 
-lag_priorities = [
-    {'lag_dist': 500},
-    {'lag_dist': 500},
+# lag_priorities = [
+#     {'lag_dist': 500},
+#     {'lag_dist': 500},
 
 
-    ]
+#     ]
 
 
 def find_nearest(array, value):

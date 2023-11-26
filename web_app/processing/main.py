@@ -38,7 +38,7 @@ from lakes.lakes_geo_processing import lakes_geo_process
 from lakes.lakes_delineation import lakes_catch_delin
 from lakes.lakes_land_cover_assignment import lakes_land_cover
 from lakes.lakes_process_loads import process_loads_lakes
-from lakes.lakes_power_all import lakes_power_combo_processing
+from lakes.lakes_assign_power_all import lakes_process_power_modelled, lakes_process_power_monitored
 
 from gw.gw_geo_processing import gw_geo_process
 from gw.gw_assign_power_monitored import gw_process_power_monitored
@@ -141,7 +141,8 @@ process_loads_lakes()
 # lakes_sims.py should be run via the terminal
 
 ## Process the powers associated with the other parameters
-lakes_power_combo_processing()
+lakes_process_power_monitored()
+lakes_process_power_modelled()
 
 
 ###################################################

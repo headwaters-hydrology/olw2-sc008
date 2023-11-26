@@ -62,7 +62,25 @@ catch_style_handle = assign("""function style(feature) {
         color: 'black',
         fillOpacity: 0.1
     };
-}""", name='rivers_catch_style_handle')
+}""", name='lakes_catch_style_handle')
+
+sites_points_handle = assign("""function rivers_sites_points_handle(feature, latlng, context){
+    const {classes, colorscale, circleOptions, colorProp} = context.props.hideout;  // get props from hideout
+    const value = feature.properties[colorProp];  // get value the determines the fillColor
+    for (let i = 0; i < classes.length; ++i) {
+        if (value == classes[i]) {
+            circleOptions.fillColor = colorscale[i];  // set the color according to the class
+        }
+    }
+
+    return L.circleMarker(latlng, circleOptions);
+}""", name='lakes_sites_points_handle')
+
+draw_marae = assign("""function(feature, latlng){
+const flag = L.icon({iconUrl: '/assets/nzta-marae.svg', iconSize: [20, 30]});
+return L.marker(latlng, {icon: flag});
+}""", name='lakes_marae_handle')
+
 
 # lake_id = 11133
 
@@ -242,8 +260,10 @@ def layout():
                                     dl.BaseLayer(dl.TileLayer(url='https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', attribution='Map data: © OpenStreetMap contributors, SRTM | Map style: © OpenTopoMap (CC-BY-SA)', opacity=0.6), checked=False, name='OpenTopoMap'),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(url=str(param.lakes_pbf_path), format="geobuf", id='lake_points', zoomToBoundsOnClick=True, cluster=True)), name='Lake points', checked=True),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='catch_map_lakes', zoomToBoundsOnClick=True, zoomToBounds=True, options=dict(style=catch_style_handle))), name='Catchments', checked=True),
+                                    dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='marae_map_lakes', zoomToBoundsOnClick=False, zoomToBounds=False, options=dict(pointToLayer=draw_marae))), name='Marae', checked=False),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='reach_map_lakes', options=dict(style=param.reach_style))), name='Rivers', checked=True),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='lake_poly', options=dict(style=lake_style_handle), hideout={'classes': [''], 'colorscale': ['#808080'], 'style': param.lake_style, 'colorProp': 'name'})), name='Lakes', checked=True),
+                                    dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='sites_points_lakes', options=dict(pointToLayer=sites_points_handle), hideout=param.rivers_points_hideout)), name='Monitoring sites', checked=True),
                                     # dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='sites_points_lakes', options=dict(pointToLayer=sites_points_handle), hideout=rivers_points_hideout)), name='Monitoring sites', checked=True),
                                     ],
                                     id='layers_gw',
@@ -264,6 +284,7 @@ def layout():
                     ),
             dcc.Store(id='lake_id', data=''),
             dcc.Store(id='powers_obj_lakes', data=''),
+            dcc.Store(id='sites_powers_obj_lakes', data=''),
             dcc.Store(id='reaches_obj_lakes', data=''),
             dcc.Store(id='custom_reductions_obj_lakes', data=''),
             dcc.Store(id='base_reductions_obj_lakes', data=''),
@@ -325,20 +346,35 @@ def update_reaches_lakes(lake_id):
     return data
 
 
-# @callback(
-#         Output('sites_points', 'data'),
-#         Input('lake_id', 'value'),
-#         )
-# # @cache.memoize()
-# def update_monitor_sites(lake_id):
-#     if (lake_id is not None):
-#         with booklet.open(lakes_sites_path, 'r') as f:
-#             data = base64.b64encode(f[int(lake_id)]).decode()
+@callback(
+        Output('marae_map_lakes', 'data'),
+        Input('lake_id', 'data'),
+        )
+def update_marae(lake_id):
+    if lake_id != '':
+        with booklet.open(param.lakes_marae_path, 'r') as f:
+            data = base64.b64encode(f[int(lake_id)]).decode()
 
-#     else:
-#         data = ''
+    else:
+        data = ''
 
-#     return data
+    return data
+
+
+@callback(
+        Output('sites_points_lakes', 'data'),
+        Input('lake_id', 'data'),
+        )
+# @cache.memoize()
+def update_monitor_sites(lake_id):
+    if lake_id != '':
+        with booklet.open(param.lakes_moni_sites_gbuf_path, 'r') as f:
+            data = base64.b64encode(f[int(lake_id)]).decode()
+
+    else:
+        data = ''
+
+    return data
 
 
 @callback(
@@ -385,19 +421,6 @@ def update_base_reductions_obj(lake_id):
             data = utils.encode_obj(f[int(lake_id)])
 
     return data
-
-
-# @callback(
-#     Output("dl_poly_lakes", "data"),
-#     Input("dl_btn_lakes", "n_clicks"),
-#     State('lake_id', 'value'),
-#     prevent_initial_call=True,
-#     )
-# def download_lc(n_clicks, lake_id):
-#     if isinstance(lake_id, str):
-#         path = lakes_catch_lc_dir.joinpath(lakes_catch_lc_gpkg_str.format(lake_id))
-
-#         return dcc.send_file(path)
 
 
 @callback(
@@ -540,6 +563,7 @@ def update_reach_reductions(click, base_reductions_obj, lake_id, reductions_obj)
 
 @callback(
     Output('powers_obj_lakes', 'data'),
+    Output('sites_powers_obj_lakes', 'data'),
     [Input('reaches_obj_lakes', 'data'), Input('indicator_lakes', 'value'), Input('time_period_lakes', 'value'), Input('freq_lakes', 'value'), Input('reductions_slider_lakes', 'value')],
     [State('lake_id', 'data')]
     )
@@ -554,7 +578,6 @@ def update_powers_data_lakes(reaches_obj, indicator, n_years, n_samples_year, pr
         # print(props)
 
         conc_perc = 100 - props
-
         lake_data = lakes_data[int(lake_id)]
 
         ## Lake residence time calcs
@@ -577,10 +600,10 @@ def update_powers_data_lakes(reaches_obj, indicator, n_years, n_samples_year, pr
         elif conc_perc > 100:
             conc_perc = 100
 
-        ## Lookup power
         n_samples = int(n_samples_year)*int(n_years)
 
-        power_data = xr.open_dataset(param.lakes_power_combo_path, engine='h5netcdf')
+        ## Modelled
+        power_data = xr.open_dataset(param.lakes_power_model_path, engine='h5netcdf')
         try:
             power_data1 = power_data.sel(indicator=indicator, LFENZID=int(lake_id), n_samples=n_samples, conc_perc=conc_perc).copy().load()
 
@@ -590,11 +613,54 @@ def update_powers_data_lakes(reaches_obj, indicator, n_years, n_samples_year, pr
         power_data.close()
         del power_data
 
-        data = utils.encode_obj({'reduction': props, 'power': power_data2, 'lake_id': lake_id})
-    else:
-        data = ''
+        power_model_encoded = utils.encode_obj({'reduction': props, 'power': power_data2, 'lake_id': lake_id})
 
-    return data
+        ## Monitored
+        with booklet.open(param.lakes_moni_sites_gbuf_path, 'r') as f:
+            sites = f[int(lake_id)]
+
+        features = geobuf.decode(sites)['features']
+
+        if len(features) > 0:
+            power_data = xr.open_dataset(param.lakes_power_moni_path, engine='h5netcdf')
+
+            # print(power_data)
+            sites_data = {f1['id']: f1['id'] for f1 in features}
+
+            power_data1 = power_data.sel(indicator=indicator, n_samples=n_samples, drop=True).copy().load()
+            power_site_ids = power_data1.site_id.values
+
+            site_ids = np.array(list(sites_data.keys()))
+
+            # other_segs = segs[~np.isin(segs, conc_perc.nzsegment.values)]
+            # print(other_segs)
+
+            # conc_perc1 = conc_perc.sel(site_id=site_ids)
+            conc_perc1 = conc_perc
+
+            power_data2 = []
+            for site_id, site_name in sites_data.items():
+                # conc_perc1 = int(conc_perc.sel(site_id=site_id))
+                if site_id in power_site_ids:
+                    try:
+                        power = int(power_data1.sel(conc_perc=conc_perc1, site_id=site_id).power_monitored.values)
+                    except ValueError:
+                        power = -1
+                else:
+                    power = -1
+                power_data2.append({'reduction': 100 - conc_perc1, 'site_id': site_id, 'power_monitored': power, 'site_name': site_name})
+
+            power_data.close()
+            del power_data
+
+            # print(power_data2)
+
+            power_moni_encoded = utils.encode_obj(power_data2)
+    else:
+        power_model_encoded = ''
+        power_moni_encoded = ''
+
+    return power_model_encoded, power_moni_encoded
 
 
 # @callback(
@@ -618,15 +684,20 @@ def update_powers_data_lakes(reaches_obj, indicator, n_years, n_samples_year, pr
 
 @callback(
     Output('lake_poly', 'hideout'),
-    [Input('powers_obj_lakes', 'data')],
+    Output('sites_points_lakes', 'hideout'),
+    Input('powers_obj_lakes', 'data'),
+    Input('sites_powers_obj_lakes', 'data'),
     Input('lake_id', 'data'),
     prevent_initial_call=True
     )
-def update_hideout_lakes(powers_obj, lake_id):
+def update_hideout_lakes(powers_obj, sites_powers_obj, lake_id):
     """
 
     """
-    if (powers_obj != '') and (powers_obj is not None):
+    hideout_model = {'classes': [lake_id], 'colorscale': ['#808080'], 'style': param.lake_style, 'colorProp': 'LFENZID'}
+    hideout_moni = param.rivers_points_hideout
+
+    if powers_obj != '':
         # print('trigger')
         props = utils.decode_obj(powers_obj)
         # print(props)
@@ -638,30 +709,45 @@ def update_hideout_lakes(powers_obj, lake_id):
             # print(color_arr)
             # print(props['lake_id'])
 
-            hideout = {'classes': [props['lake_id']], 'colorscale': color_arr, 'style': param.lake_style, 'colorProp': 'LFENZID'}
-        else:
-            hideout = {'classes': [lake_id], 'colorscale': ['#808080'], 'style': param.lake_style, 'colorProp': 'LFENZID'}
-    else:
-        hideout = {'classes': [lake_id], 'colorscale': ['#808080'], 'style': param.lake_style, 'colorProp': 'LFENZID'}
+            hideout_model = {'classes': [props['lake_id']], 'colorscale': color_arr, 'style': param.lake_style, 'colorProp': 'LFENZID'}
 
-    return hideout
+        ## Monitored
+        if sites_powers_obj != '':
+            sites_props = utils.decode_obj(sites_powers_obj)
+            # print(props_moni)
+            color_arr2 = pd.cut([p['power_monitored'] for p in sites_props], param.bins, labels=param.colorscale_power, right=False).tolist()
+            color_arr2 = [color if isinstance(color, str) else '#252525' for color in color_arr2]
+            # print(color_arr2)
+
+            hideout_moni = {'classes': [p['site_id'] for p in sites_props], 'colorscale': color_arr2, 'circleOptions': dict(fillOpacity=1, stroke=True, color='black', weight=1, radius=param.site_point_radius), 'colorProp': 'nzsegment'}
+
+    return hideout_model, hideout_moni
 
 
 @callback(
     Output("info_lakes", "children"),
-    [Input('powers_obj_lakes', 'data'),
-      Input("lake_poly", "click_feature")],
+    Input('powers_obj_lakes', 'data'),
+    Input('sites_powers_obj_lakes', 'data'),
+    Input("lake_poly", "click_feature"),
+    Input('sites_points_lakes', 'click_feature'),
+    Input('lake_id', 'data'),
+    State("info_lakes", "children"),
     )
-def update_map_info_lakes(powers_obj, feature):
+def update_map_info_lakes(powers_obj, sites_powers_obj, feature, sites_feature, lake_id, old_info):
     """
 
     """
     info = """"""
 
+    trig = ctx.triggered_id
+
     # if (reductions_obj != '') and (reductions_obj is not None) and ('reductions_poly' in map_checkboxes):
     #     info = info + """\n\nHover over the polygons to see reduction %"""
 
-    if (powers_obj != '') and (powers_obj is not None):
+    if trig == 'catch_id':
+        pass
+
+    elif (powers_obj != '') and (trig == 'lake_poly'):
         if feature is not None:
             props = utils.decode_obj(powers_obj)
 
@@ -672,10 +758,32 @@ def update_map_info_lakes(powers_obj, feature):
 
             info_str = """\n\n**Improvement**: {red}%\n\n**Likelihood of observing an improvement (power)**:\n\n&nbsp;&nbsp;&nbsp;&nbsp;**Modelled**: {t_stat1}%\n\n&nbsp;&nbsp;&nbsp;&nbsp;**Monitored**: {t_stat2}""".format(red=int(props['reduction']), t_stat1=int(props['power'][0]), t_stat2=moni1)
 
-            info = info + info_str
+            info = info_str
 
-        else:
-            info = info + """\n\nClick on a lake to see info"""
+    elif (trig == 'sites_points') or ((sites_powers_obj != '') and (sites_feature is not None) and ('Site name' in old_info)):
+        if (sites_powers_obj != ''):
+            sites_props = utils.decode_obj(sites_powers_obj)
+            feature_id = int(sites_feature['properties']['site_id'])
+            # print(sites_feature)
+
+            reach_data = [p for p in sites_props if p['site_id'] == feature_id]
+            if reach_data:
+                reach_data0 = reach_data[0]
+                power = reach_data0['power_monitored']
+                if power == -1:
+                    power = 'NA'
+                else:
+                    power = str(power) + '%'
+
+                reduction = reach_data0['reduction']
+                site_name = reach_data0['site_name']
+
+                info_str = """**Site name**: {site}\n\n**Predicted improvement**: {red}%\n\n**Likelihood of detecting the improvement (power)**: {power}""".format(red=reduction, power=power, site=site_name)
+
+                info = info_str
+
+        # else:
+        #     info = info + """\n\nClick on a lake to see info"""
 
     return info
 

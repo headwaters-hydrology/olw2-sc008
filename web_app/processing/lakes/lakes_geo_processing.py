@@ -19,6 +19,8 @@ import booklet
 import multiprocessing as mp
 import concurrent.futures
 import geobuf
+from shapely.geometry import Point, Polygon, box, LineString, mapping, shape
+import orjson
 
 import utils
 
@@ -136,12 +138,25 @@ def lakes_geo_process():
 
     site_loc3 = vector.xy_to_gpd(['lawa_id', 'site_id', 'LFENZID'], 'lon', 'lat', site_loc2, 4326)
 
-    site_loc_geo = site_loc3.set_index('site_id', drop=False).__geo_interface__
+    catches0 = booklet.open(utils.lakes_catches_major_path)
 
-    sites_gbuf = geobuf.encode(site_loc_geo)
+    with booklet.open(utils.lakes_moni_sites_gbuf_path, 'n', key_serializer='uint4', value_serializer='zstd', n_buckets=1607) as f:
+        for k, v in catches0.items():
+            geojson = geobuf.decode(v)
+            geo = shape(geojson['features'][0]['geometry'])
+            site_loc4 = site_loc3[site_loc3.within(geo)].set_index('site_id', drop=False).rename(columns={'site_id': 'tooltip'}).__geo_interface__
+            gbuf = geobuf.encode(site_loc4)
+            f[k] = gbuf
+            # f[k] = marae3
 
-    with open(utils.lakes_moni_sites_gbuf_path, 'wb') as f:
-        f.write(sites_gbuf)
+    catches0.close()
+
+    # site_loc_geo = site_loc3.set_index('site_id', drop=False).rename(columns={'site_id': 'tooltip'}).__geo_interface__
+
+    # sites_gbuf = geobuf.encode(site_loc_geo)
+
+    # with open(utils.lakes_moni_sites_gbuf_path, 'wb') as f:
+    #     f.write(sites_gbuf)
 
     site_loc3.to_file(utils.lakes_moni_sites_gpkg_path)
 

@@ -162,6 +162,8 @@ river_catch_major_path = assets_path.joinpath('rivers_catchments_major.blt')
 river_catch_name_path = assets_path.joinpath('rivers_catchments_names.blt')
 river_marae_path = assets_path.joinpath('rivers_catchments_marae.blt')
 
+river_catch_gpkg_path = base_path.joinpath('rivers_catch_major_3rd.gpkg')
+
 river_sims_path = output_path.joinpath('rivers_sims')
 river_sims_path.mkdir(parents=True, exist_ok=True)
 
@@ -292,7 +294,7 @@ lakes_poly_path = output_path.joinpath('lakes_poly.feather')
 lakes_catch_path = output_path.joinpath('lakes_catch.feather')
 
 lakes_points_gbuf_path = assets_path.joinpath('lakes_points.pbf')
-lakes_moni_sites_gbuf_path = assets_path.joinpath('lakes_moni_sites.pbf')
+lakes_moni_sites_gbuf_path = assets_path.joinpath('lakes_moni_sites.blt')
 lakes_moni_sites_gpkg_path = output_path.joinpath('lakes_moni_sites.gpkg')
 lakes_poly_gbuf_path = assets_path.joinpath('lakes_poly.blt')
 # lakes_poly_path = base_path.joinpath('lakes_locations_fenz.gpkg')
@@ -311,7 +313,7 @@ lakes_sims_path = output_path.joinpath('lakes_sims')
 lakes_sims_path.mkdir(parents=True, exist_ok=True)
 
 lakes_sims_h5_path = lakes_sims_path.joinpath('lakes_sims.h5')
-lakes_power_combo_path = assets_path.joinpath('lakes_power_combo.h5')
+# lakes_power_combo_path = assets_path.joinpath('lakes_power_combo.h5')
 lakes_power_model_path = assets_path.joinpath('lakes_power_modelled.h5')
 lakes_power_moni_path = assets_path.joinpath('lakes_power_monitored.h5')
 lakes_reductions_model_path = assets_path.joinpath('lakes_reductions_modelled.h5')
@@ -319,6 +321,8 @@ lakes_reductions_model_path = assets_path.joinpath('lakes_reductions_modelled.h5
 lakes_lc_path = assets_path.joinpath('lakes_catch_lc.blt')
 
 lakes_loads_rec_path = assets_path.joinpath('lakes_loads_rec.blt')
+
+lakes_marae_path = assets_path.joinpath('lakes_catchments_marae.blt')
 
 ## Model data
 lakes_rupesh_stdev_path = base_path.joinpath('lakes_stdev_v04.csv')

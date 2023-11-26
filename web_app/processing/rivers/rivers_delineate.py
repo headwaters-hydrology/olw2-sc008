@@ -187,6 +187,8 @@ def rec_delin():
     rec_shed = gpd.GeoDataFrame(catch_ids, geometry=list(catches_major_dict.values()), crs=4326, columns=['nzsegment'])
     rec_shed['geometry'] = rec_shed.simplify(0.0004)
 
+    rec_shed.to_file(utils.river_catch_gpkg_path)
+
     gjson = orjson.loads(rec_shed.set_index('nzsegment').to_json())
 
     with open(utils.assets_path.joinpath('rivers_catchments.pbf'), 'wb') as f:

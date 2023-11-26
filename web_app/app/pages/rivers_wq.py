@@ -643,6 +643,10 @@ def update_hideout(powers_obj, sites_powers_obj):
     """
 
     """
+    hideout_model = {}
+    options = dict(style=base_reach_style_handle)
+    hideout_moni = param.rivers_points_hideout
+
     if (powers_obj != '') and (powers_obj is not None):
         props = utils.decode_obj(powers_obj)
 
@@ -663,14 +667,6 @@ def update_hideout(powers_obj, sites_powers_obj):
             # print(color_arr2)
 
             hideout_moni = {'classes': [p['nzsegment'] for p in sites_props], 'colorscale': color_arr2, 'circleOptions': dict(fillOpacity=1, stroke=True, color='black', weight=1, radius=param.site_point_radius), 'colorProp': 'nzsegment'}
-
-            del sites_props
-        else:
-            hideout_moni = param.rivers_points_hideout
-    else:
-        hideout_model = {}
-        options = dict(style=base_reach_style_handle)
-        hideout_moni = param.rivers_points_hideout
 
     return hideout_model, options, hideout_moni
 
@@ -729,7 +725,7 @@ def update_map_info(powers_obj, sites_powers_obj, reach_feature, sites_feature, 
                 reduction = reach_data0['reduction']
                 site_name = reach_data0['site_name']
 
-                info_str = """\n\n**nzsegment**: {seg}\n\n**Site name**: {site}\n\n**Improvement**: {red}%\n\n**Likelihood of observing an improvement (power)**: {power}""".format(red=reduction, power=power, seg=feature_id, site=site_name)
+                info_str = """\n\n**nzsegment**: {seg}\n\n**Site name**: {site}\n\n**Predicted improvement**: {red}%\n\n**Likelihood of detecting the improvement (power)**: {power}""".format(red=reduction, power=power, seg=feature_id, site=site_name)
 
                 info = info_str
 
@@ -739,7 +735,7 @@ def update_map_info(powers_obj, sites_powers_obj, reach_feature, sites_feature, 
         feature_id = int(reach_feature['id'])
         reach_data = props.sel(nzsegment=feature_id)
 
-        info_str = """\n\n**nzsegment**: {seg}\n\n**Improvement**: {red}%\n\n**Likelihood of observing an improvement (power)**: {t_stat}%""".format(red=int(reach_data.reduction), t_stat=int(reach_data.power_modelled), seg=feature_id)
+        info_str = """\n\n**nzsegment**: {seg}\n\n**Predicted improvement**: {red}%\n\n**Likelihood of detecting the improvement (power)**: {t_stat}%""".format(red=int(reach_data.reduction), t_stat=int(reach_data.power_modelled), seg=feature_id)
 
         info = info_str
 

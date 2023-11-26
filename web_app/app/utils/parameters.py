@@ -54,10 +54,12 @@ eco_sites_path = assets_path.joinpath('eco_sites_catchments.blt')
 
 
 ## Lakes
-lakes_power_combo_path = assets_path.joinpath('lakes_power_combo.h5')
-# lakes_power_moni_path = assets_path.joinpath('lakes_power_monitored.h5')
+# lakes_power_combo_path = assets_path.joinpath('lakes_power_combo.h5')
+lakes_power_moni_path = assets_path.joinpath('lakes_power_monitored.h5')
+lakes_power_model_path = assets_path.joinpath('lakes_power_modelled.h5')
 lakes_reductions_model_path = assets_path.joinpath('lakes_reductions_modelled.h5')
 
+lakes_moni_sites_gbuf_path = assets_path.joinpath('lakes_moni_sites.blt')
 lakes_pbf_path = app_base_path.joinpath('lakes_points.pbf')
 lakes_poly_gbuf_path = assets_path.joinpath('lakes_poly.blt')
 lakes_catches_major_path = assets_path.joinpath('lakes_catchments_major.blt')
@@ -69,6 +71,8 @@ lakes_catches_minor_path = assets_path.joinpath('lakes_catchments_minor.blt')
 lakes_catch_lc_gpkg_str = '{base_url}olw-data/olw-sc008/lakes_land_cover_gpkg/{lake_id}_lakes_land_cover_reductions.gpkg'
 
 lakes_loads_rec_path = assets_path.joinpath('lakes_loads_rec.blt')
+
+lakes_marae_path = assets_path.joinpath('lakes_catchments_marae.blt')
 
 ## GW
 gw_error_path = assets_path.joinpath('gw_points_error.h5')
