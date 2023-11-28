@@ -172,7 +172,7 @@ def layout():
                                     dmc.Text('(2a) Select Indicator:'),
                                     dcc.Dropdown(options=[{'label': d.capitalize(), 'value': d} for d in indicators], id='indicator_lc', optionHeight=40, clearable=False),
 
-                                    dmc.Text('(2b) Change the percent of the improvements applied. 100% is the max realistic improvement (This option only applies to the river segments):', style={'margin-top': 20}),
+                                    dmc.Text(dcc.Markdown('(2b) Change the percent of the improvements applied. 100% is the max realistic improvement (**This option only applies to the river reaches**):'), style={'margin-top': 20}),
                                     dmc.Slider(id='Reductions_slider_lc',
                                                 value=100,
                                                 mb=35,
@@ -183,7 +183,7 @@ def layout():
                                                 marks=param.marks
                                                 ),
                                     dmc.Text('NOTE', weight=700, underline=True, style={'margin-top': 20}),
-                                    dmc.Text('The river segments can be added to the map via the layer button on the top right corner of the map.')
+                                    dmc.Text('The river reaches can be added to the map via the layer button on the top right corner of the map, and the land cover can also be removed.')
                                     ],
                                     )
                                 ],
@@ -463,7 +463,7 @@ def update_reach_hideout(reaches_obj, indicator, prop_red):
         ## Modelled
         color_arr = pd.cut(props.reduction.values, param.bins, labels=param.colorscale_power, right=False).tolist()
 
-        hideout = {'colorscale': color_arr, 'classes': props.nzsegment.values, 'style': param.reach_style, 'colorProp': 'nzsegment'}
+        hideout = {'colorscale': color_arr, 'classes': props.nzsegment.values, 'style': param.style_power, 'colorProp': 'nzsegment'}
 
     else:
         hideout = {}

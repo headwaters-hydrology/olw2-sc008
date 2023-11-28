@@ -248,10 +248,6 @@ def layout():
                                                disabled=False,
                                                marks=param.marks
                                                ),
-                                    # dcc.Dropdown(options=[{'label': d, 'value': d} for d in time_periods], id='time_period', clearable=False, value=5),
-                                    # html.Label('Select sampling frequency:'),
-                                    # dcc.Dropdown(options=[{'label': v, 'value': k} for k, v in freq_mapping.items()], id='freq', clearable=False, value=12),
-
                                     ],
                                     )
                                 ],

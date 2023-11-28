@@ -61,6 +61,7 @@ lakes_reductions_model_path = assets_path.joinpath('lakes_reductions_modelled.h5
 
 lakes_moni_sites_gbuf_path = assets_path.joinpath('lakes_moni_sites.blt')
 lakes_pbf_path = app_base_path.joinpath('lakes_points.pbf')
+lakes_3rd_pbf_path = app_base_path.joinpath('lakes_points_3rd.pbf')
 lakes_poly_gbuf_path = assets_path.joinpath('lakes_poly.blt')
 lakes_catches_major_path = assets_path.joinpath('lakes_catchments_major.blt')
 lakes_reach_gbuf_path = assets_path.joinpath('lakes_reaches.blt')
@@ -167,7 +168,7 @@ ctg = ["{}%+".format(cls, classes[i + 1]) for i, cls in enumerate(classes[:-1])]
 
 site_point_radius = 6
 
-reduction_ratios = range(10, 101, 10)
+reduction_ratios = range(0, 101, 10)
 red_ratios = np.array(list(reduction_ratios), dtype='int8')
 
 rivers_points_hideout = {'classes': [], 'colorscale': ['#232323'], 'circleOptions': dict(fillOpacity=1, stroke=True, weight=1, color='black', radius=site_point_radius), 'colorProp': 'nzsegment'}
@@ -180,9 +181,6 @@ eco_indicator_dict = {'peri': 'Periphyton', 'mci': 'MCI', 'sediment': 'Deposited
 
 eco_reduction_cols = list(eco_indicator_dict.values())
 
-# eco_reductions_values = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50]
-# eco_reductions_options = [{'value': v, 'label': str(v)+'%'} for v in eco_reductions_values]
-
 eco_reductions_values = np.arange(10, 101, 10)
 eco_reductions_options = [{'value': v, 'label': str(v)+'%'} for v in eco_reductions_values]
 
@@ -192,6 +190,8 @@ colorscale_weights = ['#edf8b1','#7fcdbb','#2c7fb8']
 lakes_indicator_dict = {'CHLA': 'Chlorophyll a', 'Secchi': 'Secchi Depth', 'TN': 'Total nitrogen', 'TP': 'Total phosphorus'}
 
 lakes_reduction_cols = list(lakes_indicator_dict.values())
+
+lakes_points_hideout = {'classes': [], 'colorscale': ['#232323'], 'circleOptions': dict(fillOpacity=1, stroke=True, weight=1, color='black', radius=site_point_radius), 'colorProp': 'tooltip'}
 
 gw_points_hideout = {'classes': [], 'colorscale': ['#808080'], 'circleOptions': dict(fillOpacity=1, stroke=False, radius=site_point_radius), 'colorProp': 'tooltip'}
 

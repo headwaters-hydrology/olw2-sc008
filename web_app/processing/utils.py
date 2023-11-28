@@ -289,14 +289,20 @@ lakes_fenz_catch_path = base_path.joinpath('lakes_catchments_fenz.gpkg')
 lakes_fenz_poly_path = base_path.joinpath('lakes_polygons_fenz.gpkg')
 
 ## Geo processing
-lakes_points_path = output_path.joinpath('lakes_points.feather')
-lakes_poly_path = output_path.joinpath('lakes_poly.feather')
+lakes_points_path = output_path.joinpath('lakes_points.gpkg')
+lakes_points_3rd_path = output_path.joinpath('lakes_points_3rd.gpkg')
+lakes_poly_3rd_path = output_path.joinpath('lakes_poly_3rd_order.gpkg')
+lakes_poly_path = output_path.joinpath('lakes_poly.gpkg')
 lakes_catch_path = output_path.joinpath('lakes_catch.feather')
 
 lakes_points_gbuf_path = assets_path.joinpath('lakes_points.pbf')
+lakes_points_3rd_gbuf_path = assets_path.joinpath('lakes_points_3rd.pbf')
 lakes_moni_sites_gbuf_path = assets_path.joinpath('lakes_moni_sites.blt')
+lakes_moni_sites_3rd_gbuf_path = assets_path.joinpath('lakes_moni_sites_3rd.blt')
 lakes_moni_sites_gpkg_path = output_path.joinpath('lakes_moni_sites.gpkg')
+lakes_poly_3rd_gbuf_path = assets_path.joinpath('lakes_poly_3rd.blt')
 lakes_poly_gbuf_path = assets_path.joinpath('lakes_poly.blt')
+
 # lakes_poly_path = base_path.joinpath('lakes_locations_fenz.gpkg')
 lakes_delin_points_path = base_path.joinpath('lakes_delineate_points.gpkg')
 lakes_reaches_mapping_path = assets_path.joinpath('lakes_reaches_mapping.blt')

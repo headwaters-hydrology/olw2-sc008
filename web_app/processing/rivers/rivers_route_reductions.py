@@ -40,7 +40,7 @@ pd.options.display.max_columns = 10
 
 # catch_id = 3076139
 
-reduction_ratios = range(5, 101, 5)
+reduction_ratios = range(0, 101, 10)
 feature = 'rivers'
 
 with booklet.open(utils.river_reach_mapping_path) as f:

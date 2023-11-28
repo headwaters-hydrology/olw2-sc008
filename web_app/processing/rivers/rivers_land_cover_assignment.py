@@ -33,6 +33,11 @@ pd.options.display.max_columns = 10
 
 typo_corrections = {3076139: {'Warm/Low/Well/Moist': {'total phosphorus': 36, 'total nitrogen': 39},
                               'Cool/Low/Well/Moist': {'total phosphorus': 34, 'total nitrogen': 32},
+                              'Cool/Low/Light/Moist': {'total phosphorus': 35, 'total nitrogen': 35},
+                              'Warm/Low/Light/Moist': {'total phosphorus': 35, 'total nitrogen': 35},
+                              'Warm/Moderate/Light/Moist': {'total phosphorus': 35, 'total nitrogen': 35},
+                              'Warm/Moderate/Well/Moist': {'total phosphorus': 35, 'total nitrogen': 35},
+                              'High Producing Exotic Grassland': {'total phosphorus': 35, 'total nitrogen': 35},
                               },
                     }
 
@@ -40,6 +45,11 @@ special_typo = {3076139: {
     'recommended': {
         'Warm/Low/Well/Moist': {'total phosphorus': 27, 'total nitrogen': 18},
         'Cool/Low/Well/Moist': {'total phosphorus': 12, 'total nitrogen': 7},
+        'Cool/Low/Light/Moist': {'total phosphorus': 20, 'total nitrogen': 12},
+        'Warm/Low/Light/Moist': {'total phosphorus': 20, 'total nitrogen': 12},
+        'Warm/Moderate/Light/Moist': {'total phosphorus': 20, 'total nitrogen': 12},
+        'Warm/Moderate/Well/Moist': {'total phosphorus': 20, 'total nitrogen': 12},
+        'High Producing Exotic Grassland': {'total phosphorus': 20, 'total nitrogen': 12},
                                   },
     }
     }

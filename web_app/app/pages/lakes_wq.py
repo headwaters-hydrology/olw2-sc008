@@ -36,9 +36,9 @@ from utils import utils
 dash.register_page(
     __name__,
     path='/lakes-wq',
-    title='Water Quality',
+    title='Water Quality Routing',
     name='lakes_wq',
-    description='Lakes and Lagoons Water Quality'
+    description='Lakes Water Quality Routing'
 )
 
 ### Handles
@@ -64,7 +64,7 @@ catch_style_handle = assign("""function style(feature) {
     };
 }""", name='lakes_catch_style_handle')
 
-sites_points_handle = assign("""function rivers_sites_points_handle(feature, latlng, context){
+sites_points_handle = assign("""function lakes_sites_points_handle(feature, latlng, context){
     const {classes, colorscale, circleOptions, colorProp} = context.props.hideout;  // get props from hideout
     const value = feature.properties[colorProp];  // get value the determines the fillColor
     for (let i = 0; i < classes.length; ++i) {
@@ -93,8 +93,9 @@ with open(param.assets_path.joinpath('lakes_points.pbf'), 'rb') as f:
 lakes_names = {}
 for f in geodict['features']:
     label0 = ' '.join(f['properties']['name'].split())
-    label = str(f['id']) + ' - ' + label0
-    lakes_names[int(f['id'])] = label
+    # label = str(f['id']) + ' - ' + label0
+    # lakes_names[int(f['id'])] = label
+    lakes_names[int(f['id'])] = label0
 
 lakes_data = {int(f['id']): f['properties'] for f in geodict['features']}
 
@@ -258,12 +259,12 @@ def layout():
                                 dl.LayersControl([
                                     dl.BaseLayer(dl.TileLayer(attribution=param.attribution, opacity=0.7), checked=True, name='OpenStreetMap'),
                                     dl.BaseLayer(dl.TileLayer(url='https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', attribution='Map data: © OpenStreetMap contributors, SRTM | Map style: © OpenTopoMap (CC-BY-SA)', opacity=0.6), checked=False, name='OpenTopoMap'),
-                                    dl.Overlay(dl.LayerGroup(dl.GeoJSON(url=str(param.lakes_pbf_path), format="geobuf", id='lake_points', zoomToBoundsOnClick=True, cluster=True)), name='Lake points', checked=True),
+                                    dl.Overlay(dl.LayerGroup(dl.GeoJSON(url=str(param.lakes_3rd_pbf_path), format="geobuf", id='lake_points', zoomToBoundsOnClick=True, cluster=True)), name='Lake points', checked=True),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='catch_map_lakes', zoomToBoundsOnClick=True, zoomToBounds=True, options=dict(style=catch_style_handle))), name='Catchments', checked=True),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='marae_map_lakes', zoomToBoundsOnClick=False, zoomToBounds=False, options=dict(pointToLayer=draw_marae))), name='Marae', checked=False),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='reach_map_lakes', options=dict(style=param.reach_style))), name='Rivers', checked=True),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='lake_poly', options=dict(style=lake_style_handle), hideout={'classes': [''], 'colorscale': ['#808080'], 'style': param.lake_style, 'colorProp': 'name'})), name='Lakes', checked=True),
-                                    dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='sites_points_lakes', options=dict(pointToLayer=sites_points_handle), hideout=param.rivers_points_hideout)), name='Monitoring sites', checked=True),
+                                    dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='sites_points_lakes', options=dict(pointToLayer=sites_points_handle), hideout=param.lakes_points_hideout)), name='Monitoring sites', checked=True),
                                     # dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='sites_points_lakes', options=dict(pointToLayer=sites_points_handle), hideout=rivers_points_hideout)), name='Monitoring sites', checked=True),
                                     ],
                                     id='layers_gw',
@@ -319,7 +320,7 @@ def update_lake_id(feature):
     Output('lake_name', 'children'),
     [Input('lake_id', 'data')]
     )
-def update_catch_name(lake_id):
+def update_lake_name(lake_id):
     """
 
     """
@@ -571,10 +572,16 @@ def update_powers_data_lakes(reaches_obj, indicator, n_years, n_samples_year, pr
     """
 
     """
+    power_model_encoded = ''
+    power_moni_encoded = ''
+
     if (reaches_obj != '') and (reaches_obj is not None) and isinstance(n_years, str) and isinstance(n_samples_year, str) and isinstance(indicator, str):
         ind_name = param.lakes_indicator_dict[indicator]
 
-        props = int(utils.decode_obj(reaches_obj)[ind_name].sel(reduction_perc=prop_red, drop=True))
+        if prop_red == 0:
+            props = 0
+        else:
+            props = int(utils.decode_obj(reaches_obj)[ind_name].sel(reduction_perc=prop_red, drop=True))
         # print(props)
 
         conc_perc = 100 - props
@@ -607,9 +614,9 @@ def update_powers_data_lakes(reaches_obj, indicator, n_years, n_samples_year, pr
         try:
             power_data1 = power_data.sel(indicator=indicator, LFENZID=int(lake_id), n_samples=n_samples, conc_perc=conc_perc).copy().load()
 
-            power_data2 = [int(power_data1.power_modelled.values), float(power_data1.power_monitored.values)]
+            power_data2 = int(power_data1.power_modelled.values)
         except:
-            power_data2 = [0, np.nan]
+            power_data2 = 0
         power_data.close()
         del power_data
 
@@ -630,7 +637,7 @@ def update_powers_data_lakes(reaches_obj, indicator, n_years, n_samples_year, pr
             power_data1 = power_data.sel(indicator=indicator, n_samples=n_samples, drop=True).copy().load()
             power_site_ids = power_data1.site_id.values
 
-            site_ids = np.array(list(sites_data.keys()))
+            # site_ids = np.array(list(sites_data.keys()))
 
             # other_segs = segs[~np.isin(segs, conc_perc.nzsegment.values)]
             # print(other_segs)
@@ -648,7 +655,7 @@ def update_powers_data_lakes(reaches_obj, indicator, n_years, n_samples_year, pr
                         power = -1
                 else:
                     power = -1
-                power_data2.append({'reduction': 100 - conc_perc1, 'site_id': site_id, 'power_monitored': power, 'site_name': site_name})
+                power_data2.append({'reduction': 100 - conc_perc1, 'site_id': site_id, 'power': power, 'site_name': site_name, 'lake_id': lake_id})
 
             power_data.close()
             del power_data
@@ -656,9 +663,6 @@ def update_powers_data_lakes(reaches_obj, indicator, n_years, n_samples_year, pr
             # print(power_data2)
 
             power_moni_encoded = utils.encode_obj(power_data2)
-    else:
-        power_model_encoded = ''
-        power_moni_encoded = ''
 
     return power_model_encoded, power_moni_encoded
 
@@ -705,7 +709,7 @@ def update_hideout_lakes(powers_obj, sites_powers_obj, lake_id):
 
         if props['lake_id'] == lake_id:
 
-            color_arr = pd.cut([props['power'][0]], param.bins, labels=param.colorscale_power, right=False).tolist()
+            color_arr = pd.cut([props['power']], param.bins, labels=param.colorscale_power, right=False).tolist()
             # print(color_arr)
             # print(props['lake_id'])
 
@@ -714,12 +718,14 @@ def update_hideout_lakes(powers_obj, sites_powers_obj, lake_id):
         ## Monitored
         if sites_powers_obj != '':
             sites_props = utils.decode_obj(sites_powers_obj)
-            # print(props_moni)
-            color_arr2 = pd.cut([p['power_monitored'] for p in sites_props], param.bins, labels=param.colorscale_power, right=False).tolist()
+            # print(sites_props)
+            color_arr2 = pd.cut([p['power'] for p in sites_props], param.bins, labels=param.colorscale_power, right=False).tolist()
             color_arr2 = [color if isinstance(color, str) else '#252525' for color in color_arr2]
             # print(color_arr2)
 
-            hideout_moni = {'classes': [p['site_id'] for p in sites_props], 'colorscale': color_arr2, 'circleOptions': dict(fillOpacity=1, stroke=True, color='black', weight=1, radius=param.site_point_radius), 'colorProp': 'nzsegment'}
+            # print(sites_props)
+
+            hideout_moni = {'classes': [p['site_id'] for p in sites_props], 'colorscale': color_arr2, 'circleOptions': dict(fillOpacity=1, stroke=True, color='black', weight=1, radius=param.site_point_radius), 'colorProp': 'tooltip'}
 
     return hideout_model, hideout_moni
 
@@ -741,6 +747,8 @@ def update_map_info_lakes(powers_obj, sites_powers_obj, feature, sites_feature, 
 
     trig = ctx.triggered_id
 
+    # print(ctx.triggered_prop_ids)
+
     # if (reductions_obj != '') and (reductions_obj is not None) and ('reductions_poly' in map_checkboxes):
     #     info = info + """\n\nHover over the polygons to see reduction %"""
 
@@ -750,26 +758,25 @@ def update_map_info_lakes(powers_obj, sites_powers_obj, feature, sites_feature, 
     elif (powers_obj != '') and (trig == 'lake_poly'):
         if feature is not None:
             props = utils.decode_obj(powers_obj)
+            # print(props)
 
-            if np.isnan(props['power'][1]):
-                moni1 = 'NA'
-            else:
-                moni1 = str(int(props['power'][1])) + '%'
+            lake_name = lakes_names[int(lake_id)]
 
-            info_str = """\n\n**Improvement**: {red}%\n\n**Likelihood of observing an improvement (power)**:\n\n&nbsp;&nbsp;&nbsp;&nbsp;**Modelled**: {t_stat1}%\n\n&nbsp;&nbsp;&nbsp;&nbsp;**Monitored**: {t_stat2}""".format(red=int(props['reduction']), t_stat1=int(props['power'][0]), t_stat2=moni1)
+            info_str = """**Lake name**: {lake}\n\n**Predicted improvement**: {red}%\n\n**Likelihood of detecting the improvement (power)**: {power}%""".format(red=int(props['reduction']), power=int(props['power']), lake=lake_name)
 
             info = info_str
 
-    elif (trig == 'sites_points') or ((sites_powers_obj != '') and (sites_feature is not None) and ('Site name' in old_info)):
+    elif (trig == 'sites_points_lakes') or ((sites_powers_obj != '') and (sites_feature is not None) and ('Site name' in old_info)):
         if (sites_powers_obj != ''):
             sites_props = utils.decode_obj(sites_powers_obj)
-            feature_id = int(sites_feature['properties']['site_id'])
             # print(sites_feature)
+            feature_id = sites_feature['id']
+            # print(sites_props)
 
             reach_data = [p for p in sites_props if p['site_id'] == feature_id]
             if reach_data:
                 reach_data0 = reach_data[0]
-                power = reach_data0['power_monitored']
+                power = reach_data0['power']
                 if power == -1:
                     power = 'NA'
                 else:
@@ -782,8 +789,15 @@ def update_map_info_lakes(powers_obj, sites_powers_obj, feature, sites_feature, 
 
                 info = info_str
 
-        # else:
-        #     info = info + """\n\nClick on a lake to see info"""
+    elif (trig == 'powers_obj_lakes') and (powers_obj != '') and ('Lake name' in old_info):
+        # print(reach_feature)
+        props = utils.decode_obj(powers_obj)
+
+        lake_name = lakes_names[int(lake_id)]
+
+        info_str = """**Lake name**: {lake}\n\n**Predicted improvement**: {red}%\n\n**Likelihood of detecting the improvement (power)**: {power}%""".format(red=int(props['reduction']), power=int(props['power']), lake=lake_name)
+
+        info = info_str
 
     return info
 
@@ -793,22 +807,35 @@ def update_map_info_lakes(powers_obj, sites_powers_obj, feature, sites_feature, 
     Input("dl_btn_power_lakes", "n_clicks"),
     State('lake_id', 'data'),
     State('powers_obj_lakes', 'data'),
+    State('sites_powers_obj_lakes', 'data'),
     State('indicator_lakes', 'value'),
     State('time_period_lakes', 'value'),
     State('freq_lakes', 'value'),
     prevent_initial_call=True,
     )
-def download_power(n_clicks, lake_id, powers_obj, indicator, n_years, n_samples_year):
+def download_power(n_clicks, lake_id, powers_obj, sites_powers_obj, indicator, n_years, n_samples_year):
 
     if (lake_id != '') and (powers_obj != '') and (powers_obj is not None):
         power_data = utils.decode_obj(powers_obj)
 
-        df1 = pd.DataFrame([power_data['power']], columns=['modelled', 'monitored'])
+        # print(power_data)
+
+        lake_name = lakes_names[int(lake_id)]
+
+        df1 = pd.DataFrame.from_records([power_data]).rename(columns={'power': 'overall_lake_power_modelled', 'lake_id': 'LFENZID', 'reduction': 'improvement'})
         df1['indicator'] = param.lakes_indicator_dict[indicator]
         df1['n_years'] = n_years
         df1['n_samples_per_year'] = n_samples_year
-        df1['LFENZID'] = int(lake_id)
-        df1['improvement'] = power_data['reduction']
+        df1['lake_name'] = lake_name
+        # print(df1)
+
+        if sites_powers_obj != '':
+            sites_power_data = utils.decode_obj(sites_powers_obj)
+            # print(sites_power_data)
+            sites_df = pd.DataFrame.from_records(sites_power_data).rename(columns={'power': 'monitoring_site_power', 'lake_id': 'LFENZID'})
+            # print(sites_df)
+            sites_df.loc[sites_df.monitoring_site_power < 0, 'monitoring_site_power'] = np.nan
+            df1 = pd.merge(df1, sites_df.drop(['reduction', 'site_id'], axis=1), on=['LFENZID'], how='left')
 
         df2 = df1.set_index(['indicator', 'n_years', 'n_samples_per_year', 'improvement', 'LFENZID']).sort_index()
 
