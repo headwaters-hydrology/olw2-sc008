@@ -134,27 +134,14 @@ def layout():
         children=[
             dmc.Grid(
                 columns=7,
-                # grow=True,
-                # justify="space-between",
-                # align='stretch',
-                # style={
-                #     'margin': 0,
-                #     'padding': 0
-                #     },
                 children=[
                     dmc.Col(
                         span=3,
-                        # style={
-                        #     # 'margin-top': 20,
-                        #     'margin': 0,
-                        #     'padding': 0,
-                        #     },
                         children=dmc.Accordion(
                             value="1",
                             chevronPosition='left',
                             children=[
                             dmc.AccordionItem([
-                                # html.H5('(1) Catchment selection', style={'font-weight': 'bold'}),
                                 dmc.AccordionControl('(1) Catchment Selection', style={'font-size': 18}),
                                 dmc.AccordionPanel([
 
@@ -167,12 +154,22 @@ def layout():
                                 ),
 
                             dmc.AccordionItem([
-                                dmc.AccordionControl('(2) Query Options', style={'font-size': 18}),
+                                dmc.AccordionControl('(2) Select Contaminant', style={'font-size': 18}),
                                 dmc.AccordionPanel([
-                                    dmc.Text('(2a) Select Indicator:'),
+                                    dmc.Text('(2a) Select Contaminant:'),
                                     dcc.Dropdown(options=[{'label': d.capitalize(), 'value': d} for d in indicators], id='indicator_lc', optionHeight=40, clearable=False),
+                                    ],
+                                    )
+                                ],
+                                value='2'
+                                ),
 
-                                    dmc.Text(dcc.Markdown('(2b) Change the percent of the improvements applied. 100% is the max realistic improvement (**This option only applies to the river reaches**):'), style={'margin-top': 20}),
+                            dmc.AccordionItem([
+                                dmc.AccordionControl('(3) In-stream Improvements', style={'font-size': 18}),
+                                dmc.AccordionPanel([
+                                    dmc.Text(dcc.Markdown('(3a) Add the river reaches to the map via the layer button on the top right corner of the map, and the land cover can also be removed to more easily see the reaches.'), style={'margin-top': 20}),
+
+                                    dmc.Text(dcc.Markdown('(3b) Change the percent of the improvements applied. 100% is the max realistic improvement (**This option only applies to the river reaches**):'), style={'margin-top': 20}),
                                     dmc.Slider(id='Reductions_slider_lc',
                                                 value=100,
                                                 mb=35,
@@ -182,18 +179,18 @@ def layout():
                                                 disabled=False,
                                                 marks=param.marks
                                                 ),
-                                    dmc.Text('NOTE', weight=700, underline=True, style={'margin-top': 20}),
-                                    dmc.Text('The river reaches can be added to the map via the layer button on the top right corner of the map, and the land cover can also be removed.')
+                                    # dmc.Text('NOTE', weight=700, underline=True, style={'margin-top': 20}),
+                                    # dmc.Text('The river reaches can be added to the map via the layer button on the top right corner of the map, and the land cover can also be removed.')
                                     ],
                                     )
                                 ],
-                                value='2'
+                                value='3'
                                 ),
 
                             dmc.AccordionItem([
-                                dmc.AccordionControl('(3) Download Results', style={'font-size': 18}),
+                                dmc.AccordionControl('(4) Download Results', style={'font-size': 18}),
                                 dmc.AccordionPanel([
-                                    dmc.Text('(3a) Download land cover improvements for the selected catchment (gpkg):'),
+                                    dmc.Text('(4a) Download land cover improvements for the selected catchment (gpkg):'),
                                     dcc.Loading(
                                     type="default",
                                     children=[
@@ -202,7 +199,7 @@ def layout():
                                     ],
                                     ),
                                 dmc.AccordionPanel([
-                                    dmc.Text('(3b) Download river reach improvements for the selected catchment (csv):'),
+                                    dmc.Text('(4b) Download river reach improvements for the selected catchment (csv):'),
                                     dcc.Loading(
                                     type="default",
                                     children=[
@@ -212,7 +209,7 @@ def layout():
                                     ],
                                     ),
                             #     dmc.AccordionPanel([
-                            #         dmc.Text('(3c) Download land cover reductions for all NZ (gpkg):'),
+                            #         dmc.Text('(4c) Download land cover reductions for all NZ (gpkg):'),
                             #         dcc.Loading(
                             #         type="default",
                             #         children=[
@@ -221,7 +218,7 @@ def layout():
                             #         ],
                             #         ),
                             #     dmc.AccordionPanel([
-                            #         dmc.Text('(3d) Download river reach reductions for all NZ (csv):'),
+                            #         dmc.Text('(4d) Download river reach reductions for all NZ (csv):'),
                             #         dcc.Loading(
                             #         type="default",
                             #         children=[
@@ -230,31 +227,20 @@ def layout():
                             #         ],
                             #         )
                                 ],
-                                value='3'
+                                value='4'
                                 ),
 
                             ],
-                            # style={
-                            #     'margin': 0,
-                            #     'padding': 0
-                            #     },
-                            # className='four columns', style={'margin': 10}
                             )
                         ),
                     dmc.Col(
                         span=4,
-                        # style={
-                        #     'margin-top': 20
-                        #     },
                         children=html.Div([
                             dl.Map(center=param.center, zoom=param.zoom, children=[
                                 dl.LayersControl([
                                     dl.BaseLayer(dl.TileLayer(attribution=param.attribution, opacity=0.7), checked=True, name='OpenStreetMap'),
                                     dl.BaseLayer(dl.TileLayer(url='https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', attribution='Map data: © OpenStreetMap contributors, SRTM | Map style: © OpenTopoMap (CC-BY-SA)', opacity=0.6), checked=False, name='OpenTopoMap'),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(url=str(param.rivers_catch_pbf_path), format="geobuf", id='catch_map_lc', zoomToBoundsOnClick=True, zoomToBounds=False, options=dict(style=catch_style_handle))), name='Catchments', checked=True),
-                                    # dl.GeoJSON(url='', format="geobuf", id='base_reach_map', options=dict(style=base_reaches_style_handle)),
-
-                                    # dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='sites_points', options=dict(pointToLayer=sites_points_handle), hideout={'circleOptions': dict(fillOpacity=1, stroke=False, radius=5, color='black')})), name='Monitoring sites', checked=True),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='reductions_poly_lc', hoverStyle=arrow_function(dict(weight=5, color='#666', dashArray='')), options=dict(style=lc_style_handle), hideout={})), name='Land cover', checked=True),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='marae_map_lc', zoomToBoundsOnClick=False, zoomToBounds=False, options=dict(pointToLayer=draw_marae))), name='Marae', checked=False),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='reach_map_lc', options={}, hideout={}, hoverStyle=arrow_function(dict(weight=8, color='black', dashArray='')))), name='Rivers', checked=False),
@@ -267,7 +253,6 @@ def layout():
                                                 ], style={'width': '100%', 'height': param.map_height, 'margin': "auto", "display": "block"}, id="map2_lc"),
 
                             ],
-                            # className='five columns', style={'margin': 10}
                             ),
                         ),
                     ]
