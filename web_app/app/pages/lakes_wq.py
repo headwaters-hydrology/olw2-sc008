@@ -263,11 +263,10 @@ def layout():
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='catch_map_lakes', zoomToBoundsOnClick=True, zoomToBounds=True, options=dict(style=catch_style_handle))), name='Catchments', checked=True),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='marae_map_lakes', zoomToBoundsOnClick=False, zoomToBounds=False, options=dict(pointToLayer=draw_marae))), name='Marae', checked=False),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='reach_map_lakes', options=dict(style=param.reach_style))), name='Rivers', checked=True),
-                                    dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='lake_poly', options=dict(style=lake_style_handle), hideout={'classes': [''], 'colorscale': ['#808080'], 'style': param.lake_style, 'colorProp': 'name'})), name='Lakes', checked=True),
+                                    dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='lake_poly', options=dict(style=lake_style_handle), hideout={'classes': [''], 'colorscale': ['#808080'], 'style': param.lake_style, 'colorProp': 'tooltip'})), name='Lakes', checked=True),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='sites_points_lakes', options=dict(pointToLayer=sites_points_handle), hideout=param.lakes_points_hideout)), name='Monitoring sites', checked=True),
                                     # dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='sites_points_lakes', options=dict(pointToLayer=sites_points_handle), hideout=rivers_points_hideout)), name='Monitoring sites', checked=True),
                                     ],
-                                    id='layers_gw',
                                     ),
                                 gc.colorbar_power,
                                 # html.Div(id='colorbar', children=colorbar_base),
@@ -577,6 +576,8 @@ def update_powers_data_lakes(reaches_obj, indicator, n_years, n_samples_year, pr
 
     if (reaches_obj != '') and (reaches_obj is not None) and isinstance(n_years, str) and isinstance(n_samples_year, str) and isinstance(indicator, str):
         ind_name = param.lakes_indicator_dict[indicator]
+        n_samples = int(n_samples_year)*int(n_years)
+        lake_data = lakes_data[int(lake_id)]
 
         if prop_red == 0:
             props = 0
@@ -584,30 +585,7 @@ def update_powers_data_lakes(reaches_obj, indicator, n_years, n_samples_year, pr
             props = int(utils.decode_obj(reaches_obj)[ind_name].sel(reduction_perc=prop_red, drop=True))
         # print(props)
 
-        conc_perc = 100 - props
-        lake_data = lakes_data[int(lake_id)]
-
-        ## Lake residence time calcs
-        if indicator in ['TP', 'CHLA', 'Secchi']:
-            if lake_data['max_depth'] > 7.5:
-                b = 1 + (0.44*(lake_data['residence_time']**0.13))
-                conc_perc = int(round(((conc_perc*0.01)**(1/b)) * 100))
-        elif indicator == 'TN':
-            conc_perc = int(round(((conc_perc*0.01)**0.54) * 100))
-        if indicator in ['CHLA', 'Secchi']:
-            conc_perc = int(round(((conc_perc*0.01)**1.25) * 100))
-        if indicator == 'Secchi':
-            if lake_data['max_depth'] > 20:
-                conc_perc = int(round(((conc_perc*0.01)**(0.9)) * 100))
-            else:
-                conc_perc = int(round(((conc_perc*0.01)**(0.9)) * 100))
-
-        if conc_perc < 1:
-            conc_perc = 1
-        elif conc_perc > 100:
-            conc_perc = 100
-
-        n_samples = int(n_samples_year)*int(n_years)
+        conc_perc = utils.lakes_conc_adjustment(indicator, 100 - props, lake_data)
 
         ## Modelled
         power_data = xr.open_dataset(param.lakes_power_model_path, engine='h5netcdf')
@@ -637,25 +615,16 @@ def update_powers_data_lakes(reaches_obj, indicator, n_years, n_samples_year, pr
             power_data1 = power_data.sel(indicator=indicator, n_samples=n_samples, drop=True).copy().load()
             power_site_ids = power_data1.site_id.values
 
-            # site_ids = np.array(list(sites_data.keys()))
-
-            # other_segs = segs[~np.isin(segs, conc_perc.nzsegment.values)]
-            # print(other_segs)
-
-            # conc_perc1 = conc_perc.sel(site_id=site_ids)
-            conc_perc1 = conc_perc
-
             power_data2 = []
             for site_id, site_name in sites_data.items():
-                # conc_perc1 = int(conc_perc.sel(site_id=site_id))
                 if site_id in power_site_ids:
                     try:
-                        power = int(power_data1.sel(conc_perc=conc_perc1, site_id=site_id).power_monitored.values)
+                        power = int(power_data1.sel(conc_perc=conc_perc, site_id=site_id).power_monitored.values)
                     except ValueError:
                         power = -1
                 else:
                     power = -1
-                power_data2.append({'reduction': 100 - conc_perc1, 'site_id': site_id, 'power': power, 'site_name': site_name, 'lake_id': lake_id})
+                power_data2.append({'reduction': 100 - conc_perc, 'site_id': site_id, 'power': power, 'site_name': site_name, 'lake_id': lake_id})
 
             power_data.close()
             del power_data
@@ -752,7 +721,7 @@ def update_map_info_lakes(powers_obj, sites_powers_obj, feature, sites_feature, 
     # if (reductions_obj != '') and (reductions_obj is not None) and ('reductions_poly' in map_checkboxes):
     #     info = info + """\n\nHover over the polygons to see reduction %"""
 
-    if trig == 'catch_id':
+    if trig == 'lake_id':
         pass
 
     elif (powers_obj != '') and (trig == 'lake_poly'):

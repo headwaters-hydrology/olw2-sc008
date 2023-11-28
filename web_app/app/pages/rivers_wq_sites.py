@@ -150,7 +150,7 @@ def layout():
                                 dmc.AccordionPanel([
                                     dmc.Text('(2a) Select Indicator:'),
                                     dcc.Dropdown(options=[{'label': param.rivers_indicator_dict[d], 'value': d} for d in indicators], id='indicator_sites', optionHeight=40, clearable=False, style={'margin-bottom': 20}),
-                                    html.Label('(2b) Type in a percent improvement by site under the "improvement %" column then press enter to confirm:'),
+                                    html.Label('(2b) Assign a percent improvement by site under the "improvement %" column then press enter to confirm:'),
                                     dash_table.DataTable(data=[], style_data={
         'whiteSpace': 'normal',
         'height': 'auto',
@@ -158,19 +158,6 @@ def layout():
         'if': {'column_id': 'improvement %'},
         'font-weight': 'bold'
     }]),
-                                    # dmc.Slider(id='reductions_slider_sites',
-                                    #            value=25,
-                                    #            mb=35,
-                                    #            step=5,
-                                    #            min=5,
-                                    #            max=90,
-                                    #            showLabelOnHover=True,
-                                    #            disabled=False,
-                                    #            marks=reductions_options
-                                    #            ),
-                                    # dcc.Dropdown(options=gw_reductions_options, id='reductions_gw', optionHeight=40, clearable=False,
-                                    #               style={'margin-top': 10}
-                                    #               ),
                                     ]
                                     )
                                 ],
