@@ -217,7 +217,7 @@ app.layout = html.Div(
             dash.page_container,
             size="xl",
             # pt=20,
-            style={"margin-top": 0, 'margin-left': 0, 'margin-right': 0, 'margin-bottom': 0},
+            style={"margin-top": 20, 'margin-left': 0, 'margin-right': 0, 'margin-bottom': 0},
             # style={"margin-top": 80, 'margin-left': 200, 'margin-right': 20},
         ),
     ],

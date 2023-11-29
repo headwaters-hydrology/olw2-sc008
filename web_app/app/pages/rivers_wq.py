@@ -161,20 +161,19 @@ def layout():
                                 ),
 
                             dmc.AccordionItem([
-                                # html.H5('Optional (2) Customise Reductions Layer', style={'font-weight': 'bold', 'margin-top': 20}),
-                                dmc.AccordionControl('(2 - Optional) Customise Improvements Layer', style={'font-size': 18}),
+                                dmc.AccordionControl('(2 - Optional) Customise the Land Mitigation Layer', style={'font-size': 18}),
                                 dmc.AccordionPanel([
-                                    html.Label('(2a) Download improvements polygons as GPKG:'),
+                                    html.Label('(2a) Download default Land Mitigation Layer as GPKG:'),
                                     dcc.Loading(
                                     id="loading-2",
                                     type="default",
-                                    children=[dmc.Anchor(dmc.Button('Download land cover'), href='', id='dl_poly', style={'margin-top': 10})],
+                                    children=[dmc.Anchor(dmc.Button('Download default layer'), href='', id='dl_poly', style={'margin-top': 10})],
                                     ),
                                     html.Label('NOTE: Only modify existing values. Do not add additional columns; they will be ignored.', style={
                                         'margin-top': 10
                                     }
                                         ),
-                                    html.Label('(2b) Upload modified improvements polygons as GPKG:', style={
+                                    html.Label('(2b) Upload modified Land Mitigation Layer as GPKG:', style={
                                         'margin-top': 20
                                     }
                                         ),
@@ -182,11 +181,7 @@ def layout():
                                         children=[
                                             dcc.Upload(
                                                 id='upload_data_rivers',
-                                                children=dmc.Button('Upload improvements',
-                                                                     # className="me-1"
-                                                                      # style={
-                                                                      #     'width': '50%',
-                                                                      #     }
+                                                children=dmc.Button('Upload modified layer',
                                                 ),
                                                 style={
                                                     'margin-top': 10
@@ -199,7 +194,7 @@ def layout():
                                         'margin-top': 10,
                                         'textAlign': 'left',
                                                     }, id='upload_error_text'),
-                                    html.Label('(2c) Process the improvements layer and route the improvements downstream:', style={
+                                    html.Label('(2c) Process the modified Land Mitigation Layer and route the improvements downstream:', style={
                                         'margin-top': 20
                                     }
                                         ),
@@ -207,7 +202,6 @@ def layout():
                                     id="loading-1",
                                     type="default",
                                     children=html.Div([dmc.Button('Process improvements', id='process_reductions_rivers',
-                                                                  # className="me-1",
                                                                   n_clicks=0),
                                                         html.Div(id='process_text', style={'margin-top': 10})],
                                                       style={'margin-top': 10, 'margin-bottom': 10}
@@ -503,10 +497,10 @@ def update_reach_reductions(click, base_reductions_obj, catch_id, reductions_obj
                 text_out = 'The improvements values are identical to the originals. Either skip this step, or modify the improvements values.'
         elif catch_id != '':
             data = utils.set_default_rivers_reach_reductions(catch_id)
-            text_out = 'Please upload a polygon improvements file in step (2b)'
+            text_out = 'Please upload a Land Mitigation file in step (2b)'
         else:
             data = ''
-            text_out = 'Please select a catchment before proceding'
+            text_out = 'Please select a catchment before proceeding'
     else:
         if catch_id != '':
             # print('trigger')
@@ -514,7 +508,7 @@ def update_reach_reductions(click, base_reductions_obj, catch_id, reductions_obj
             text_out = ''
         else:
             data = ''
-            text_out = 'Please select a catchment before proceding'
+            text_out = 'Please select a catchment before proceeding'
 
     return data, text_out
 
@@ -699,7 +693,7 @@ def update_map_info(powers_obj, sites_powers_obj, reach_feature, sites_feature, 
 
         reach_data = props.sel(nzsegment=feature_id)
 
-        info_str = """\n\n**nzsegment**: {seg}\n\n**Improvement**: {red}%\n\n**Likelihood of observing an improvement (power)**: {t_stat}%""".format(red=int(reach_data.reduction), t_stat=int(reach_data.power_modelled), seg=feature_id)
+        info_str = """\n\n**nzsegment**: {seg}\n\n**Predicted improvement**: {red}%\n\n**Likelihood of observing the improvement (power)**: {t_stat}%""".format(red=int(reach_data.reduction), t_stat=int(reach_data.power_modelled), seg=feature_id)
 
         info = info_str
 

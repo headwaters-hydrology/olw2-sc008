@@ -154,19 +154,19 @@ def layout():
                                 ),
 
                             dmc.AccordionItem([
-                                dmc.AccordionControl('(2 - Optional) Customise Improvements Layer', style={'font-size': 18}),
+                                dmc.AccordionControl('(2 - Optional) Customise the Land Mitigation Layer', style={'font-size': 18}),
                                 dmc.AccordionPanel([
-                                    html.Label('(2a) Download improvements polygons as GPKG:'),
+                                    html.Label('(2a) Download default Land Mitigation Layer as GPKG:'),
                                     dcc.Loading(
                                     id="loading-2",
                                     type="default",
-                                    children=[dmc.Anchor(dmc.Button('Download land cover'), href='', id='dl_poly_eco', style={'margin-top': 10})],
+                                    children=[dmc.Anchor(dmc.Button('Download default layer'), href='', id='dl_poly_eco', style={'margin-top': 10})],
                                     ),
                                     html.Label('NOTE: Only modify existing values. Do not add additional columns; they will be ignored.', style={
                                         'margin-top': 10
                                     }
                                         ),
-                                    html.Label('(2b) Upload modified improvements polygons as GPKG:', style={
+                                    html.Label('(2b) Upload modified Land Mitigation Layer as GPKG:', style={
                                         'margin-top': 20
                                     }
                                         ),
@@ -174,7 +174,7 @@ def layout():
                                         children=[
                                             dcc.Upload(
                                                 id='upload_data_rivers_eco',
-                                                children=dmc.Button('Upload improvements',
+                                                children=dmc.Button('Upload modified layer',
                                                 ),
                                                 style={
                                                     'margin-top': 10
@@ -187,7 +187,7 @@ def layout():
                                         'margin-top': 10,
                                         'textAlign': 'left',
                                                     }, id='upload_error_text_eco'),
-                                    html.Label('(2c) Process the improvements layer and route the improvements downstream:', style={
+                                    html.Label('(2c) Process the modified Land Mitigation Layer and route the improvements downstream:', style={
                                         'margin-top': 20
                                     }
                                         ),
@@ -473,10 +473,10 @@ def update_reach_reductions(click, base_reductions_obj, catch_id, reductions_obj
             text_out = 'Routing complete'
         elif catch_id != '':
             data = utils.set_default_eco_reach_weights(catch_id)
-            text_out = 'Please upload a polygon improvements file in step (2b)'
+            text_out = 'Please upload a Land Mitigation file in step (2b)'
         else:
             data = ''
-            text_out = 'Please select a catchment before proceding'
+            text_out = 'Please select a catchment before proceeding'
     else:
         if catch_id != '':
             # print('trigger')
@@ -484,7 +484,7 @@ def update_reach_reductions(click, base_reductions_obj, catch_id, reductions_obj
             text_out = ''
         else:
             data = ''
-            text_out = 'Please select a catchment before proceding'
+            text_out = 'Please select a catchment before proceeding'
 
     return data, text_out
 

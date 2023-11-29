@@ -474,7 +474,7 @@ def update_map_info_lakes(powers_obj, sites_powers_obj, feature, sites_feature, 
 
             lake_name = lakes_names[int(lake_id)]
 
-            info_str = """**Lake name**: {lake}\n\n**Predicted improvement**: {red}%\n\n**Likelihood of detecting the improvement (power)**: {power}%""".format(red=int(props['reduction']), power=int(props['power']), lake=lake_name)
+            info_str = """**Lake name**: {lake}\n\n**User-defined improvement**: {red}%\n\n**Likelihood of detecting the improvement (power)**: {power}%""".format(red=int(props['reduction']), power=int(props['power']), lake=lake_name)
 
             info = info_str
 
@@ -497,7 +497,7 @@ def update_map_info_lakes(powers_obj, sites_powers_obj, feature, sites_feature, 
                 reduction = reach_data0['reduction']
                 site_name = reach_data0['site_name']
 
-                info_str = """**Site name**: {site}\n\n**Predicted improvement**: {red}%\n\n**Likelihood of detecting the improvement (power)**: {power}""".format(red=reduction, power=power, site=site_name)
+                info_str = """**Site name**: {site}\n\n**User-defined improvement**: {red}%\n\n**Likelihood of detecting the improvement (power)**: {power}""".format(red=reduction, power=power, site=site_name)
 
                 info = info_str
 
@@ -507,7 +507,7 @@ def update_map_info_lakes(powers_obj, sites_powers_obj, feature, sites_feature, 
 
         lake_name = lakes_names[int(lake_id)]
 
-        info_str = """**Lake name**: {lake}\n\n**Predicted improvement**: {red}%\n\n**Likelihood of detecting the improvement (power)**: {power}%""".format(red=int(props['reduction']), power=int(props['power']), lake=lake_name)
+        info_str = """**Lake name**: {lake}\n\n**User-defined improvement**: {red}%\n\n**Likelihood of detecting the improvement (power)**: {power}%""".format(red=int(props['reduction']), power=int(props['power']), lake=lake_name)
 
         info = info_str
 

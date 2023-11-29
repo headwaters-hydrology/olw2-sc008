@@ -89,7 +89,7 @@ lc_catch_pbf_path = assets_path.joinpath('rivers_catch_lc_pbf.blt')
 rivers_lc_param_mapping = {
     'Visual Clarity': 'suspended sediment',
     'E.coli': 'e.coli',
-    'Dissolved reactive phosporus': 'total phosphorus',
+    'Dissolved reactive phosphorus': 'total phosphorus',
     'Ammoniacal nitrogen': 'total nitrogen',
     'Nitrate nitrogen': 'total nitrogen',
     'Total nitrogen': 'total nitrogen',
@@ -98,7 +98,7 @@ rivers_lc_param_mapping = {
 
 rivers_lc_param_effects = {
     'total nitrogen': ['Total nitrogen', 'Nitrate nitrogen', 'Ammoniacal nitrogen'],
-    'total phosphorus': ['Total phosphorus', 'Dissolved reactive phosporus'],
+    'total phosphorus': ['Total phosphorus', 'Dissolved reactive phosphorus'],
     'e.coli': ['E.coli'],
     'suspended sediment': ['Visual Clarity']
     }
@@ -126,8 +126,8 @@ lakes_lc_params = list(set(lakes_lc_param_mapping.values()))
 lakes_lc_params.sort()
 
 ### Layout
-# map_height = '80vh'
-map_height = '100vh' # for stand-alone pages
+map_height = '80vh'
+# map_height = '100vh' # for stand-alone pages
 center = [-41.1157, 172.4759]
 zoom = 6
 

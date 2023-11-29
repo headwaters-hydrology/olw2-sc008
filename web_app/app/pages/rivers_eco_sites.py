@@ -406,7 +406,6 @@ def update_monitor_sites(catch_id):
     return points_data, tbl_data
 
 
-
 @callback(
     Output('sites_powers_obj_eco_sites', 'data'),
     Input('tbl_eco_sites', 'data'),
@@ -513,10 +512,7 @@ def update_map_info(sites_powers_obj, sites_feature, old_info):
 
             info += """##### Monitoring Site:
 
-                \n\n**nzsegment**: {seg}\n\n**Site name**: {site}\n\n**Improvement %**: {conc}\n\n**Likelihood of observing an improvement (power)**: {t_stat}""".format(t_stat=power, conc=red, seg=feature_id, site=sites_feature['id'])
-
-    # if info == """""":
-    #     info = old_info
+                \n\n**nzsegment**: {seg}\n\n**Site name**: {site}\n\n**User-defined improvement %**: {conc}\n\n**Likelihood of observing the improvement (power)**: {t_stat}""".format(t_stat=power, conc=red, seg=feature_id, site=sites_feature['id'])
 
     return info
 

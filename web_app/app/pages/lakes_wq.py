@@ -141,18 +141,18 @@ def layout():
                                 ),
 
                             dmc.AccordionItem([
-                                dmc.AccordionControl('(2 - Optional) Customise Improvements Layer', style={'font-size': 18}),
+                                dmc.AccordionControl('(2 - Optional) Customise the Land Mitigation Layer', style={'font-size': 18}),
                                 dmc.AccordionPanel([
-                                    html.Label('(2a) Download improvements polygons as GPKG:'),
+                                    html.Label('(2a) Download default Land Mitigation Layer as GPKG:'),
                                     dcc.Loading(
                                     type="default",
-                                    children=[dmc.Anchor(dmc.Button('Download land cover'), href='', id='dl_poly_lakes', style={'margin-top': 10})],
+                                    children=[dmc.Anchor(dmc.Button('Download default layer'), href='', id='dl_poly_lakes', style={'margin-top': 10})],
                                     ),
                                     html.Label('NOTE: Only modify existing values. Do not add additional columns; they will be ignored.', style={
                                         'margin-top': 10
                                     }
                                         ),
-                                    html.Label('(2b) Upload modified improvements polygons as GPKG:', style={
+                                    html.Label('(2b) Upload modified Land Mitigation Layer as GPKG:', style={
                                         'margin-top': 20
                                     }
                                         ),
@@ -160,7 +160,7 @@ def layout():
                                         children=[
                                             dcc.Upload(
                                                 id='upload_data_lakes',
-                                                children=dmc.Button('Upload improvements',
+                                                children=dmc.Button('Upload modified layer',
                                                 ),
                                                 style={
                                                     'margin-top': 10
@@ -172,7 +172,7 @@ def layout():
                                     dcc.Markdown('', style={
                                         'textAlign': 'left',
                                                     }, id='upload_error_text_lakes'),
-                                    html.Label('(2c) Process the improvements layer and route the improvements downstream:', style={
+                                    html.Label('(2c) Process the modified Land Mitigation Layer and route the improvements downstream:', style={
                                         'margin-top': 20
                                     }
                                         ),
@@ -505,10 +505,10 @@ def update_reach_reductions(click, base_reductions_obj, lake_id, reductions_obj)
                 text_out = 'The improvements values are identical to the originals. Either skip this step, or modify the improvements values.'
         elif lake_id != '':
             data = utils.set_default_lakes_reach_reductions(lake_id)
-            text_out = 'Please upload a polygon improvements file in step (2b)'
+            text_out = 'Please upload a Land Mitigation file in step (2b)'
         else:
             data = ''
-            text_out = 'Please select a lake before proceding'
+            text_out = 'Please select a lake before proceeding'
     else:
         if lake_id != '':
             # print('trigger')
@@ -516,7 +516,7 @@ def update_reach_reductions(click, base_reductions_obj, lake_id, reductions_obj)
             text_out = ''
         else:
             data = ''
-            text_out = 'Please select a lake before proceding'
+            text_out = 'Please select a lake before proceeding'
 
     return data, text_out
 
