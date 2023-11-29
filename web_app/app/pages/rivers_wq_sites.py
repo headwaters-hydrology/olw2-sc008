@@ -174,7 +174,7 @@ def layout():
                                                          fullWidth=True,
                                                          color=1,
                                                          ),
-                                    dmc.Text('(3b) Select sampling frequency (monitoring site power):', style={'margin-top': 20}),
+                                    dmc.Text('(3b) Select sampling frequency:', style={'margin-top': 20}),
                                     dmc.SegmentedControl(data=[{'label': v, 'value': str(k)} for k, v in param.rivers_freq_mapping.items()],
                                                           id='freq_sites',
                                                           value='12',

@@ -20,6 +20,7 @@ import base64
 import booklet
 import hdf5plugin
 import geobuf
+from dash_iconify import DashIconify
 
 # from .utils import parameters as param
 # from . import utils
@@ -232,7 +233,44 @@ def layout():
                                                          fullWidth=True,
                                                          color=1
                                                          ),
-                                    html.Label('(3d) Change the percent of the improvements applied (100% is the max realistic improvement):', style={'margin-top': 20}),
+                                    dmc.HoverCard(
+                                        withArrow=True,
+                                        width=param.hovercard_width,
+                                        shadow="md",
+                                        children=[
+                                            dmc.HoverCardTarget(html.Label('(3d) Select the percentage of the maximum contaminant loss reductions applied: ❓', style={'margin-top': 20})),
+                                            dmc.HoverCardDropdown(
+                                                dmc.Text(
+                                                    """
+                                                    The percentage selected will be applied to the contaminant loss reductions specified in the (default or customised) Land Mitigation Layer across the entire catchment. E.g. if 50% is selected, the reductions in the Land Mitigation Layer will be halved; if 100% is selected the reductions will not be altered. Therefore, 0% represents no mitigation and 100% represents the maximum “mitigatable” contaminant loss reduction.
+                                                    """,
+                                                    size="sm",
+                                                )
+                                            ),
+                                        ],
+                                    ),
+                                    # dmc.Group([
+                                    #     html.Label('(3d) Select the percentage of the maximum contaminant loss reductions applied:'),
+                                    #     dmc.HoverCard(
+                                    #         withArrow=True,
+                                    #         width=param.hovercard_width,
+                                    #         shadow="md",
+                                    #         children=[
+                                    #             dmc.HoverCardTarget(DashIconify(icon="material-symbols:help", width=30)),
+                                    #             dmc.HoverCardDropdown(
+                                    #                 dmc.Text(
+                                    #                     """
+                                    #                     The percentage selected will be applied to the contaminant loss reductions specified in the (default or customised) Land Mitigation Layer across the entire catchment. E.g. if 50% is selected, the reductions in the Land Mitigation Layer will be halved; if 100% is selected the reductions will not be altered. Therefore, 0% represents no mitigation and 100% represents the maximum “mitigatable” contaminant loss reduction.
+                                    #                     """,
+                                    #                     size="sm",
+                                    #                 )
+                                    #             ),
+                                    #         ],
+                                    #     ),
+                                    #     ],
+                                    #     style={'margin-top': 20},
+                                    #     noWrap=True
+                                    # ),
                                     dmc.Slider(id='Reductions_slider',
                                                value=100,
                                                mb=35,

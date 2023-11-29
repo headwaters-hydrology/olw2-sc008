@@ -146,7 +146,7 @@ def layout():
                                 ),
 
                             dmc.AccordionItem([
-                                dmc.AccordionControl('(2) Define Indicator and improvements by site', style={'font-size': 18}),
+                                dmc.AccordionControl('(2) Select indicator and specify improvements by site', style={'font-size': 18}),
                                 dmc.AccordionPanel([
                                     dmc.Text('(2a) Select Indicator:'),
                                     dcc.Dropdown(options=[{'label': param.eco_indicator_dict[d], 'value': d} for d in indicators], id='indicator_eco_sites', optionHeight=40, clearable=False, style={'margin-bottom': 20}),

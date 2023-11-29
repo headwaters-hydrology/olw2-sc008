@@ -126,10 +126,12 @@ lakes_lc_params = list(set(lakes_lc_param_mapping.values()))
 lakes_lc_params.sort()
 
 ### Layout
-map_height = '80vh'
-# map_height = '100vh' # for stand-alone pages
+# map_height = '80vh'
+map_height = '95vh' # for stand-alone pages
 center = [-41.1157, 172.4759]
 zoom = 6
+
+hovercard_width = 300
 
 attribution = 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 
@@ -167,6 +169,12 @@ colorscale_power = ['#808080', '#FED976', '#FD8D3C', '#E31A1C', '#800026']
 ctg = ["{}%+".format(cls, classes[i + 1]) for i, cls in enumerate(classes[:-1])] + ["{}%+".format(classes[-1])]
 
 site_point_radius = 6
+
+classes_reductions = [0, 20, 40, 60, 80]
+bins_reductions = classes.copy()
+bins_reductions.append(101)
+colorscale_reductions = ['#edf8fb','#b3cde3','#8c96c6','#8856a7','#810f7c']
+ctg_reductions = ["{}%+".format(cls, classes[i + 1]) for i, cls in enumerate(classes[:-1])] + ["{}%+".format(classes[-1])]
 
 reduction_ratios = range(0, 101, 10)
 red_ratios = np.array(list(reduction_ratios), dtype='int8')

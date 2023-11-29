@@ -190,20 +190,20 @@ def layout():
                             dmc.AccordionItem([
                                 dmc.AccordionControl('(4) Download Results', style={'font-size': 18}),
                                 dmc.AccordionPanel([
-                                    dmc.Text('(4a) Download land cover improvements for the selected catchment (gpkg):'),
+                                    dmc.Text('(4a) Download the Land Mitigation Layer for the selected catchment (GPKG):'),
                                     dcc.Loading(
                                     type="default",
                                     children=[
-                            dmc.Anchor(dmc.Button('Download land cover'), href='', id='lc_dl1')],
+                            dmc.Anchor(dmc.Button('Download Land Mitigation'), href='', id='lc_dl1')],
                                     ),
                                     ],
                                     ),
                                 dmc.AccordionPanel([
-                                    dmc.Text('(4b) Download river reach improvements for the selected catchment (csv):'),
+                                    dmc.Text('(4b) Download the predicted in-stream contaminant load reductions for the selected catchment (CSV):'),
                                     dcc.Loading(
                                     type="default",
                                     children=[
-                            dmc.Button('Download reaches', id='reach_dl_btn'),
+                            dmc.Button('Download load reductions', id='reach_dl_btn'),
                             dcc.Download(id='reach_dl1')],
                                     ),
                                     ],
@@ -246,7 +246,7 @@ def layout():
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='reach_map_lc', options={}, hideout={}, hoverStyle=arrow_function(dict(weight=8, color='black', dashArray='')))), name='Rivers', checked=False),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='sites_points_lc', options=dict(pointToLayer=sites_points_handle), hideout=param.rivers_points_hideout)), name='Monitoring sites', checked=False),
                                     ], id='layers_lc'),
-                                gc.colorbar_power,
+                                gc.colorbar_reductions,
                                 # html.Div(id='colorbar', children=colorbar_base),
                                 # dmc.Group(id='colorbar', children=colorbar_base),
                                 dcc.Markdown(id="info_lc", className="info", style={"position": "absolute", "top": "10px", "right": "160px", "z-index": "1000"})
@@ -446,7 +446,7 @@ def update_reach_hideout(reaches_obj, indicator, prop_red):
         props = utils.decode_obj(reaches_obj)[[ind_name]].sel(reduction_perc=prop_red, drop=True).rename({ind_name: 'reduction'})
 
         ## Modelled
-        color_arr = pd.cut(props.reduction.values, param.bins, labels=param.colorscale_power, right=False).tolist()
+        color_arr = pd.cut(props.reduction.values, param.bins_reductions, labels=param.colorscale_reductions, right=False).tolist()
 
         hideout = {'colorscale': color_arr, 'classes': props.nzsegment.values, 'style': param.style_power, 'colorProp': 'nzsegment'}
 
@@ -468,7 +468,7 @@ def update_lc_hideout(indicator):
 
     """
     if isinstance(indicator, str):
-        hideout = {'colorscale': param.colorscale_power, 'classes': param.classes, 'style': param.lc_style, 'colorProp': indicator}
+        hideout = {'colorscale': param.colorscale_reductions, 'classes': param.classes_reductions, 'style': param.lc_style, 'colorProp': indicator}
 
     else:
         hideout = {}

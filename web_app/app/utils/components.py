@@ -12,12 +12,16 @@ import utils.parameters as param
 #### Global components
 
 ### Colorbars
-## Power
 colorbar_base = dl.Colorbar(style={'opacity': 0})
 base_reach_style = dict(weight=4, opacity=1, color='white')
 
+## Power
 indices = list(range(len(param.ctg) + 1))
 colorbar_power = dl.Colorbar(min=0, max=len(param.ctg), classes=indices, colorscale=param.colorscale_power, tooltip=True, tickValues=[item + 0.5 for item in indices[:-1]], tickText=param.ctg, width=300, height=30, position="bottomright")
+
+## Land cover reductions
+indices_reductions = list(range(len(param.ctg_reductions) + 1))
+colorbar_reductions = dl.Colorbar(min=0, max=len(param.ctg_reductions), classes=indices_reductions, colorscale=param.colorscale_reductions, tooltip=True, tickValues=[item + 0.5 for item in indices[:-1]], tickText=param.ctg_reductions, width=300, height=30, position="bottomright")
 
 ## Eco categories
 ctg_weights = ['Low', 'Moderate', 'High']
