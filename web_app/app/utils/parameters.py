@@ -132,6 +132,7 @@ center = [-41.1157, 172.4759]
 zoom = 6
 
 hovercard_width = 300
+hovercard_open_delay = 1000
 
 attribution = 'Map data &copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
 
