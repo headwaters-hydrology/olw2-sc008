@@ -181,12 +181,13 @@ def layout():
                                                 },
                                                 multiple=False
                                             ),
+                                            dcc.Markdown('', style={
+                                                'margin-top': 10,
+                                                'textAlign': 'left',
+                                                            }, id='upload_error_text_eco'),
                                             ]
                                         ),
-                                    dcc.Markdown('', style={
-                                        'margin-top': 10,
-                                        'textAlign': 'left',
-                                                    }, id='upload_error_text_eco'),
+
                                     html.Label('(2c) Process the modified Land Mitigation Layer and route the improvements downstream:', style={
                                         'margin-top': 20
                                     }
@@ -440,7 +441,7 @@ def update_land_reductions(contents, filename, catch_id):
                 error_text = data[0]
                 data = None
             else:
-                error_text = 'Upload sucessful'
+                error_text = 'Upload successful'
     else:
         error_text = 'You need to select a catchment before uploading a file. Please refresh the page and start from step (1).'
 

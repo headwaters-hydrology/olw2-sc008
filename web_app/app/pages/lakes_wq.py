@@ -167,11 +167,12 @@ def layout():
                                                 },
                                                 multiple=False
                                             ),
+                                            dcc.Markdown('', style={
+                                                'textAlign': 'left',
+                                                            }, id='upload_error_text_lakes'),
                                             ]
                                         ),
-                                    dcc.Markdown('', style={
-                                        'textAlign': 'left',
-                                                    }, id='upload_error_text_lakes'),
+
                                     html.Label('(2c) Process the modified Land Mitigation Layer and route the improvements downstream:', style={
                                         'margin-top': 20
                                     }
@@ -457,7 +458,7 @@ def update_land_reductions(contents, filename, lake_id):
                 error_text = data[0]
                 data = None
             else:
-                error_text = 'Upload sucessful'
+                error_text = 'Upload successful'
     else:
         error_text = 'You need to select a lake before uploading a file. Please refresh the page and start from step (1).'
 
