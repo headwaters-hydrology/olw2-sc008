@@ -128,8 +128,6 @@ def lakes_process_power_modelled():
 
     h5.to_hdf5(utils.lakes_power_model_path)
 
-    return error_list
-
 
 
 

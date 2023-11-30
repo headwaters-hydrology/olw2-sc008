@@ -181,7 +181,7 @@ red_ratios = np.array(list(reduction_ratios), dtype='int8')
 
 rivers_points_hideout = {'classes': [], 'colorscale': ['#232323'], 'circleOptions': dict(fillOpacity=1, stroke=True, weight=1, color='black', radius=site_point_radius), 'colorProp': 'nzsegment'}
 
-rivers_indicator_dict = {'BD': 'Visual Clarity', 'EC': 'E.coli', 'DRP': 'Dissolved reactive phosporus', 'NH': 'Ammoniacal nitrogen', 'NO': 'Nitrate nitrogen', 'TN': 'Total nitrogen', 'TP': 'Total phosphorus'}
+rivers_indicator_dict = {'BD': 'Visual Clarity', 'EC': 'E.coli', 'DRP': 'Dissolved reactive phosphorus', 'NH': 'Ammoniacal nitrogen', 'NO': 'Nitrate nitrogen', 'TN': 'Total nitrogen', 'TP': 'Total phosphorus'}
 
 rivers_reduction_cols = list(rivers_indicator_dict.values())
 
@@ -213,7 +213,7 @@ gw_reductions_options = [{'value': v, 'label': str(v)+'%'} for v in gw_reduction
 
 gw_time_periods = [5, 10, 20, 30]
 
-hfl_indicator_dict = {'EC': 'E.coli', 'DRP': 'Dissolved reactive phosporus', 'NO': 'Nitrate nitrogen', 'TN': 'Total nitrogen', 'TP': 'Total phosphorus'}
+hfl_indicator_dict = {'EC': 'E.coli', 'DRP': 'Dissolved reactive phosphorus', 'NO': 'Nitrate nitrogen', 'TN': 'Total nitrogen', 'TP': 'Total phosphorus'}
 
 hfl_reduction_cols = list(hfl_indicator_dict.values())
 

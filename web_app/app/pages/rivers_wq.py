@@ -507,7 +507,7 @@ def update_reach_reductions(click, base_reductions_obj, catch_id, reductions_obj
     trig = ctx.triggered_id
 
     if (trig == 'process_reductions_rivers'):
-        if (catch_id != '') and (reductions_obj != '') and (reductions_obj is not None):
+        if (catch_id != '') and (reductions_obj != ''):
             red1 = xr.open_dataset(param.rivers_reductions_model_path, engine='h5netcdf')
 
             with booklet.open(param.rivers_reach_mapping_path) as f:

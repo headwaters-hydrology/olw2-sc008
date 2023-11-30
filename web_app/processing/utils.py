@@ -48,7 +48,7 @@ output_path.mkdir(parents=True, exist_ok=True)
 assets_path = output_path.joinpath('assets')
 assets_path.mkdir(parents=True, exist_ok=True)
 
-indicators_mapping = {'rivers': {'Visual Clarity': 'suspended sediment', 'E.coli': 'e.coli', 'Dissolved reactive phosporus': 'total phosphorus', 'Nitrate nitrogen': 'total nitrogen', 'Total nitrogen': 'total nitrogen', 'Total phosphorus': 'total phosphorus'},
+indicators_mapping = {'rivers': {'Visual Clarity': 'suspended sediment', 'E.coli': 'e.coli', 'Dissolved reactive phosphorus': 'total phosphorus', 'Nitrate nitrogen': 'total nitrogen', 'Total nitrogen': 'total nitrogen', 'Total phosphorus': 'total phosphorus'},
               'lakes': {'E.coli': 'e.coli', 'Total nitrogen': 'total nitrogen', 'Total phosphorus': 'total phosphorus', 'Chlorophyll a': 'e.coli', 'Total Cyanobacteria': 'e.coli', 'Secchi Depth': 'suspended sediment'}
               }
 
@@ -59,7 +59,7 @@ indicators_mapping = {'rivers': {'Visual Clarity': 'suspended sediment', 'E.coli
 indicator_dict = {
     'Visual Clarity': 'sediment',
     'E.coli': 'e.coli',
-    'Dissolved reactive phosporus': 'DRP',
+    'Dissolved reactive phosphorus': 'DRP',
     'Ammoniacal nitrogen': 'NNN',
     'Nitrate nitrogen': 'NNN',
     'Total nitrogen': 'TN',
