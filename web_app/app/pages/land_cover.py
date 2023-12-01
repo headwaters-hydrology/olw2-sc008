@@ -169,7 +169,25 @@ def layout():
                                 dmc.AccordionPanel([
                                     dmc.Text(dcc.Markdown('(3a) Add the river reaches to the map via the layer button on the top right corner of the map, and the land cover can also be removed to more easily see the reaches.'), style={'margin-top': 20}),
 
-                                    dmc.Text(dcc.Markdown('(3b) Change the percent of the improvements applied. 100% is the max realistic improvement (**This option only applies to the river reaches**):'), style={'margin-top': 20}),
+                                    dmc.HoverCard(
+                                        withArrow=True,
+                                        width=param.hovercard_width,
+                                        shadow="md",
+                                        openDelay=param.hovercard_open_delay,
+                                        children=[
+                                            dmc.HoverCardTarget(dcc.Markdown('(3d) Select the percentage of the maximum contaminant loss reductions applied for the river reaches: ❓', style={'margin-top': 20})),
+                                            dmc.HoverCardDropdown(
+                                                dmc.Text(
+                                                    """
+                                                    The percentage selected will be applied to the contaminant loss reductions specified in the (default or customised) Land Mitigation Layer across the entire catchment. E.g. if 50% is selected, the reductions in the Land Mitigation Layer will be halved; if 100% is selected the reductions will not be altered.
+                                                    """,
+                                                    size="sm",
+                                                )
+                                            ),
+                                        ],
+                                    ),
+
+                                    # dmc.Text(dcc.Markdown('(3b) Change the percent of the improvements applied. 100% is the max realistic improvement (**This option only applies to the river reaches**):'), style={'margin-top': 20}),
                                     dmc.Slider(id='Reductions_slider_lc',
                                                 value=100,
                                                 mb=35,

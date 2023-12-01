@@ -580,6 +580,8 @@ def update_map_info(reach_feature, perc_loads_obj, sites_feature, catch_id):
 
     elif (sites_feature is not None):
         feature_id = int(sites_feature['properties']['nzsegment'])
+        site_id = sites_feature['id']
+        # print(sites_feature)
         perc_load = 'No continuous flow'
 
         if (perc_loads_obj != '') and (perc_loads_obj is not None):
@@ -597,7 +599,7 @@ def update_map_info(reach_feature, perc_loads_obj, sites_feature, catch_id):
 
         info = """##### Monitoring Site:
 
-            \n\n**Site name**: {site}\n\n**Percent load above 90th percentile flow**: {perc_load}""".format(perc_load=perc_load, site=feature_id)
+            \n\n**Site name**: {site}\n\n**Percent load above 90th percentile flow**: {perc_load}""".format(perc_load=perc_load, site=site_id)
 
     return info
 
