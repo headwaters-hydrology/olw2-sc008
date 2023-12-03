@@ -175,7 +175,7 @@ def layout():
                                         shadow="md",
                                         openDelay=param.hovercard_open_delay,
                                         children=[
-                                            dmc.HoverCardTarget(dcc.Markdown('(3d) Select the percentage of the maximum contaminant loss reductions applied for the river reaches: ❓', style={'margin-top': 20})),
+                                            dmc.HoverCardTarget(dcc.Markdown('(3d) Select the percentage of the maximum contaminant loss reductions applied for the river reaches (❓):', style={'margin-top': 20})),
                                             dmc.HoverCardDropdown(
                                                 dmc.Text(
                                                     """

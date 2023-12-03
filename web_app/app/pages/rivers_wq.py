@@ -239,7 +239,7 @@ def layout():
                                         shadow="md",
                                         openDelay=param.hovercard_open_delay,
                                         children=[
-                                            dmc.HoverCardTarget(html.Label('(3d) Select the percentage of the maximum contaminant loss reductions applied: ❓', style={'margin-top': 20})),
+                                            dmc.HoverCardTarget(html.Label('(3d) Select the percentage of the maximum contaminant loss reductions applied (❓):', style={'margin-top': 20})),
                                             dmc.HoverCardDropdown(
                                                 dmc.Text(
                                                     """

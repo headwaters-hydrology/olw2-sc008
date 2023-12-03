@@ -146,8 +146,9 @@ def layout():
                                         withArrow=True,
                                         width=param.hovercard_width,
                                         shadow="md",
+                                        openDelay=param.hovercard_open_delay,
                                         children=[
-                                            dmc.HoverCardTarget(html.Label('(3a) Select sampling duration (years): ❓', style={'margin-top': 20})),
+                                            dmc.HoverCardTarget(html.Label('(3a) Select sampling duration (years) (❓):', style={'margin-top': 20})),
                                             dmc.HoverCardDropdown(
                                                 dmc.Text(
                                                     """
