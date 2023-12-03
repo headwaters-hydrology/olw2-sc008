@@ -35,7 +35,7 @@ services:
     depends_on:
       - assets
     deploy:
-      replicas: 10
+      replicas: 8
       placement:
         constraints:
           - node.labels.function == web_server
