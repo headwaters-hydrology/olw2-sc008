@@ -476,6 +476,11 @@ def update_map_info_lakes(powers_obj, sites_powers_obj, feature, sites_feature, 
 
             info_str = """**Lake name**: {lake}\n\n**User-defined improvement**: {red}%\n\n**Likelihood of detecting the improvement (power)**: {power}%""".format(red=int(props['reduction']), power=int(props['power']), lake=lake_name)
 
+            if (sites_powers_obj != ''):
+                info_str += """\n\n*Power estimate from monitoring site(s)*"""
+            else:
+                info_str += """\n\n*Power estimate from numerical model*"""
+
             info = info_str
 
     elif (trig == 'sites_points_lakes_sites') or ((sites_powers_obj != '') and (sites_feature is not None) and ('Site name' in old_info)):
@@ -508,6 +513,11 @@ def update_map_info_lakes(powers_obj, sites_powers_obj, feature, sites_feature, 
         lake_name = lakes_names[int(lake_id)]
 
         info_str = """**Lake name**: {lake}\n\n**User-defined improvement**: {red}%\n\n**Likelihood of detecting the improvement (power)**: {power}%""".format(red=int(props['reduction']), power=int(props['power']), lake=lake_name)
+
+        if (sites_powers_obj != ''):
+            info_str += """\n\n*Power estimate from monitoring site(s)*"""
+        else:
+            info_str += """\n\n*Power estimate from numerical model*"""
 
         info = info_str
 

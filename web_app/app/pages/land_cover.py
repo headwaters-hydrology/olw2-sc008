@@ -523,7 +523,7 @@ def update_map_info(reaches_obj, reach_feature, lc_feature, indicator, prop_red)
 
                 reach_data = props.sel(nzsegment=feature_id)
 
-                info_str = """**nzsegment**: {seg}\n\n**Improvement**: {red}%""".format(red=int(reach_data.reduction), seg=feature_id)
+                info_str = """**nzsegment**: {seg}\n\n**Predicted improvement**: {red}%""".format(red=int(reach_data.reduction), seg=feature_id)
 
                 info = info + info_str
 
@@ -534,7 +534,7 @@ def update_map_info(reaches_obj, reach_feature, lc_feature, indicator, prop_red)
             feature = lc_feature['properties']
             # print(feature)
 
-            info_str = """**Typology**: {typo}\n\n**Land Cover**: {lc}\n\n**Improvement**: {red}%""".format(red=int(feature[indicator]), typo=feature['typology'], lc=feature['land_cover'])
+            info_str = """**Typology**: {typo}\n\n**Land Cover**: {lc}\n\n**Predicted improvement**: {red}%""".format(red=int(feature[indicator]), typo=feature['typology'], lc=feature['land_cover'])
 
             info = info + info_str
 
