@@ -26,7 +26,7 @@ services:
           - node.labels.function == web_server
 
   dash:
-    image: mullenkamp/olw-monitoring-app:3.10
+    image: mullenkamp/olw-monitoring-app:3.11
     volumes:
       - olw-assets:/app/assets
     networks:
@@ -43,10 +43,10 @@ services:
         - traefik.enable=true
         - traefik.docker.network=traefik-public
         - traefik.constraint-label=traefik-public
-        - traefik.http.routers.olw-app-base-http.rule=Host(`olw-app.nzrivers.xyz`)
+        - traefik.http.routers.olw-app-base-http.rule=Host(`web-app.monitoringfreshwater.co.nz`)
         - traefik.http.routers.olw-app-base-http.entrypoints=http
         - traefik.http.routers.olw-app-base-http.middlewares=https-redirect
-        - traefik.http.routers.olw-app-base-https.rule=Host(`olw-app.nzrivers.xyz`)
+        - traefik.http.routers.olw-app-base-https.rule=Host(`web-app.monitoringfreshwater.co.nz`)
         - traefik.http.routers.olw-app-base-https.entrypoints=https
         - traefik.http.routers.olw-app-base-https.tls=true
         # - traefik.http.routers.es-dash-https.tls.certresolver=le

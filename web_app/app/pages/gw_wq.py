@@ -152,7 +152,7 @@ def layout():
                                             dmc.HoverCardDropdown(
                                                 dmc.Text(
                                                     """
-                                                    The power results for groundwater only apply after the groundwater lag times of the upgradient improvements. Any improvements performed upgradient of the wells will take time to reach the wells. Click on a well to see the estimated mean residence time.
+                                                    The power results for groundwater do not include the impacts of groundwater travel processes (e.g. lag between the source and receptor). Any improvements performed upgradient of the wells will take time to reach the wells. The map therefore shows the maximum possible detection power, which will often be an overestimate.
                                                     """,
                                                     size="sm",
                                                 )
