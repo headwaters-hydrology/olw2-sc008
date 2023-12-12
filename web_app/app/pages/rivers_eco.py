@@ -94,10 +94,10 @@ return L.marker(latlng, {icon: flag});
 ### Initial processing
 
 # catches.sort()
-# indicators = list(param.eco_indicator_dict.keys())
-# indicators.sort()
+indicators = list(param.eco_indicator_dict.keys())
+indicators.sort()
 
-indicators = ['mci']
+# indicators = ['mci']
 
 bins_weights_plus = np.array([0, 0.001, 0.002, 0.003])
 
@@ -267,7 +267,7 @@ def layout():
                             #     },
                             # className='four columns', style={'margin': 10}
                             ),
-                        dcc.Markdown("""* The rivers colored with *Low*, *Moderate*, and *High* are the qualitative monitoring priorities as there  is too much uncertainty in estimating the powers per reach.""")]
+                        dcc.Markdown("""* The rivers colored with *Low*, *Moderate*, and *High* are the qualitative monitoring priorities as there is too much uncertainty in estimating the powers per reach.""")]
                         ),
                     dmc.Col(
                         span=4,

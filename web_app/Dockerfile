@@ -1,7 +1,8 @@
 # FROM tiangolo/uwsgi-nginx-flask:python3.8
-FROM mullenkamp/tethys-dash-base:1.8
+# FROM mullenkamp/tethys-dash-base:1.8
+FROM python:3.10-slim
 
-# RUN apt-get update && apt-get install -y libspatialindex-dev python-rtree
+RUN apt-get update && apt-get install -y libspatialindex-dev
 ENV PYTHONUNBUFFERED True
 ENV APP_HOME /app
 WORKDIR $APP_HOME

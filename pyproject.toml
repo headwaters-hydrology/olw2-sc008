@@ -55,6 +55,7 @@ dependencies = ['plotly==5.15.0',
                 'pyarrow==10.0.1',
                 'sentry-sdk==1.31',
                 'dash-iconify==0.1.2',
+                'nzrec',
                 ]
 
 [project.urls]
