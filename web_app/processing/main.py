@@ -8,12 +8,6 @@ Created on Wed Nov 23 09:18:20 2022
 import os
 import pathlib
 
-import sys
-if '..' not in sys.path:
-    sys.path.append('..')
-
-import utils
-
 from land_cover.lcdb_processing import lcdb_processing
 from land_cover.land_cover_extra_layers import process_extra_geo_layers
 from land_cover.land_cover_reductions import land_cover_reductions
