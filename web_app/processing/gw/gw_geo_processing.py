@@ -64,6 +64,11 @@ def gw_geo_process():
     gw_data = gw_data.isel(lag_dist=range(8)).copy()
     gw_data['lag_dist'] = gw_data['lag_dist'].astype('int32')
 
+    # gw_depths = gw_data[['ref', 'depth']].copy().load()
+    # depths = gw_depths.depth.values
+
+    # for ref in gw_data.ref.values:
+
     gw_data['depth_cat'] = gw_data.depth.astype('int16')
     gw_data = gw_data.assign({'depth_cat': (('ref'), np.array([find_nearest(lag_depths, v) for v in gw_data.depth.values], dtype='int16'))})
 
@@ -73,20 +78,31 @@ def gw_geo_process():
     lag_mins = []
     lag_maxes = []
     lag_medians = []
+    depth_mins = []
+    depth_maxes = []
     for ref in gw_data1.ref.values:
         data = gw_data1.sel(ref=ref, drop=True).dropna('lag_dist').isel(lag_dist=0)
         lag_mins.append(int(data.lag_min.values))
         lag_maxes.append(int(data.lag_max.values))
         lag_medians.append(int(data.lag_median.values))
         lag_dist.append(int(data.lag_dist.values))
+        depth = int(data.depth.values)
+        depth_cat = int(data.depth_cat.values)
+        depth_min = depth - depth_cat
+        if depth_min < 0:
+            depth_min = 0
+        depth_max = depth + depth_cat
 
-    gw_data2 = gw_data1.drop(['lag_dist', 'lag_depth']).assign({'lag_min': (('ref'), lag_mins), 'lag_max': (('ref'), lag_maxes), 'lag_median': (('ref'), lag_medians), 'lag_dist': (('ref'), lag_dist)})
+        depth_mins.append(depth_min)
+        depth_maxes.append(depth_max)
+
+    gw_data2 = gw_data1.drop(['lag_dist', 'lag_depth']).assign({'lag_min': (('ref'), lag_mins), 'lag_max': (('ref'), lag_maxes), 'lag_median': (('ref'), lag_medians), 'lag_dist': (('ref'), lag_dist), 'depth_min': (('ref'), depth_mins), 'depth_max': (('ref'), depth_maxes)})
 
     ## Make the geometry
-    gw_pts0 = gw_data2[['lon', 'lat', 'depth', 'lag_at_site', 'lag_min', 'lag_max', 'lag_median', 'lag_dist']].to_dataframe().reset_index()
+    gw_pts0 = gw_data2[['lon', 'lat', 'depth', 'lag_at_site', 'lag_min', 'lag_max', 'lag_median', 'lag_dist', 'depth_min', 'depth_max']].to_dataframe().reset_index()
     gw_data.close()
 
-    gw_pts1 = vector.xy_to_gpd(['ref', 'depth', 'lag_at_site', 'lag_min', 'lag_max', 'lag_median', 'lag_dist'], 'lon', 'lat', gw_pts0, 4326)
+    gw_pts1 = vector.xy_to_gpd(['ref', 'depth', 'lag_at_site', 'lag_min', 'lag_max', 'lag_median', 'lag_dist', 'depth_min', 'depth_max'], 'lon', 'lat', gw_pts0, 4326)
     gw_pts1['geometry'] = gw_pts1['geometry'].simplify(0.00001)
     gw_pts1['tooltip'] = gw_pts1['ref']
 
