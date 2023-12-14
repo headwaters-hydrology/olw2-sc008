@@ -757,7 +757,7 @@ def update_map_info_lakes(powers_obj, sites_powers_obj, feature, sites_feature, 
             else:
                 info_str += """\n\n*Power estimate from numerical model*"""
 
-            info_str += """\n\n**Lake phosphorus residence time**: {p_res} year(s)\n\n**Lake nitrogen residence time**: {n_res} year(s)""".format(p_res=lake_data['p_residence_time'], n_res=lake_data['n_residence_time'])
+            info_str += """\n\n**Lake phosphorus residence time**: {p_res:.2f} year(s)\n\n**Lake nitrogen residence time**: {n_res:.2f} year(s)""".format(p_res=lake_data['p_residence_time'], n_res=lake_data['n_residence_time'])
 
             info = info_str
 
