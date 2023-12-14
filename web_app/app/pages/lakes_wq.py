@@ -746,6 +746,8 @@ def update_map_info_lakes(powers_obj, sites_powers_obj, feature, sites_feature, 
             props = utils.decode_obj(powers_obj)
             # print(props)
 
+            lake_data = feature['properties']
+
             lake_name = lakes_names[int(lake_id)]
 
             info_str = """**Lake name**: {lake}\n\n**Predicted improvement**: {red}%\n\n**Likelihood of detecting the improvement (power)**: {power}%""".format(red=int(props['reduction']), power=int(props['power']), lake=lake_name)
@@ -754,6 +756,8 @@ def update_map_info_lakes(powers_obj, sites_powers_obj, feature, sites_feature, 
                 info_str += """\n\n*Power estimate from monitoring site(s)*"""
             else:
                 info_str += """\n\n*Power estimate from numerical model*"""
+
+            info_str += """\n\n**Lake water residence time**: {res}\n\n**Lake phosphorus residence time**: {p_res}\n\n**Lake nitrogen residence time**: {n_res}""".format(res=lake_data['residence_time'], p_res=lake_data['p_residence_time'], n_res=lake_data['n_residence_time'])
 
             info = info_str
 
@@ -792,6 +796,8 @@ def update_map_info_lakes(powers_obj, sites_powers_obj, feature, sites_feature, 
             info_str += """\n\n*Power estimate from monitoring site(s)*"""
         else:
             info_str += """\n\n*Power estimate from numerical model*"""
+
+        info_str += """\n\n**Lake water residence time**: {res}\n\n**Lake phosphorus residence time**: {p_res}\n\n**Lake nitrogen residence time**: {n_res}""".format(res=lake_data['residence_time'], p_res=lake_data['p_residence_time'], n_res=lake_data['n_residence_time'])
 
         info = info_str
 
