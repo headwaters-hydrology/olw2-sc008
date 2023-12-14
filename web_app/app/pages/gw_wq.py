@@ -383,8 +383,8 @@ def update_map_info_gw(powers_obj, reductions, feature, gw_points_encode):
                 # print(feature['properties']['lag_at_site'])
 
                 if feature['properties']['lag_at_site'] is None:
-                    info_str = """\n\n**User-defined improvement**: {red}%\n\n**Likelihood of observing the improvement (power)**: {t_stat}%\n\n**Well Depth (m)**: {depth:.1f}\n\n**Mean residence time (MRT) at well (years)**: NA\n\n**MRT at nearest {depth_min} - {depth_max} m depth well**: {lag_median} years within a distance of {lag_dist:,} m"""
-                    info2 = info_str.format(red=int(reductions), t_stat=int(props[props.ref==feature['id']].iloc[0]['power']), depth=feature['properties']['depth'], lag_median=feature['properties']['lag_median'], lag_dist=feature['properties']['lag_dist'], depth_min=feature['properties']['depth_min'], depth_max=feature['properties']['depth_max'])
+                    info_str = """\n\n**User-defined improvement**: {red}%\n\n**Likelihood of observing the improvement (power)**: {t_stat}%\n\n**Well Depth (m)**: {depth:.1f}\n\n**Mean residence time (MRT) at well (years)**: NA\n\n**MRT within {lag_dist:.1f} km at {depth_min} - {depth_max} m depth**:\n\n&nbsp;&nbsp;&nbsp;&nbsp; Min - Median - Max: {lag_min} - {lag_median} - {lag_max }years"""
+                    info2 = info_str.format(red=int(reductions), t_stat=int(props[props.ref==feature['id']].iloc[0]['power']), depth=feature['properties']['depth'], lag_median=feature['properties']['lag_median'], lag_dist=feature['properties']['lag_dist']*0.001, depth_min=feature['properties']['depth_min'], depth_max=feature['properties']['depth_max'], lag_min=feature['properties']['lag_min'], lag_max=feature['properties']['lag_max'])
                 else:
                     site_lag = str(int(feature['properties']['lag_at_site']))
                     info_str = """\n\n**User-defined improvement**: {red}%\n\n**Likelihood of observing the improvement (power)**: {t_stat}%\n\n**Well Depth (m)**: {depth:.1f}\n\n**Mean residence time (MRT) at well (years)**: {site_lag}"""
