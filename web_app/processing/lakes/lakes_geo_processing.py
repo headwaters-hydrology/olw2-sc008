@@ -104,9 +104,13 @@ def lakes_geo_process():
     lakes_poly0['max_depth'] = lakes_poly0['max_depth'].round().astype('int32')
     lakes_poly0.loc[lakes_poly0.name.isnull(), 'name'] = 'No name'
 
+    lakes_poly0['mean_depth'] = lakes_poly0.LakeVolume / lakes_poly0.LakeAreaHa / 10000
+    lakes_poly0['p_residence_time'] = np.sqrt(lakes_poly0.residence_time)/(1 + np.sqrt(lakes_poly0.residence_time))
+    lakes_poly0['n_residence_time'] = 1 - np.exp((-6.83 - lakes_poly0.residence_time)/(lakes_poly0.mean_depth))
+
     lakes_poly0 = lakes_poly0.drop_duplicates(subset=['LFENZID'])
 
-    lakes_poly1 = lakes_poly0.loc[lakes_poly0.LFENZID.isin(lake_ids), ['LFENZID', 'name', 'residence_time', 'max_depth', 'geometry']].reset_index(drop=True).copy()
+    lakes_poly1 = lakes_poly0.loc[lakes_poly0.LFENZID.isin(lake_ids), ['LFENZID', 'name', 'residence_time', 'max_depth', 'mean_depth', 'p_residence_time', 'n_residence_time', 'geometry']].reset_index(drop=True).copy()
 
     lakes_poly_3rd = lakes_poly1[lakes_poly1.LFENZID.isin(fenz_catch2.LFENZID.values)].copy()
 

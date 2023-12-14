@@ -13,6 +13,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 COPY ./app/pages/*.py ./pages/
 COPY ./app/utils/*.py ./utils/
 COPY ./app/*.ini ./
-COPY ./app/*.py ./
+COPY ./app/gunicorn_conf.py ./
+COPY ./app/main.py ./
 
 CMD ["gunicorn", "--conf", "gunicorn_conf.py", "--bind", "0.0.0.0:80", "main:server"]
