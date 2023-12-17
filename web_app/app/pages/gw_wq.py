@@ -97,7 +97,7 @@ def layout():
                 children=[
                     dmc.Col(
                         span=3,
-                        children=dmc.Accordion(
+                        children=[dmc.Accordion(
                             value="1",
                             chevronPosition='left',
                             children=[
@@ -221,7 +221,14 @@ def layout():
                             #     'padding': 0
                             #     },
                             # className='four columns', style={'margin': 10}
-                            )
+                            ),
+                            dcc.Markdown("""The interactive map provides a screening assessment of nitrate concentration change detection power potential and can be used to identify:
+
+- Sites with low detection power potential (<80% = unlikely to be useful for nitrate loss mitigation effectiveness determination); and
+- Sites with high detection power potential (≥80% = may be useful for mitigation effectiveness determination, subject to further assessment).
+
+If the detection power is shown to be ≥80%, further assessment of detection power should be undertaken as per the *Mitigation Effectiveness Monitoring Design: Water quality monitoring for management of diffuse nitrate pollution* document. """, style={'font-size': 14, 'margin-top': 10})
+                            ]
                         ),
                     dmc.Col(
                         span=4,
