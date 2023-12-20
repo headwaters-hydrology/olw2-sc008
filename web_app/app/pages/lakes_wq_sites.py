@@ -545,7 +545,7 @@ def download_power(n_clicks, lake_id, powers_obj, sites_powers_obj, indicator, n
 
         lake_name = lakes_names[int(lake_id)]
 
-        df1 = pd.DataFrame.from_records([power_data]).rename(columns={'power': 'overall_lake_power_modelled', 'lake_id': 'LFENZID', 'reduction': 'improvement'})
+        df1 = pd.DataFrame.from_records([power_data]).rename(columns={'power': 'lake_power_modelled', 'lake_id': 'LFENZID', 'reduction': 'lake_improvement'})
         df1['indicator'] = param.lakes_indicator_dict[indicator]
         df1['n_years'] = n_years
         df1['n_samples_per_year'] = n_samples_year
@@ -555,11 +555,11 @@ def download_power(n_clicks, lake_id, powers_obj, sites_powers_obj, indicator, n
         if sites_powers_obj != '':
             sites_power_data = utils.decode_obj(sites_powers_obj)
             # print(sites_power_data)
-            sites_df = pd.DataFrame.from_records(sites_power_data).rename(columns={'power': 'monitoring_site_power', 'lake_id': 'LFENZID'})
+            sites_df = pd.DataFrame.from_records(sites_power_data).rename(columns={'power': 'site_power', 'lake_id': 'LFENZID', 'reduction': 'site_improvement'})
             # print(sites_df)
-            sites_df.loc[sites_df.monitoring_site_power < 0, 'monitoring_site_power'] = np.nan
-            df1 = pd.merge(df1, sites_df.drop(['reduction', 'site_id'], axis=1), on=['LFENZID'], how='left')
+            sites_df.loc[sites_df.site_power < 0, 'site_power'] = np.nan
+            df1 = pd.merge(df1, sites_df.drop(['site_id'], axis=1), on=['LFENZID'], how='left')
 
-        df2 = df1.set_index(['indicator', 'n_years', 'n_samples_per_year', 'improvement', 'LFENZID']).sort_index()
+        df2 = df1.set_index(['indicator', 'n_years', 'n_samples_per_year', 'LFENZID']).sort_index()
 
         return dcc.send_data_frame(df2.to_csv, f"lake_power_{lake_id}.csv")
