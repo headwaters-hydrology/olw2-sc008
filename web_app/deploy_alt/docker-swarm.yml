@@ -12,7 +12,7 @@ volumes:
 
 services:
   assets:
-    image: mullenkamp/olw-monitoring-app-assets:1.14
+    image: mullenkamp/olw-monitoring-app-assets:1.25
     volumes:
       - olw-assets:/app/assets
     networks:
@@ -24,10 +24,9 @@ services:
       placement:
         constraints:
           - node.labels.function == web_server
-          # - node.hostname == uswest3.tethys-ts.xyz
 
   dash:
-    image: mullenkamp/olw-monitoring-app:3.1
+    image: mullenkamp/olw-monitoring-app:3.17
     volumes:
       - olw-assets:/app/assets
     networks:
@@ -36,19 +35,18 @@ services:
     depends_on:
       - assets
     deploy:
-      replicas: 2
+      replicas: 8
       placement:
         constraints:
           - node.labels.function == web_server
-          # - node.hostname == uswest3.tethys-ts.xyz
       labels:
         - traefik.enable=true
         - traefik.docker.network=traefik-public
         - traefik.constraint-label=traefik-public
-        - traefik.http.routers.olw-app-base-http.rule=Host(`olw-app.nzrivers.xyz`)
+        - traefik.http.routers.olw-app-base-http.rule=Host(`web-app.monitoringfreshwater.co.nz`)
         - traefik.http.routers.olw-app-base-http.entrypoints=http
         - traefik.http.routers.olw-app-base-http.middlewares=https-redirect
-        - traefik.http.routers.olw-app-base-https.rule=Host(`olw-app.nzrivers.xyz`)
+        - traefik.http.routers.olw-app-base-https.rule=Host(`web-app.monitoringfreshwater.co.nz`)
         - traefik.http.routers.olw-app-base-https.entrypoints=https
         - traefik.http.routers.olw-app-base-https.tls=true
         # - traefik.http.routers.es-dash-https.tls.certresolver=le

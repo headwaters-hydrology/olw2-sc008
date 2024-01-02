@@ -141,6 +141,7 @@ def rec_delin():
     ## Delineate overall reaches for the geobuf and catchments
     reach_gbuf_dict = {}
     catches_major_dict = {}
+    catches_major_4th_dict = {}
     catches_minor_dict = {}
     for way_id in reaches_dict:
         # print(way_id)
@@ -167,6 +168,9 @@ def rec_delin():
         geo = shapely.ops.unary_union(geos).buffer(0.00001)
         catches_major_dict[way_id] = geo
 
+        if stream_orders[way_id] > 3:
+            catches_major_4th_dict[way_id] = geo
+
 
     # Reach geobufs in blt
     with booklet.open(utils.river_reach_gbuf_path, 'n', key_serializer='uint4', value_serializer='zstd', n_buckets=1607) as f:
@@ -183,9 +187,20 @@ def rec_delin():
     rec_shed = gpd.GeoDataFrame(catch_ids, geometry=list(catches_major_dict.values()), crs=4326, columns=['nzsegment'])
     rec_shed['geometry'] = rec_shed.simplify(0.0004)
 
+    rec_shed.to_file(utils.river_catch_gpkg_path)
+
     gjson = orjson.loads(rec_shed.set_index('nzsegment').to_json())
 
     with open(utils.assets_path.joinpath('rivers_catchments.pbf'), 'wb') as f:
+        f.write(geobuf.encode(gjson))
+
+    catch_ids = list(catches_major_4th_dict.keys())
+    rec_shed = gpd.GeoDataFrame(catch_ids, geometry=list(catches_major_4th_dict.values()), crs=4326, columns=['nzsegment'])
+    rec_shed['geometry'] = rec_shed.simplify(0.0004)
+
+    gjson = orjson.loads(rec_shed.set_index('nzsegment').to_json())
+
+    with open(utils.assets_path.joinpath('rivers_catchments_4th.pbf'), 'wb') as f:
         f.write(geobuf.encode(gjson))
 
     ## Produce a file grouped by all catchments as geodataframes

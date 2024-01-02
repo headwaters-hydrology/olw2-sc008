@@ -376,7 +376,10 @@ def calc_river_reach_reductions(catch_id, new_reductions, base_reductions, diff_
                     p1 = np.sum(prop_area)/t_area_sum
                     props_val[r, h] = p1
 
-            reach_red[ind] = np.round(props_val*100).astype('int8') # Round to nearest even number
+        if ind == 'Visual Clarity':
+            reach_red[ind] = np.round((props_val**0.76)*100).astype('int8')
+        else:
+            reach_red[ind] = np.round(props_val*100).astype('int8')
 
     new_props = xr.Dataset(data_vars={ind: (('reduction_perc', 'nzsegment'), values)  for ind, values in reach_red.items()},
                        coords={'nzsegment': props_index,
@@ -476,7 +479,7 @@ def calc_river_reach_eco_weights(catch_id, new_reductions, base_reductions):
                     p1 = np.sum(prop_area)/t_area_sum
                     props_val[r, h] = p1
 
-            reach_red[ind] = np.round(props_val*100).astype('int8') # Round to nearest even number
+        reach_red[ind] = np.round(props_val*100).astype('int8')
 
     new_props = xr.Dataset(data_vars={ind: (('reduction_perc', 'nzsegment'), values)  for ind, values in reach_red.items()},
                        coords={'nzsegment': props_index,
@@ -581,7 +584,10 @@ def calc_lake_reach_reductions(lake_id, new_reductions, base_reductions, diff_co
                 p1 = np.sum(prop_area)/t_area_sum
                 props_val[r] = p1
 
-            reach_red[ind] = np.round(props_val*100).astype('int8') # Round to nearest even number
+        if ind == 'Secchi Depth':
+            reach_red[ind] = np.round((props_val**0.76)*100).astype('int8')
+        else:
+            reach_red[ind] = np.round(props_val*100).astype('int8')
 
     props = xr.Dataset(data_vars={ind: (('reduction_perc'), values)  for ind, values in reach_red.items()},
                        coords={
@@ -644,7 +650,31 @@ def xr_concat(datasets):
     return xr3
 
 
+def lakes_conc_adjustment(indicator, conc_perc, lake_data):
+    """
 
+    """
+    ## Lake residence time calcs
+    if indicator in ['TP', 'CHLA', 'Secchi']:
+        if lake_data['max_depth'] > 7.5:
+            b = 1 + (0.44*(lake_data['residence_time']**0.13))
+            conc_perc = int(round(((conc_perc*0.01)**(1/b)) * 100))
+    elif indicator == 'TN':
+        conc_perc = int(round(((conc_perc*0.01)**0.54) * 100))
+    if indicator in ['CHLA', 'Secchi']:
+        conc_perc = int(round(((conc_perc*0.01)**1.25) * 100))
+    if indicator == 'Secchi':
+        if lake_data['max_depth'] > 20:
+            conc_perc = int(round(((conc_perc*0.01)**(0.9)) * 100))
+        else:
+            conc_perc = int(round(((conc_perc*0.01)**(0.9)) * 100))
+
+    if conc_perc < 1:
+        conc_perc = 1
+    elif conc_perc > 100:
+        conc_perc = 100
+
+    return conc_perc
 
 
 

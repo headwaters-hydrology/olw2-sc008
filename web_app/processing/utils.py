@@ -48,8 +48,8 @@ output_path.mkdir(parents=True, exist_ok=True)
 assets_path = output_path.joinpath('assets')
 assets_path.mkdir(parents=True, exist_ok=True)
 
-indicators_mapping = {'rivers': {'Visual Clarity': 'suspended sediment', 'E.coli': 'e.coli', 'Dissolved reactive phosporus': 'total phosphorus', 'Ammoniacal nitrogen': 'total nitrogen', 'Nitrate': 'total nitrogen', 'Total nitrogen': 'total nitrogen', 'Total phosphorus': 'total phosphorus'},
-              'lakes': {'E.coli': 'e.coli', 'Ammoniacal nitrogen': 'total nitrogen', 'Total nitrogen': 'total nitrogen', 'Total phosphorus': 'total phosphorus', 'Chlorophyll a': 'e.coli', 'Total Cyanobacteria': 'e.coli', 'Secchi Depth': 'suspended sediment'}
+indicators_mapping = {'rivers': {'Visual Clarity': 'suspended sediment', 'E.coli': 'e.coli', 'Dissolved reactive phosphorus': 'total phosphorus', 'Nitrate nitrogen': 'total nitrogen', 'Total nitrogen': 'total nitrogen', 'Total phosphorus': 'total phosphorus'},
+              'lakes': {'E.coli': 'e.coli', 'Total nitrogen': 'total nitrogen', 'Total phosphorus': 'total phosphorus', 'Chlorophyll a': 'e.coli', 'Total Cyanobacteria': 'e.coli', 'Secchi Depth': 'suspended sediment'}
               }
 
 # indicators = {'rivers': ['total phosphorus', 'total nitrogen', 'suspended sediment', 'e.coli'],
@@ -59,9 +59,9 @@ indicators_mapping = {'rivers': {'Visual Clarity': 'suspended sediment', 'E.coli
 indicator_dict = {
     'Visual Clarity': 'sediment',
     'E.coli': 'e.coli',
-    'Dissolved reactive phosporus': 'DRP',
+    'Dissolved reactive phosphorus': 'DRP',
     'Ammoniacal nitrogen': 'NNN',
-    'Nitrate': 'NNN',
+    'Nitrate nitrogen': 'NNN',
     'Total nitrogen': 'TN',
     'Total phosphorus': 'TP',
     'Chlorophyll a': 'e.coli',
@@ -101,6 +101,8 @@ lc_red_gpkg_path = base_path.joinpath('land_cover_reductions.gpkg')
 lc_red_feather_path = base_path.joinpath('land_cover_reductions.feather')
 
 lc_red_csv_path = lc_base_path.joinpath('typology_reductions.csv')
+
+lc_special_layers_path = lc_base_path.joinpath('special_layers')
 
 ### Rivers
 sites_loc_csv = base_path.joinpath('olw_river_sites_locations.csv')
@@ -152,12 +154,15 @@ rivers_catch_lc_gpkg_path = output_path.joinpath('olw_land_cover_reductions.gpkg
 rivers_red_csv_path = output_path.joinpath('olw_rivers_reductions.csv')
 
 river_sites_catch_path = assets_path.joinpath('rivers_sites_catchments.blt')
+river_sites_catch_3rd_path = assets_path.joinpath('rivers_sites_catchments_3rd.blt')
 river_reach_mapping_path = assets_path.joinpath('rivers_reaches_mapping.blt')
 river_reach_gbuf_path = assets_path.joinpath('rivers_reaches.blt')
 river_catch_path = assets_path.joinpath('rivers_catchments_minor.blt')
 river_catch_major_path = assets_path.joinpath('rivers_catchments_major.blt')
 river_catch_name_path = assets_path.joinpath('rivers_catchments_names.blt')
 river_marae_path = assets_path.joinpath('rivers_catchments_marae.blt')
+
+river_catch_gpkg_path = base_path.joinpath('rivers_catch_major_3rd.gpkg')
 
 river_sims_path = output_path.joinpath('rivers_sims')
 river_sims_path.mkdir(parents=True, exist_ok=True)
@@ -284,12 +289,20 @@ lakes_fenz_catch_path = base_path.joinpath('lakes_catchments_fenz.gpkg')
 lakes_fenz_poly_path = base_path.joinpath('lakes_polygons_fenz.gpkg')
 
 ## Geo processing
-lakes_points_path = output_path.joinpath('lakes_points.feather')
-lakes_poly_path = output_path.joinpath('lakes_poly.feather')
+lakes_points_path = output_path.joinpath('lakes_points.gpkg')
+lakes_points_3rd_path = output_path.joinpath('lakes_points_3rd.gpkg')
+lakes_poly_3rd_path = output_path.joinpath('lakes_poly_3rd_order.gpkg')
+lakes_poly_path = output_path.joinpath('lakes_poly.gpkg')
 lakes_catch_path = output_path.joinpath('lakes_catch.feather')
 
 lakes_points_gbuf_path = assets_path.joinpath('lakes_points.pbf')
+lakes_points_3rd_gbuf_path = assets_path.joinpath('lakes_points_3rd.pbf')
+lakes_moni_sites_gbuf_path = assets_path.joinpath('lakes_moni_sites.blt')
+lakes_moni_sites_3rd_gbuf_path = assets_path.joinpath('lakes_moni_sites_3rd.blt')
+lakes_moni_sites_gpkg_path = output_path.joinpath('lakes_moni_sites.gpkg')
+lakes_poly_3rd_gbuf_path = assets_path.joinpath('lakes_poly_3rd.blt')
 lakes_poly_gbuf_path = assets_path.joinpath('lakes_poly.blt')
+
 # lakes_poly_path = base_path.joinpath('lakes_locations_fenz.gpkg')
 lakes_delin_points_path = base_path.joinpath('lakes_delineate_points.gpkg')
 lakes_reaches_mapping_path = assets_path.joinpath('lakes_reaches_mapping.blt')
@@ -306,7 +319,7 @@ lakes_sims_path = output_path.joinpath('lakes_sims')
 lakes_sims_path.mkdir(parents=True, exist_ok=True)
 
 lakes_sims_h5_path = lakes_sims_path.joinpath('lakes_sims.h5')
-lakes_power_combo_path = assets_path.joinpath('lakes_power_combo.h5')
+# lakes_power_combo_path = assets_path.joinpath('lakes_power_combo.h5')
 lakes_power_model_path = assets_path.joinpath('lakes_power_modelled.h5')
 lakes_power_moni_path = assets_path.joinpath('lakes_power_monitored.h5')
 lakes_reductions_model_path = assets_path.joinpath('lakes_reductions_modelled.h5')
@@ -314,6 +327,8 @@ lakes_reductions_model_path = assets_path.joinpath('lakes_reductions_modelled.h5
 lakes_lc_path = assets_path.joinpath('lakes_catch_lc.blt')
 
 lakes_loads_rec_path = assets_path.joinpath('lakes_loads_rec.blt')
+
+lakes_marae_path = assets_path.joinpath('lakes_catchments_marae.blt')
 
 ## Model data
 lakes_rupesh_stdev_path = base_path.joinpath('lakes_stdev_v04.csv')
@@ -798,7 +813,7 @@ def calc_river_reach_reductions(feature, catch_id, reduction_ratios=range(10, 10
 
     ## Scale the reductions
     props_index = np.array(list(branches.keys()), dtype='int32')
-    props_val = np.zeros((len(red_ratios), len(props_index)))
+    props_val = np.zeros((len(red_ratios), len(branches)))
 
     reach_red = {}
     for ind in inds:
@@ -832,7 +847,10 @@ def calc_river_reach_reductions(feature, catch_id, reduction_ratios=range(10, 10
                     p1 = np.sum(prop_area)/t_area_sum
                     props_val[r, h] = p1
 
-            reach_red[ind] = np.round(props_val*100).astype('int8') # Round to nearest even number
+        if ind == 'Visual Clarity':
+            reach_red[ind] = np.round((props_val**0.76)*100).astype('int8')
+        else:
+            reach_red[ind] = np.round(props_val*100).astype('int8')
 
     props = xr.Dataset(data_vars={ind: (('reduction_perc', 'nzsegment'), values)  for ind, values in reach_red.items()},
                        coords={'nzsegment': props_index,
@@ -927,14 +945,16 @@ def calc_lakes_reach_reductions(feature, lake_id, reduction_ratios=range(10, 101
                 p1 = np.sum(prop_area)/t_area_sum
                 props_val[r] = p1
 
-            reach_red[ind] = np.round(props_val*100).astype('int8') # Round to nearest even number
+        if ind == 'Secchi Depth':
+            reach_red[ind] = np.round((props_val**0.76)*100).astype('int8')
+        else:
+            reach_red[ind] = np.round(props_val*100).astype('int8')
 
     props = xr.Dataset(data_vars={ind: (('reduction_perc'), values)  for ind, values in reach_red.items()},
                        coords={
                                 'reduction_perc': red_ratios}
                        )
     props = props.assign_coords(LFENZID=np.array(lake_id, dtype='int32')).expand_dims('LFENZID')
-
 
     return props
 

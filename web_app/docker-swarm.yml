@@ -12,7 +12,7 @@ volumes:
 
 services:
   assets:
-    image: mullenkamp/olw-monitoring-app-assets:1.15
+    image: mullenkamp/olw-monitoring-app-assets:1.19
     volumes:
       - olw-assets:/app/assets
     networks:
@@ -24,10 +24,10 @@ services:
       placement:
         constraints:
           - node.labels.function == web_server
-          - node.hostname == uswest3.tethys-ts.xyz
+          # - node.hostname == uswest3.tethys-ts.xyz
 
   dash:
-    image: mullenkamp/olw-monitoring-app:2.3
+    image: mullenkamp/olw-monitoring-app:2.8
     volumes:
       - olw-assets:/app/assets
     networks:
@@ -40,7 +40,7 @@ services:
       placement:
         constraints:
           - node.labels.function == web_server
-          - node.hostname == uswest3.tethys-ts.xyz
+          # - node.hostname == uswest3.tethys-ts.xyz
       labels:
         - traefik.enable=true
         - traefik.docker.network=traefik-public

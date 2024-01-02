@@ -101,11 +101,13 @@ def process_loads_lakes():
 
     combo1 = combo1.drop(cols2, axis=1)
 
+    lakes_indicators = list(utils.indicators_mapping['lakes'].keys())
+
     ## Split by catchment
-    with booklet.open(utils.lakes_loads_rec_path, 'n', value_serializer='pickle_zstd', key_serializer='uint4', n_buckets=400) as blt:
+    with booklet.open(utils.lakes_loads_rec_path, 'n', value_serializer='pickle_zstd', key_serializer='uint4', n_buckets=401) as blt:
         with booklet.open(utils.lakes_reaches_mapping_path) as f:
             for catch_id, reaches in f.items():
-                combo2 = combo1.loc[combo1.index.isin(reaches)][utils.indicators['lakes']].copy()
+                combo2 = combo1.loc[combo1.index.isin(reaches)][lakes_indicators].copy()
                 blt[catch_id] = combo2
 
 

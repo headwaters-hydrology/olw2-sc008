@@ -97,7 +97,9 @@ return L.marker(latlng, {icon: flag});
 indicators = list(param.eco_indicator_dict.keys())
 indicators.sort()
 
+# indicators = ['mci']
 
+bins_weights_plus = np.array([0, 0.001, 0.002, 0.003])
 
 ###############################################
 ### App layout
@@ -140,7 +142,6 @@ def layout():
                             chevronPosition='left',
                             children=[
                             dmc.AccordionItem([
-                                # html.H5('(1) Catchment selection', style={'font-weight': 'bold'}),
                                 dmc.AccordionControl('(1) Catchment Selection', style={'font-size': 18}),
                                 dmc.AccordionPanel([
 
@@ -153,19 +154,19 @@ def layout():
                                 ),
 
                             dmc.AccordionItem([
-                                dmc.AccordionControl('(2 - Optional) Customise Improvements Layer', style={'font-size': 18}),
+                                dmc.AccordionControl('(2 - Optional) Customise the Land Mitigation Layer', style={'font-size': 18}),
                                 dmc.AccordionPanel([
-                                    html.Label('(2a) Download improvements polygons as GPKG:'),
+                                    html.Label('(2a) Download default Land Mitigation Layer as GPKG:'),
                                     dcc.Loading(
                                     id="loading-2",
                                     type="default",
-                                    children=[dmc.Anchor(dmc.Button('Download land cover'), href='', id='dl_poly_eco', style={'margin-top': 10})],
+                                    children=[dmc.Anchor(dmc.Button('Download default layer'), href='', id='dl_poly_eco', style={'margin-top': 10})],
                                     ),
                                     html.Label('NOTE: Only modify existing values. Do not add additional columns; they will be ignored.', style={
                                         'margin-top': 10
                                     }
                                         ),
-                                    html.Label('(2b) Upload modified improvements polygons as GPKG:', style={
+                                    html.Label('(2b) Upload modified Land Mitigation Layer as GPKG:', style={
                                         'margin-top': 20
                                     }
                                         ),
@@ -173,24 +174,21 @@ def layout():
                                         children=[
                                             dcc.Upload(
                                                 id='upload_data_rivers_eco',
-                                                children=dmc.Button('Upload improvements',
-                                                                     # className="me-1"
-                                                                      # style={
-                                                                      #     'width': '50%',
-                                                                      #     }
+                                                children=dmc.Button('Upload modified layer',
                                                 ),
                                                 style={
                                                     'margin-top': 10
                                                 },
                                                 multiple=False
                                             ),
+                                            dcc.Markdown('', style={
+                                                'margin-top': 10,
+                                                'textAlign': 'left',
+                                                            }, id='upload_error_text_eco'),
                                             ]
                                         ),
-                                    dcc.Markdown('', style={
-                                        'margin-top': 10,
-                                        'textAlign': 'left',
-                                                    }, id='upload_error_text_eco'),
-                                    html.Label('(2c) Process the improvements layer and route the improvements downstream:', style={
+
+                                    html.Label('(2c) Process the modified Land Mitigation Layer and route the improvements downstream:', style={
                                         'margin-top': 20
                                     }
                                         ),
@@ -215,51 +213,31 @@ def layout():
                                 dmc.AccordionPanel([
                                     dmc.Text('(3a) Select Indicator:'),
                                     dcc.Dropdown(options=[{'label': param.eco_indicator_dict[d], 'value': d} for d in indicators], id='indicator_eco', optionHeight=40, clearable=False, style={'margin-bottom': 20}),
-                                    html.Label('(3b) Select a percent improvement for the overall catchment:'),
-                                    dmc.Slider(id='reductions_slider_eco',
-                                               value=30,
-                                               mb=35,
-                                               step=10,
-                                               min=10,
-                                               max=100,
-                                               showLabelOnHover=True,
-                                               disabled=False,
-                                               marks=param.eco_reductions_options
-                                               ),
-                                    dmc.Text('(3c) Select sampling length (years):', style={'margin-top': 20}),
-                                    dmc.SegmentedControl(data=[{'label': d, 'value': str(d)} for d in param.eco_time_periods],
-                                                         id='time_period_eco',
-                                                         value='5',
-                                                         fullWidth=True,
-                                                         color=1,
-                                                         ),
-                                    # dmc.Text('(3c) Select sampling frequency (monitoring site power):', style={'margin-top': 20}),
-                                    # dmc.SegmentedControl(data=[{'label': v, 'value': str(k)} for k, v in freq_mapping.items()],
-                                    #                       id='freq_eco',
-                                    #                       value='12',
+                                    # html.Label('(3b) Select a percent improvement for the overall catchment:'),
+                                    # dmc.Slider(id='reductions_slider_eco',
+                                    #            value=30,
+                                    #            mb=35,
+                                    #            step=10,
+                                    #            min=10,
+                                    #            max=100,
+                                    #            showLabelOnHover=True,
+                                    #            disabled=False,
+                                    #            marks=param.eco_reductions_options
+                                    #            ),
+                                    # dmc.Text('(3c) Select sampling duration (years):', style={'margin-top': 20}),
+                                    # dmc.SegmentedControl(data=[{'label': d, 'value': str(d)} for d in param.eco_time_periods],
+                                    #                      id='time_period_eco',
+                                    #                      value='5',
+                                    #                      fullWidth=True,
+                                    #                      color=1,
+                                    #                      ),
+                                    # dmc.Text('(3d) Select the number of sites per catchment:', style={'margin-top': 20}),
+                                    # dmc.SegmentedControl(data=[{'label': k, 'value': str(k)} for k in param.eco_n_sites],
+                                    #                       id='n_sites_eco',
+                                    #                       value='10',
                                     #                       fullWidth=True,
                                     #                       color=1
                                     #                       ),
-                                    dmc.Text('(3d) Select the number of sites per catchment:', style={'margin-top': 20}),
-                                    dmc.SegmentedControl(data=[{'label': k, 'value': str(k)} for k in param.eco_n_sites],
-                                                          id='n_sites_eco',
-                                                          value='10',
-                                                          fullWidth=True,
-                                                          color=1
-                                                          ),
-                                    # html.Label('(3d) Change the percent of the reductions applied (100% is the max realistic reduction):', style={'margin-top': 20}),
-                                    # dmc.Slider(id='Reductions_slider',
-                                    #            value=100,
-                                    #            mb=35,
-                                    #            step=10,
-                                    #            # min=10,
-                                    #            showLabelOnHover=True,
-                                    #            disabled=False,
-                                    #            marks=marks
-                                    #            ),
-                                    # dcc.Dropdown(options=[{'label': d, 'value': d} for d in time_periods], id='time_period', clearable=False, value=5),
-                                    # html.Label('Select sampling frequency:'),
-                                    # dcc.Dropdown(options=[{'label': v, 'value': k} for k, v in freq_mapping.items()], id='freq', clearable=False, value=12),
 
                                     ],
                                     )
@@ -289,7 +267,7 @@ def layout():
                             #     },
                             # className='four columns', style={'margin': 10}
                             ),
-                        dcc.Markdown("""* The rivers colored with *Low*, *Moderate*, and *High* are the qualitative monitoring priorities as there  is too much uncertainty in estimating the powers per reach.""")]
+                        dcc.Markdown("""* The rivers colored with *Low*, *Moderate*, and *High* are the qualitative monitoring priorities as there is too much uncertainty in estimating the powers per reach.""")]
                         ),
                     dmc.Col(
                         span=4,
@@ -309,7 +287,7 @@ def layout():
                                     id='layers_eco'
                                     ),
                                 gc.colorbar_weights,
-                                dcc.Markdown(id="info_eco", className="info", style={"position": "absolute", "top": "10px", "right": "160px", "z-index": "1000"})
+                                # dcc.Markdown(id="info_eco", className="info", style={"position": "absolute", "top": "10px", "right": "160px", "z-index": "1000"})
                                 ],
                                 style={'width': '100%', 'height': param.map_height, 'margin': "auto", "display": "block"}
                                 ),
@@ -323,7 +301,7 @@ def layout():
             dcc.Store(id='catch_id_eco', data=''),
             dcc.Store(id='reaches_obj_eco', data=''),
             dcc.Store(id='reaches_weights_obj_eco', data=''),
-            dcc.Store(id='catch_power_obj_eco', data=''),
+            # dcc.Store(id='catch_power_obj_eco', data=''),
             dcc.Store(id='custom_reductions_obj_eco', data=''),
             dcc.Store(id='base_reductions_obj_eco', data=''),
             ]
@@ -463,7 +441,7 @@ def update_land_reductions(contents, filename, catch_id):
                 error_text = data[0]
                 data = None
             else:
-                error_text = 'Upload sucessful'
+                error_text = 'Upload successful'
     else:
         error_text = 'You need to select a catchment before uploading a file. Please refresh the page and start from step (1).'
 
@@ -496,10 +474,10 @@ def update_reach_reductions(click, base_reductions_obj, catch_id, reductions_obj
             text_out = 'Routing complete'
         elif catch_id != '':
             data = utils.set_default_eco_reach_weights(catch_id)
-            text_out = 'Please upload a polygon improvements file in step (2b)'
+            text_out = 'Please upload a Land Mitigation file in step (2b)'
         else:
             data = ''
-            text_out = 'Please select a catchment before proceding'
+            text_out = 'Please select a catchment before proceeding'
     else:
         if catch_id != '':
             # print('trigger')
@@ -507,7 +485,7 @@ def update_reach_reductions(click, base_reductions_obj, catch_id, reductions_obj
             text_out = ''
         else:
             data = ''
-            text_out = 'Please select a catchment before proceding'
+            text_out = 'Please select a catchment before proceeding'
 
     return data, text_out
 
@@ -515,18 +493,18 @@ def update_reach_reductions(click, base_reductions_obj, catch_id, reductions_obj
 @callback(
     Output('reaches_weights_obj_eco', 'data'),
     Input('reaches_obj_eco', 'data'),
-    Input('reductions_slider_eco', 'value'),
+    # Input('reductions_slider_eco', 'value'),
     Input('indicator_eco', 'value'),
     State('catch_id_eco', 'data'),
     prevent_initial_call=True
     )
-def update_reaches_obj(reaches_obj, reductions, indicator, catch_id):
+def update_reaches_obj(reaches_obj, indicator, catch_id):
     """
 
     """
-    if (reaches_obj != '') and (reaches_obj is not None) and isinstance(reductions, (str, int)) and isinstance(indicator, str) and (catch_id != ''):
+    if (reaches_obj != '') and (reaches_obj is not None) and isinstance(indicator, str) and (catch_id != ''):
         reach_weights0 = utils.decode_obj(reaches_obj)
-        reach_weights1 = reach_weights0.sel(reduction_perc=int(reductions), drop=True).rename({indicator: 'weights'}).load().copy()
+        reach_weights1 = reach_weights0.sel(reduction_perc=50, drop=True).rename({indicator: 'weights'}).load().copy()
         reach_weights0.close()
         del reach_weights0
 
@@ -536,28 +514,28 @@ def update_reaches_obj(reaches_obj, reductions, indicator, catch_id):
         raise dash.exceptions.PreventUpdate
 
 
-@callback(
-    Output('catch_power_obj_eco', 'data'),
-    [Input('reductions_slider_eco', 'value'), Input('indicator_eco', 'value'), Input('time_period_eco', 'value'), Input('n_sites_eco', 'value')],
-    [State('catch_id_eco', 'data')],
-    prevent_initial_call=True
-    )
-def update_catch_power_obj(reductions, indicator, n_years, n_sites, catch_id):
-    """
+# @callback(
+#     Output('catch_power_obj_eco', 'data'),
+#     [Input('reductions_slider_eco', 'value'), Input('indicator_eco', 'value'), Input('time_period_eco', 'value'), Input('n_sites_eco', 'value')],
+#     [State('catch_id_eco', 'data')],
+#     prevent_initial_call=True
+#     )
+# def update_catch_power_obj(reductions, indicator, n_years, n_sites, catch_id):
+#     """
 
-    """
-    if isinstance(reductions, (str, int)) and isinstance(n_years, str) and isinstance(indicator, str) and isinstance(n_sites, str) and (catch_id != ''):
-        n_samples = int(n_sites)*int(n_years)
+#     """
+#     if isinstance(reductions, (str, int)) and isinstance(n_years, str) and isinstance(indicator, str) and isinstance(n_sites, str) and (catch_id != ''):
+#         n_samples = int(n_sites)*int(n_years)
 
-        power_data = xr.open_dataset(param.eco_power_catch_path, engine='h5netcdf')
-        power_data1 = int(power_data.sel(nzsegment=int(catch_id), indicator=indicator, n_samples=n_samples, conc_perc=100-int(reductions), drop=True).power.values)
-        power_data.close()
-        del power_data
+#         power_data = xr.open_dataset(param.eco_power_catch_path, engine='h5netcdf')
+#         power_data1 = int(power_data.sel(nzsegment=int(catch_id), indicator=indicator, n_samples=n_samples, conc_perc=100-int(reductions), drop=True).power.values)
+#         power_data.close()
+#         del power_data
 
-        data = str(power_data1)
-        return data
-    else:
-        raise dash.exceptions.PreventUpdate
+#         data = str(power_data1)
+#         return data
+#     else:
+#         raise dash.exceptions.PreventUpdate
 
 
 @callback(
@@ -576,7 +554,7 @@ def update_reach_hideout(reaches_obj):
         ## Modelled
         values = props.weights.values
         bins_weights = np.quantile(values, [0, 0.50, 0.75, 1])
-        bins_weights[-1] += 0.01
+        bins_weights += bins_weights_plus
         color_arr = pd.cut(values, bins_weights, labels=param.colorscale_weights, right=False).tolist()
 
         hideout_model = {'colorscale': color_arr, 'classes': props.nzsegment.values.astype(int), 'style': param.style_power, 'colorProp': 'nzsegment'}
@@ -589,33 +567,33 @@ def update_reach_hideout(reaches_obj):
     return hideout_model, options
 
 
-@callback(
-    Output("info_eco", "children"),
-    [
-      Input('catch_power_obj_eco', 'data'),
-      ],
-    [State("info_eco", "children"),
-     State('n_sites_eco', 'value')
-     ]
-    )
-def update_map_info(catch_power_obj, old_info, n_sites):
-    """
+# @callback(
+#     Output("info_eco", "children"),
+#     [
+#       Input('catch_power_obj_eco', 'data'),
+#       ],
+#     [State("info_eco", "children"),
+#      State('n_sites_eco', 'value')
+#      ]
+#     )
+# def update_map_info(catch_power_obj, old_info, n_sites):
+#     """
 
-    """
-    info = """"""
+#     """
+#     info = """"""
 
-    if (catch_power_obj != '') and (catch_power_obj is not None):
+#     if (catch_power_obj != '') and (catch_power_obj is not None):
 
-        catch_power = int(catch_power_obj)
+#         catch_power = int(catch_power_obj)
 
-        info += """##### Catchment:
+#         info += """##### Catchment:
 
-            \n\n**Likelihood of observing an improvement (power)**: {power}%\n\n**Number of sites**: {n_sites}\n\n""".format(power = catch_power, n_sites=n_sites)
+#             \n\n**Likelihood of observing an improvement (power)**: {power}%\n\n**Number of sites**: {n_sites}\n\n""".format(power = catch_power, n_sites=n_sites)
 
-    if info == """""":
-        info = old_info
+#     if info == """""":
+#         info = old_info
 
-    return info
+#     return info
 
 
 # @callback(

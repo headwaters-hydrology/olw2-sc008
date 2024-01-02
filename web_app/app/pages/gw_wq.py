@@ -20,6 +20,7 @@ import base64
 import geobuf
 import booklet
 from dash_iconify import DashIconify
+import hdf5plugin
 
 # from .app import app
 
@@ -96,7 +97,7 @@ def layout():
                 children=[
                     dmc.Col(
                         span=3,
-                        children=dmc.Accordion(
+                        children=[dmc.Accordion(
                             value="1",
                             chevronPosition='left',
                             children=[
@@ -115,7 +116,7 @@ def layout():
                                 ),
 
                             dmc.AccordionItem([
-                                dmc.AccordionControl('(2) Define Indicator and an improvement', style={'font-size': 18}),
+                                dmc.AccordionControl('(2) Select Indicator and an improvement', style={'font-size': 18}),
                                 dmc.AccordionPanel([
                                     dmc.Text('(2a) Select Indicator:'),
                                     dcc.Dropdown(options=indicators, id='indicator_gw', optionHeight=40, clearable=False, style={'margin-bottom': 20}),
@@ -142,35 +143,51 @@ def layout():
                             dmc.AccordionItem([
                                 dmc.AccordionControl('(3) Query Options', style={'font-size': 18}),
                                 dmc.AccordionPanel([
-                                    dmc.Group(
-                                        [dmc.Text('(3b) Select sampling length (years):', color="black"),
-                                        dmc.HoverCard(
-                                            withArrow=True,
-                                            width=300,
-                                            shadow="md",
-                                            children=[
-                                                dmc.HoverCardTarget(DashIconify(icon="material-symbols:help", width=30)),
-                                                dmc.HoverCardDropdown(
-                                                    dmc.Text(
-                                                        """
-                                                        The power results for groundwater only apply after the groundwater lag times of the upgradient improvements. Any improvements performed upgradient of the wells will take time to reach the wells. Click on a well to see the estimated mean residence time.
-                                                        """,
-                                                        size="sm",
-                                                    )
-                                                ),
-                                            ],
-                                        ),
+                                    dmc.HoverCard(
+                                        withArrow=True,
+                                        width=param.hovercard_width,
+                                        shadow="md",
+                                        openDelay=param.hovercard_open_delay,
+                                        children=[
+                                            dmc.HoverCardTarget(html.Label('(3a) Select sampling duration (years) (❓):', style={'margin-top': 20})),
+                                            dmc.HoverCardDropdown(
+                                                dmc.Text(
+                                                    """
+                                                    The power results for groundwater do not include the impacts of groundwater travel processes (e.g. lag between the source and receptor). Any improvements performed upgradient of the wells will take time to reach the wells. The map therefore shows the maximum possible detection power, which will often be an overestimate.
+                                                    """,
+                                                    size="sm",
+                                                )
+                                            ),
                                         ],
-                                        style={'margin-top': 20}
                                     ),
-                                    # dmc.Text('(3b) Select sampling length (years):', style={'margin-top': 20}),
+                                    # dmc.Group(
+                                    #     [dmc.Text('(3a) Select sampling duration (years):', color="black"),
+                                    #     dmc.HoverCard(
+                                    #         withArrow=True,
+                                    #         width=param.hovercard_width,
+                                    #         shadow="md",
+                                    #         children=[
+                                    #             dmc.HoverCardTarget(DashIconify(icon="material-symbols:help", width=30)),
+                                    #             dmc.HoverCardDropdown(
+                                    #                 dmc.Text(
+                                    #                     """
+                                    #                     The power results for groundwater only apply after the groundwater lag times of the upgradient improvements. Any improvements performed upgradient of the wells will take time to reach the wells. Click on a well to see the estimated mean residence time.
+                                    #                     """,
+                                    #                     size="sm",
+                                    #                 )
+                                    #             ),
+                                    #         ],
+                                    #     ),
+                                    #     ],
+                                    #     style={'margin-top': 20}
+                                    # ),
                                     dmc.SegmentedControl(data=[{'label': d, 'value': str(d)} for d in param.gw_time_periods],
                                                          id='time_period_gw',
                                                          value='5',
                                                          fullWidth=True,
                                                          color=1,
                                                          ),
-                                    dmc.Text('(3c) Select sampling frequency:', style={'margin-top': 20}),
+                                    dmc.Text('(3b) Select sampling frequency:', style={'margin-top': 20}),
                                     dmc.SegmentedControl(data=[{'label': v, 'value': str(k)} for k, v in param.gw_freq_mapping.items()],
                                                          id='freq_gw',
                                                          value='12',
@@ -186,7 +203,7 @@ def layout():
                             dmc.AccordionItem([
                                 dmc.AccordionControl('(4) Download Results', style={'font-size': 18}),
                                 dmc.AccordionPanel([
-                                    dmc.Text('(4a) Download power results given the prior query options (csv):'),
+                                    dmc.Text('(4a) Download power results given the prior query options (CSV):'),
                                     dcc.Loading(
                                     type="default",
                                     children=[html.Div(dmc.Button("Download power results", id='dl_btn_power_gw'), style={'margin-bottom': 20, 'margin-top': 10}),
@@ -204,7 +221,14 @@ def layout():
                             #     'padding': 0
                             #     },
                             # className='four columns', style={'margin': 10}
-                            )
+                            ),
+                            dcc.Markdown("""The interactive map provides a screening assessment of nitrate concentration change detection power potential and can be used to identify:
+
+- Sites with low detection power potential (<80% = unlikely to be useful for nitrate loss mitigation effectiveness determination); and
+- Sites with high detection power potential (≥80% = may be useful for mitigation effectiveness determination, subject to further assessment).
+
+If the detection power is shown to be ≥80%, further assessment of detection power should be undertaken as per the *Mitigation Effectiveness Monitoring Design: Water quality monitoring for management of diffuse nitrate pollution* document. """, style={'font-size': 14, 'margin-top': 10})
+                            ]
                         ),
                     dmc.Col(
                         span=4,
@@ -218,7 +242,6 @@ def layout():
                                     dl.BaseLayer(dl.TileLayer(url='https://{s}.tile.opentopomap.org/{z}/{x}/{y}.png', attribution='Map data: © OpenStreetMap contributors, SRTM | Map style: © OpenTopoMap (CC-BY-SA)', opacity=0.6), checked=False, name='OpenTopoMap'),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(url=str(param.rc_bounds_gbuf), format="geobuf", id='rc_map', zoomToBoundsOnClick=True, options=dict(style=rc_style_handle),  hideout={})), name='Regional Councils', checked=True),
                                     dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='gw_points', zoomToBounds=True, zoomToBoundsOnClick=True, cluster=False, options=dict(pointToLayer=gw_points_style_handle), hideout=param.gw_points_hideout)), name='GW wells', checked=True),
-                                    # dl.Overlay(dl.LayerGroup(dl.GeoJSON(data='', format="geobuf", id='sites_points_gw', options=dict(pointToLayer=sites_points_handle), hideout=rivers_points_hideout)), name='Monitoring sites', checked=True),
                                     ],
                                     id='layers_gw'
                                     ),
@@ -356,10 +379,6 @@ def update_map_info_gw(powers_obj, reductions, feature, gw_points_encode):
 
     """
     info = """"""
-    # info_str = """\n\n**Reduction**: {red}%\n\n**Likelihood of observing a reduction (power)**: {t_stat}%\n\n**Well Depth (m)**: {depth:.1f}\n\n**mean residence time (years)**: {lag}"""
-
-    # if (reductions_obj != '') and (reductions_obj is not None) and ('reductions_poly' in map_checkboxes):
-    #     info = info + """\n\nHover over the polygons to see reduction %"""
 
     if isinstance(reductions, int) and (powers_obj != '') and (powers_obj is not None):
         if feature is not None:
@@ -371,11 +390,11 @@ def update_map_info_gw(powers_obj, reductions, feature, gw_points_encode):
                 # print(feature['properties']['lag_at_site'])
 
                 if feature['properties']['lag_at_site'] is None:
-                    info_str = """\n\n**Improvement**: {red}%\n\n**Likelihood of observing an improvement (power)**: {t_stat}%\n\n**Well Depth (m)**: {depth:.1f}\n\n**Mean residence time (MRT) at well (years)**: NA\n\n**MRT at nearest well**: {lag_median} years within a distance of {lag_dist:,} m"""
-                    info2 = info_str.format(red=int(reductions), t_stat=int(props[props.ref==feature['id']].iloc[0]['power']), depth=feature['properties']['depth'], lag_median=feature['properties']['lag_median'], lag_dist=feature['properties']['lag_dist'])
+                    info_str = """\n\n**User-defined improvement**: {red}%\n\n**Likelihood of observing the improvement (power)**: {t_stat}%\n\n**Well Depth (m)**: {depth:.1f}\n\n**Mean residence time (MRT) at well (years)**: NA\n\n**MRT within {lag_dist:.1f} km at {depth_min} - {depth_max} m depth**:\n\n&nbsp;&nbsp;&nbsp;&nbsp; **Min - Median - Max**: {lag_min} - {lag_median} - {lag_max} years"""
+                    info2 = info_str.format(red=int(reductions), t_stat=int(props[props.ref==feature['id']].iloc[0]['power']), depth=feature['properties']['depth'], lag_median=feature['properties']['lag_median'], lag_dist=feature['properties']['lag_dist']*0.001, depth_min=feature['properties']['depth_min'], depth_max=feature['properties']['depth_max'], lag_min=feature['properties']['lag_min'], lag_max=feature['properties']['lag_max'])
                 else:
                     site_lag = str(int(feature['properties']['lag_at_site']))
-                    info_str = """\n\n**Improvement**: {red}%\n\n**Likelihood of observing an improvement (power)**: {t_stat}%\n\n**Well Depth (m)**: {depth:.1f}\n\n**Mean residence time (MRT) at well (years)**: {site_lag}"""
+                    info_str = """\n\n**User-defined improvement**: {red}%\n\n**Likelihood of observing the improvement (power)**: {t_stat}%\n\n**Well Depth (m)**: {depth:.1f}\n\n**Mean residence time (MRT) at well (years)**: {site_lag}"""
                     info2 = info_str.format(red=int(reductions), t_stat=int(props[props.ref==feature['id']].iloc[0]['power']), depth=feature['properties']['depth'], site_lag=site_lag)
 
                 info = info2

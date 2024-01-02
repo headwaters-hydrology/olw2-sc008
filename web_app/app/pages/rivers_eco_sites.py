@@ -146,12 +146,15 @@ def layout():
                                 ),
 
                             dmc.AccordionItem([
-                                dmc.AccordionControl('(2) Define Indicator and improvements by site', style={'font-size': 18}),
+                                dmc.AccordionControl('(2) Select indicator and specify improvements by site', style={'font-size': 18}),
                                 dmc.AccordionPanel([
                                     dmc.Text('(2a) Select Indicator:'),
                                     dcc.Dropdown(options=[{'label': param.eco_indicator_dict[d], 'value': d} for d in indicators], id='indicator_eco_sites', optionHeight=40, clearable=False, style={'margin-bottom': 20}),
                                     html.Label('(2b) Type in a percent improvement by site under the "improvement %" column then press enter to confirm:'),
-                                    dash_table.DataTable(data=[], columns=[{'name': n, 'id': n, 'editable': (n == 'improvement %')} for n in ['site name', 'improvement %']], id='tbl_eco_sites', style_cell={'font-size': 11}, style_header_conditional=[{
+                                    dash_table.DataTable(data=[], style_data={
+        'whiteSpace': 'normal',
+        'height': 'auto',
+    }, columns=[{'name': n, 'id': n, 'editable': (n == 'improvement %')} for n in ['site name', 'improvement %']], id='tbl_eco_sites', style_cell={'font-size': 11}, style_header_conditional=[{
         'if': {'column_id': 'improvement %'},
         'font-weight': 'bold'
     }]),
@@ -177,7 +180,7 @@ def layout():
                             dmc.AccordionItem([
                                 dmc.AccordionControl('(3) Query Options', style={'font-size': 18}),
                                 dmc.AccordionPanel([
-                                    dmc.Text('(3a) Select sampling length (years):', style={'margin-top': 20}),
+                                    dmc.Text('(3a) Select sampling duration (years):', style={'margin-top': 20}),
                                     dmc.SegmentedControl(data=[{'label': d, 'value': str(d)} for d in param.eco_time_periods],
                                                          id='time_period_eco_sites',
                                                          value='5',
@@ -386,7 +389,13 @@ def update_monitor_sites(catch_id):
 
         features = geobuf.decode(sites)['features']
         if features:
-            tbl_data = [{'site name': f['id'], 'nzsegment': f['properties']['nzsegment'], 'improvement %': 25} for f in features]
+            tbl_data = []
+            for f in features:
+                name = f['id']
+                nzsegment = f['properties']['nzsegment']
+                # if len(name) > 40:
+                #     name = name[:40] + '...'
+                tbl_data.append({'site name': name, 'nzsegment': nzsegment, 'improvement %': 25})
         else:
             tbl_data = []
 
@@ -395,7 +404,6 @@ def update_monitor_sites(catch_id):
         tbl_data = []
 
     return points_data, tbl_data
-
 
 
 @callback(
@@ -504,10 +512,7 @@ def update_map_info(sites_powers_obj, sites_feature, old_info):
 
             info += """##### Monitoring Site:
 
-                \n\n**nzsegment**: {seg}\n\n**Site name**: {site}\n\n**Improvement %**: {conc}\n\n**Likelihood of observing an improvement (power)**: {t_stat}""".format(t_stat=power, conc=red, seg=feature_id, site=sites_feature['id'])
-
-    # if info == """""":
-    #     info = old_info
+                \n\n**nzsegment**: {seg}\n\n**Site name**: {site}\n\n**User-defined improvement %**: {conc}\n\n**Likelihood of observing the improvement (power)**: {t_stat}""".format(t_stat=power, conc=red, seg=feature_id, site=sites_feature['id'])
 
     return info
 
@@ -520,18 +525,26 @@ def update_map_info(sites_powers_obj, sites_feature, old_info):
     State('indicator_eco_sites', 'value'),
     State('time_period_eco_sites', 'value'),
     State('freq_eco_sites', 'value'),
+    State('tbl_eco_sites', 'data'),
     prevent_initial_call=True,
     )
-def download_power(n_clicks, catch_id, powers_obj, indicator, n_years, n_samples_year):
+def download_power(n_clicks, catch_id, powers_obj, indicator, n_years, n_samples_year, tbl_data):
 
     if (catch_id != '') and (powers_obj != '') and (powers_obj is not None) and isinstance(n_samples_year, str):
         power_data = utils.decode_obj(powers_obj)
 
         df1 = pd.DataFrame.from_dict(power_data)
+
+        if tbl_data:
+            sites_tbl_df = pd.DataFrame(tbl_data).drop('improvement %', axis=1)
+            df1 = pd.merge(sites_tbl_df, df1, on='nzsegment')
+
         df1['improvement'] = 100 - df1['conc_perc']
         df1['indicator'] = param.eco_indicator_dict[indicator]
         df1['n_years'] = n_years
         df1['n_samples_per_year'] = n_samples_year
+
+        df1.loc[df1.power < 0, 'power'] = 'NA'
 
         df2 = df1.drop('conc_perc', axis=1).set_index(['nzsegment', 'improvement', 'indicator', 'n_years', 'n_samples_per_year']).sort_index()
 

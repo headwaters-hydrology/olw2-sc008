@@ -77,10 +77,17 @@ lcdb_reductions = {'nitrogen': {
                    }
 
 
-snb_reductions = {'sediment': 30,
+# snb_reductions = {'sediment': 30,
+#                   'e.coli': 35
+#                   }
+# dairy_reductions = {'sediment': 65,
+#                   'e.coli': 75
+#                   }
+
+snb_reductions = {
                   'e.coli': 35
                   }
-dairy_reductions = {'sediment': 65,
+dairy_reductions = {
                   'e.coli': 75
                   }
 
@@ -109,7 +116,10 @@ def land_cover_reductions():
     nitrate1 = snb1['Nitrogen'].copy()
     nitrate2 = ((1 - (nitrate1['2035 potential load (kg)'] / nitrate1['2015 current load (kg)'])) * 100).round().astype('int8')
     nitrate2.name = 'nitrogen'
-    snb2 = pd.concat([snb1['typology']['typology'], phos2, nitrate2], axis=1)
+    sed1 = snb1['Sediment'].copy()
+    sed2 = ((1 - (sed1['2035 potential load (t)'] / sed1['2015 current load (t)'])) * 100).round().astype('int8')
+    sed2.name = 'sediment'
+    snb2 = pd.concat([snb1['typology']['typology'], phos2, nitrate2, sed2], axis=1)
     snb2['typology'] = snb2.typology.str.title()
     snb2['typology'] = snb2['typology'].str.replace('Bop', 'BoP')
     for col, red in snb_reductions.items():
@@ -141,7 +151,10 @@ def land_cover_reductions():
     nitrate1 = dairy1['Nitrogen'].copy()
     nitrate2 = ((1 - (nitrate1['2035 potential load (kg)'] / nitrate1['2015 current load (kg)'])) * 100).round().astype('int8')
     nitrate2.name = 'nitrogen'
-    dairy2 = pd.concat([dairy1['typology'], phos2, nitrate2], axis=1)
+    sed1 = dairy1['Sediment'].copy()
+    sed2 = ((1 - (sed1['2035 potential load (t)'] / sed1['2015 current load (t)'])) * 100).round().astype('int8')
+    sed2.name = 'sediment'
+    dairy2 = pd.concat([dairy1['typology'], phos2, nitrate2, sed2], axis=1)
     dairy2 = dairy2.replace({'Wetness': {'Irrig': 'Irrigated'},
                              'Slope': {'Mod': 'Moderate',
                                        'Flat': 'Low'}})
@@ -186,7 +199,7 @@ def land_cover_reductions():
 
     train_features = dairy2[features_cols].astype('category').copy()
 
-    for param in ['phosphorus', 'nitrogen']:
+    for param in ['phosphorus', 'nitrogen', 'sediment']:
         model = GradientBoostingRegressor(loss='absolute_error')
 
         train_targets = dairy2[param].copy()
@@ -209,9 +222,6 @@ def land_cover_reductions():
 
     combo1 = pd.concat([snb3, dairy4]).reset_index(drop=True)
 
-    # for param, col in param_mapping.items():
-    #     combo1[param] = combo1[col].copy()
-
     # combo2 = combo1.drop(set(param_mapping.values()), axis=1)
     combo2 = combo1.rename(columns={'nitrogen': 'total nitrogen', 'phosphorus': 'total phosphorus', 'sediment': 'suspended sediment'})
 
@@ -233,9 +243,6 @@ def land_cover_reductions():
     lcdb_red = pd.concat(lcdb_red_list, axis=1).reset_index()
 
     lcdb1 = lcdb0.merge(lcdb_red, on='typology').reset_index(drop=True)
-
-    # for param, col in param_mapping.items():
-    #     lcdb1[param] = lcdb1[col].copy()
 
     # lcdb2 = lcdb1.drop(set(param_mapping.values()), axis=1)
     lcdb2 = lcdb1.rename(columns={'nitrogen': 'total nitrogen', 'phosphorus': 'total phosphorus', 'sediment': 'suspended sediment'})

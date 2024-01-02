@@ -19,6 +19,8 @@ import numpy as np
 import base64
 import booklet
 import hdf5plugin
+import geobuf
+from dash_iconify import DashIconify
 
 # from .utils import parameters as param
 # from . import utils
@@ -100,6 +102,7 @@ with booklet.open(param.rivers_reach_gbuf_path, 'r') as f:
 
 catches.sort()
 indicators = list(param.rivers_indicator_dict.keys())
+indicators.remove('NH')
 indicators.sort()
 
 ###############################################
@@ -159,20 +162,19 @@ def layout():
                                 ),
 
                             dmc.AccordionItem([
-                                # html.H5('Optional (2) Customise Reductions Layer', style={'font-weight': 'bold', 'margin-top': 20}),
-                                dmc.AccordionControl('(2 - Optional) Customise Improvements Layer', style={'font-size': 18}),
+                                dmc.AccordionControl('(2 - Optional) Customise the Land Mitigation Layer', style={'font-size': 18}),
                                 dmc.AccordionPanel([
-                                    html.Label('(2a) Download improvements polygons as GPKG:'),
+                                    html.Label('(2a) Download default Land Mitigation Layer as GPKG:'),
                                     dcc.Loading(
                                     id="loading-2",
                                     type="default",
-                                    children=[dmc.Anchor(dmc.Button('Download land cover'), href='', id='dl_poly', style={'margin-top': 10})],
+                                    children=[dmc.Anchor(dmc.Button('Download default layer'), href='', id='dl_poly', style={'margin-top': 10})],
                                     ),
                                     html.Label('NOTE: Only modify existing values. Do not add additional columns; they will be ignored.', style={
                                         'margin-top': 10
                                     }
                                         ),
-                                    html.Label('(2b) Upload modified improvements polygons as GPKG:', style={
+                                    html.Label('(2b) Upload modified Land Mitigation Layer as GPKG:', style={
                                         'margin-top': 20
                                     }
                                         ),
@@ -180,24 +182,20 @@ def layout():
                                         children=[
                                             dcc.Upload(
                                                 id='upload_data_rivers',
-                                                children=dmc.Button('Upload improvements',
-                                                                     # className="me-1"
-                                                                      # style={
-                                                                      #     'width': '50%',
-                                                                      #     }
+                                                children=dmc.Button('Upload modified layer',
                                                 ),
                                                 style={
                                                     'margin-top': 10
                                                 },
                                                 multiple=False
                                             ),
+                                            dcc.Markdown('', style={
+                                                'margin-top': 10,
+                                                'textAlign': 'left',
+                                                            }, id='upload_error_text'),
                                             ]
                                         ),
-                                    dcc.Markdown('', style={
-                                        'margin-top': 10,
-                                        'textAlign': 'left',
-                                                    }, id='upload_error_text'),
-                                    html.Label('(2c) Process the improvements layer and route the improvements downstream:', style={
+                                    html.Label('(2c) Process the modified Land Mitigation Layer and route the improvements downstream:', style={
                                         'margin-top': 20
                                     }
                                         ),
@@ -205,7 +203,6 @@ def layout():
                                     id="loading-1",
                                     type="default",
                                     children=html.Div([dmc.Button('Process improvements', id='process_reductions_rivers',
-                                                                  # className="me-1",
                                                                   n_clicks=0),
                                                         html.Div(id='process_text', style={'margin-top': 10})],
                                                       style={'margin-top': 10, 'margin-bottom': 10}
@@ -222,7 +219,7 @@ def layout():
                                 dmc.AccordionPanel([
                                     dmc.Text('(3a) Select Indicator:'),
                                     dcc.Dropdown(options=[{'label': param.rivers_indicator_dict[d], 'value': d} for d in indicators], id='indicator_rivers', optionHeight=40, clearable=False),
-                                    dmc.Text('(3b) Select sampling length (years):', style={'margin-top': 20}),
+                                    dmc.Text('(3b) Select sampling duration (years):', style={'margin-top': 20}),
                                     dmc.SegmentedControl(data=[{'label': d, 'value': str(d)} for d in param.rivers_time_periods],
                                                          id='time_period',
                                                          value='5',
@@ -236,7 +233,45 @@ def layout():
                                                          fullWidth=True,
                                                          color=1
                                                          ),
-                                    html.Label('(3d) Change the percent of the improvements applied (100% is the max realistic improvement):', style={'margin-top': 20}),
+                                    dmc.HoverCard(
+                                        withArrow=True,
+                                        width=param.hovercard_width,
+                                        shadow="md",
+                                        openDelay=param.hovercard_open_delay,
+                                        children=[
+                                            dmc.HoverCardTarget(html.Label('(3d) Select the percentage of the maximum contaminant loss reductions applied (❓):', style={'margin-top': 20})),
+                                            dmc.HoverCardDropdown(
+                                                dmc.Text(
+                                                    """
+                                                    The percentage selected will be applied to the contaminant loss reductions specified in the (default or customised) Land Mitigation Layer across the entire catchment. E.g. if 50% is selected, the reductions in the Land Mitigation Layer will be halved; if 100% is selected the reductions will not be altered.
+                                                    """,
+                                                    size="sm",
+                                                )
+                                            ),
+                                        ],
+                                    ),
+                                    # dmc.Group([
+                                    #     html.Label('(3d) Select the percentage of the maximum contaminant loss reductions applied:'),
+                                    #     dmc.HoverCard(
+                                    #         withArrow=True,
+                                    #         width=param.hovercard_width,
+                                    #         shadow="md",
+                                    #         children=[
+                                    #             dmc.HoverCardTarget(DashIconify(icon="material-symbols:help", width=30)),
+                                    #             dmc.HoverCardDropdown(
+                                    #                 dmc.Text(
+                                    #                     """
+                                    #                     The percentage selected will be applied to the contaminant loss reductions specified in the (default or customised) Land Mitigation Layer across the entire catchment. E.g. if 50% is selected, the reductions in the Land Mitigation Layer will be halved; if 100% is selected the reductions will not be altered. Therefore, 0% represents no mitigation and 100% represents the maximum “mitigatable” contaminant loss reduction.
+                                    #                     """,
+                                    #                     size="sm",
+                                    #                 )
+                                    #             ),
+                                    #         ],
+                                    #     ),
+                                    #     ],
+                                    #     style={'margin-top': 20},
+                                    #     noWrap=True
+                                    # ),
                                     dmc.Slider(id='Reductions_slider',
                                                value=100,
                                                mb=35,
@@ -246,10 +281,6 @@ def layout():
                                                disabled=False,
                                                marks=param.marks
                                                ),
-                                    # dcc.Dropdown(options=[{'label': d, 'value': d} for d in time_periods], id='time_period', clearable=False, value=5),
-                                    # html.Label('Select sampling frequency:'),
-                                    # dcc.Dropdown(options=[{'label': v, 'value': k} for k, v in freq_mapping.items()], id='freq', clearable=False, value=12),
-
                                     ],
                                     )
                                 ],
@@ -317,6 +348,7 @@ def layout():
                     ),
             dcc.Store(id='catch_id', data=''),
             dcc.Store(id='powers_obj', data=''),
+            dcc.Store(id='sites_powers_obj', data=''),
             dcc.Store(id='reaches_obj', data=''),
             dcc.Store(id='custom_reductions_obj', data=''),
             dcc.Store(id='base_reductions_obj', data=''),
@@ -383,7 +415,7 @@ def update_reaches(catch_id):
         )
 def update_monitor_sites(catch_id):
     if catch_id != '':
-        with booklet.open(param.rivers_sites_path, 'r') as f:
+        with booklet.open(param.rivers_sites_3rd_path, 'r') as f:
             data = base64.b64encode(f[int(catch_id)]).decode()
 
     else:
@@ -455,7 +487,7 @@ def update_land_reductions(contents, filename, catch_id):
                 error_text = data[0]
                 data = None
             else:
-                error_text = 'Upload sucessful'
+                error_text = 'Upload successful'
     else:
         error_text = 'You need to select a catchment before uploading a file. Please refresh the page and start from step (1).'
 
@@ -476,7 +508,7 @@ def update_reach_reductions(click, base_reductions_obj, catch_id, reductions_obj
     trig = ctx.triggered_id
 
     if (trig == 'process_reductions_rivers'):
-        if (catch_id != '') and (reductions_obj != '') and (reductions_obj is not None):
+        if (catch_id != '') and (reductions_obj != ''):
             red1 = xr.open_dataset(param.rivers_reductions_model_path, engine='h5netcdf')
 
             with booklet.open(param.rivers_reach_mapping_path) as f:
@@ -504,10 +536,10 @@ def update_reach_reductions(click, base_reductions_obj, catch_id, reductions_obj
                 text_out = 'The improvements values are identical to the originals. Either skip this step, or modify the improvements values.'
         elif catch_id != '':
             data = utils.set_default_rivers_reach_reductions(catch_id)
-            text_out = 'Please upload a polygon improvements file in step (2b)'
+            text_out = 'Please upload a Land Mitigation file in step (2b)'
         else:
             data = ''
-            text_out = 'Please select a catchment before proceding'
+            text_out = 'Please select a catchment before proceeding'
     else:
         if catch_id != '':
             # print('trigger')
@@ -515,13 +547,14 @@ def update_reach_reductions(click, base_reductions_obj, catch_id, reductions_obj
             text_out = ''
         else:
             data = ''
-            text_out = 'Please select a catchment before proceding'
+            text_out = 'Please select a catchment before proceeding'
 
     return data, text_out
 
 
 @callback(
     Output('powers_obj', 'data'),
+    Output('sites_powers_obj', 'data'),
     [Input('reaches_obj', 'data'), Input('indicator_rivers', 'value'), Input('time_period', 'value'), Input('freq', 'value'), Input('Reductions_slider', 'value')],
     [State('catch_id', 'data')]
     )
@@ -548,37 +581,67 @@ def update_powers_data(reaches_obj, indicator, n_years, n_samples_year, prop_red
         power_data.close()
         del power_data
 
-        conc_perc = 100 - props.reduction
+        conc_perc = (100 - props.reduction).round().astype('int8')
 
-        if indicator in ['BD']:
-            conc_perc = (((conc_perc*0.01)**0.76) * 100).astype('int8')
+        # if indicator in ['BD']:
+        #     conc_perc = (((conc_perc*0.01)**0.76) * 100).astype('int8')
 
         new_powers = props.assign(power_modelled=(('nzsegment'), power_data1.sel(conc_perc=conc_perc).power.values.astype('int8')))
         new_powers['nzsegment'] = new_powers['nzsegment'].astype('int32')
         new_powers['reduction'] = new_powers['reduction'].astype('int8')
 
+        power_model_encoded = utils.encode_obj(new_powers)
+
         ## Monitored
-        # power_data = xr.open_dataset(param.rivers_power_moni_path, engine='h5netcdf')
-        # sites = power_data.nzsegment.values[power_data.nzsegment.isin(branches)].astype('int32')
-        # sites.sort()
-        # if len(sites) > 0:
-        #     conc_perc1 = conc_perc.sel(nzsegment=sites)
-        #     power_data1 = power_data.sel(indicator=indicator, nzsegment=sites, n_samples=n_samples, drop=True).copy().load().sortby('nzsegment')
-        #     power_data1 = power_data1.rename({'power': 'power_monitored'})
-        #     power_data.close()
-        #     del power_data
+        power_data = xr.open_dataset(param.rivers_power_moni_path, engine='h5netcdf')
 
-        #     power_data2 = power_data1.sel(conc_perc=conc_perc1).drop('conc_perc')
+        with booklet.open(param.rivers_sites_3rd_path, 'r') as f:
+            sites = f[int(catch_id)]
 
-        #     new_powers = utils.xr_concat([new_powers, power_data2])
-        # else:
-        #     new_powers = new_powers.assign(power_monitored=(('nzsegment'), xr.full_like(new_powers.reduction, np.nan, dtype='float32').values))
+        features = geobuf.decode(sites)['features']
 
-        data = utils.encode_obj(new_powers)
+        if len(features) > 0:
+            sites_data = {f1['properties']['nzsegment']: f1['id'] for f1 in features}
+
+            power_data1 = power_data.sel(indicator=indicator, n_samples=n_samples, drop=True).copy().load()
+            power_nzsegments = power_data1.nzsegment.values
+
+            segs = np.array(list(sites_data.keys()), dtype='int32')
+
+            # other_segs = segs[~np.isin(segs, conc_perc.nzsegment.values)]
+            # print(other_segs)
+
+            conc_perc1 = conc_perc.sel(nzsegment=segs)
+
+            power_data2 = []
+            for nzsegment, site_name in sites_data.items():
+                conc_perc1 = int(conc_perc.sel(nzsegment=nzsegment))
+                if nzsegment in power_nzsegments:
+                    try:
+                        power = int(power_data1.sel(conc_perc=conc_perc1, nzsegment=nzsegment).power.values)
+                    except ValueError:
+                        power = -1
+                else:
+                    power = -1
+                power_data2.append({'reduction': 100 - conc_perc1, 'nzsegment': nzsegment, 'power_monitored': power, 'site_name': site_name})
+
+            power_data.close()
+            del power_data
+
+            # print(power_data2)
+
+            power_moni_encoded = utils.encode_obj(power_data2)
+
+        else:
+            power_moni_encoded = ''
+
+        # power_moni_encoded = ''
+
     else:
-        data = ''
+        power_model_encoded = ''
+        power_moni_encoded = ''
 
-    return data
+    return power_model_encoded, power_moni_encoded
 
 
 # @callback(
@@ -600,95 +663,110 @@ def update_powers_data(reaches_obj, indicator, n_years, n_samples_year, prop_red
 @callback(
     Output('reach_map', 'hideout'),
     Output('reach_map', 'options'),
+    Output('sites_points', 'hideout'),
     Input('powers_obj', 'data'),
+    Input('sites_powers_obj', 'data'),
     prevent_initial_call=True
     )
-def update_hideout(powers_obj):
+def update_hideout(powers_obj, sites_powers_obj):
     """
 
     """
+    hideout_model = {}
+    options = dict(style=base_reach_style_handle)
+    hideout_moni = param.rivers_points_hideout
+
     if (powers_obj != '') and (powers_obj is not None):
         props = utils.decode_obj(powers_obj)
 
         ## Modelled
         color_arr = pd.cut(props.power_modelled.values, param.bins, labels=param.colorscale_power, right=False).tolist()
 
-        hideout_model = {'colorscale': color_arr, 'classes': props.nzsegment.values.tolist(), 'style': param.style_power, 'colorProp': 'nzsegment'}
+        hideout_model = {'colorscale': color_arr, 'classes': props.nzsegment.values, 'style': param.style_power, 'colorProp': 'nzsegment'}
         options = dict(style=reach_style_handle)
-    else:
-        hideout_model = {}
-        options = dict(style=base_reach_style_handle)
 
-    return hideout_model, options
+        del props
+
+        ## Monitored
+        if sites_powers_obj != '':
+            sites_props = utils.decode_obj(sites_powers_obj)
+            # print(props_moni)
+            color_arr2 = pd.cut([p['power_monitored'] for p in sites_props], param.bins, labels=param.colorscale_power, right=False).tolist()
+            color_arr2 = [color if isinstance(color, str) else '#252525' for color in color_arr2]
+            # print(color_arr2)
+
+            hideout_moni = {'classes': [p['nzsegment'] for p in sites_props], 'colorscale': color_arr2, 'circleOptions': dict(fillOpacity=1, stroke=True, color='black', weight=1, radius=param.site_point_radius), 'colorProp': 'nzsegment'}
+
+    return hideout_model, options, hideout_moni
 
 
 @callback(
     Output("info", "children"),
-    [Input('powers_obj', 'data'),
-      # Input('reductions_obj', 'data'),
-      # Input('map_checkboxes_rivers', 'value'),
-      Input("reach_map", "click_feature"),
-      Input('sites_points', 'click_feature')],
-    State("info", "children")
+    Input('powers_obj', 'data'),
+    Input('sites_powers_obj', 'data'),
+    Input("reach_map", "click_feature"),
+    Input('sites_points', 'click_feature'),
+    Input('catch_id', 'data'),
+    State("info", "children"),
+    prevent_initial_call=True
     )
-def update_map_info(powers_obj, reach_feature, sites_feature, old_info):
+def update_map_info(powers_obj, sites_powers_obj, reach_feature, sites_feature, catch_id, old_info):
     """
 
     """
-    # info = """###### Likelihood of observing a reduction (%)"""
     info = """"""
-
-    # if (reductions_obj != '') and (reductions_obj is not None) and ('reductions_poly' in map_checkboxes):
-    #     info = info + """\n\nHover over the polygons to see reduction %"""
 
     trig = ctx.triggered_id
     # print(trig)
 
-    if (powers_obj != '') and (powers_obj is not None):
+    if trig == 'catch_id':
+        pass
+
+    elif (trig == 'reach_map'):
 
         props = utils.decode_obj(powers_obj)
         # print(reach_feature)
         # print(sites_feature)
 
-        if (trig == 'reach_map'):
-            # print(reach_feature)
-            feature_id = int(reach_feature['id'])
+        feature_id = int(reach_feature['id'])
 
-            reach_data = props.sel(nzsegment=feature_id)
+        reach_data = props.sel(nzsegment=feature_id)
 
-            info_str = """\n\n**nzsegment**: {seg}\n\n**Improvement**: {red}%\n\n**Likelihood of observing an improvement (power)**: {t_stat}%""".format(red=int(reach_data.reduction), t_stat=int(reach_data.power_modelled), seg=feature_id)
+        info_str = """\n\n**nzsegment**: {seg}\n\n**Predicted improvement**: {red}%\n\n**Likelihood of observing the improvement (power)**: {t_stat}%""".format(red=int(reach_data.reduction), t_stat=int(reach_data.power_modelled), seg=feature_id)
 
-            info += info_str
-        # elif (trig == 'sites_points'):
-        #     feature_id = int(sites_feature['properties']['nzsegment'])
-        #     # print(sites_feature)
+        info = info_str
 
-        #     reach_data = props.sel(nzsegment=feature_id)
+    elif (trig == 'sites_points') or ((sites_powers_obj != '') and (sites_feature is not None) and ('Site name' in old_info)):
+        if (sites_powers_obj != ''):
+            sites_props = utils.decode_obj(sites_powers_obj)
+            feature_id = int(sites_feature['properties']['nzsegment'])
+            # print(sites_feature)
 
-        #     info_str = """\n\n**nzsegment**: {seg}\n\n**Site name**: {site}\n\n**Improvement**: {red}%\n\n**Likelihood of observing an improvement (power)**: {t_stat}%""".format(red=int(reach_data.reduction), t_stat=int(reach_data.power_monitored), seg=feature_id, site=sites_feature['id'])
+            reach_data = [p for p in sites_props if p['nzsegment'] == feature_id]
+            if reach_data:
+                reach_data0 = reach_data[0]
+                power = reach_data0['power_monitored']
+                if power == -1:
+                    power = 'NA'
+                else:
+                    power = str(power) + '%'
 
-        #     info += info_str
-        else:
-            # if 'Site name' in old_info:
-            #     feature_id = int(sites_feature['properties']['nzsegment'])
-            #     reach_data = props.sel(nzsegment=feature_id)
+                reduction = reach_data0['reduction']
+                site_name = reach_data0['site_name']
 
-            #     info_str = """\n\n**nzsegment**: {seg}\n\n**Site name**: {site}\n\n**Improvement**: {red}%\n\n**Likelihood of observing an improvement (power)**: {t_stat}%""".format(red=int(reach_data.reduction), t_stat=int(reach_data.power_monitored), seg=feature_id, site=sites_feature['id'])
+                info_str = """\n\n**nzsegment**: {seg}\n\n**Site name**: {site}\n\n**Predicted improvement**: {red}%\n\n**Likelihood of detecting the improvement (power)**: {power}""".format(red=reduction, power=power, seg=feature_id, site=site_name)
 
-            #     info += info_str
-            if 'nzsegment' in old_info:
-                feature_id = int(reach_feature['id'])
-                reach_data = props.sel(nzsegment=feature_id)
+                info = info_str
 
-                info_str = """\n\n**nzsegment**: {seg}\n\n**Improvement**: {red}%\n\n**Likelihood of observing an improvement (power)**: {t_stat}%""".format(red=int(reach_data.reduction), t_stat=int(reach_data.power_modelled), seg=feature_id)
+    elif (trig == 'powers_obj') and (powers_obj != '') and (reach_feature is not None) and ('nzsegment' in old_info):
+        # print(reach_feature)
+        props = utils.decode_obj(powers_obj)
+        feature_id = int(reach_feature['id'])
+        reach_data = props.sel(nzsegment=feature_id)
 
-                info += info_str
-            else:
-                info += """\n\nClick on a reach to see info"""
+        info_str = """\n\n**nzsegment**: {seg}\n\n**Predicted improvement**: {red}%\n\n**Likelihood of detecting the improvement (power)**: {t_stat}%""".format(red=int(reach_data.reduction), t_stat=int(reach_data.power_modelled), seg=feature_id)
 
-
-        # else:
-        #     info = old_info
+        info = info_str
 
     return info
 
@@ -698,12 +776,13 @@ def update_map_info(powers_obj, reach_feature, sites_feature, old_info):
     Input("dl_btn_power_rivers", "n_clicks"),
     State('catch_id', 'data'),
     State('powers_obj', 'data'),
+    State('sites_powers_obj', 'data'),
     State('indicator_rivers', 'value'),
     State('time_period', 'value'),
     State('freq', 'value'),
     prevent_initial_call=True,
     )
-def download_power(n_clicks, catch_id, powers_obj, indicator, n_years, n_samples_year):
+def download_power(n_clicks, catch_id, powers_obj, sites_powers_obj, indicator, n_years, n_samples_year):
 
     if (catch_id != '') and (powers_obj != '') and (powers_obj is not None):
         power_data = utils.decode_obj(powers_obj)
@@ -713,6 +792,43 @@ def download_power(n_clicks, catch_id, powers_obj, indicator, n_years, n_samples
         df1['n_years'] = n_years
         df1['n_samples_per_year'] = n_samples_year
 
+        if sites_powers_obj != '':
+            sites_power_data = utils.decode_obj(sites_powers_obj)
+            sites_df = pd.DataFrame.from_dict(sites_power_data)
+            sites_df.loc[sites_df.power_monitored < 0, 'power_monitored'] = np.nan
+            # sites_df['indicator'] = param.rivers_indicator_dict[indicator]
+            df1 = pd.merge(df1, sites_df.drop('reduction', axis=1), on=['nzsegment'], how='left')
+
         df2 = df1.set_index(['indicator', 'n_years', 'n_samples_per_year', 'nzsegment']).sort_index()
 
         return dcc.send_data_frame(df2.to_csv, f"river_power_{catch_id}.csv")
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
