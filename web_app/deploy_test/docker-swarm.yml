@@ -12,7 +12,7 @@ volumes:
 
 services:
   assets:
-    image: mullenkamp/olw-monitoring-app-assets:1.23
+    image: mullenkamp/olw-monitoring-app-assets:1.25
     volumes:
       - olw-assets:/app/assets
     networks:
@@ -26,7 +26,7 @@ services:
           - node.labels.function == web_server
 
   dash:
-    image: mullenkamp/olw-monitoring-app:3.14
+    image: mullenkamp/olw-monitoring-app:3.17
     volumes:
       - olw-assets:/app/assets
     networks:
