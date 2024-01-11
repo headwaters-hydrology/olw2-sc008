@@ -27,25 +27,24 @@ import tempfile
 ##############################################
 ### Parameters
 
-# base_path = '/media/nvme1/data/OLW/web_app'
-base_path = '/home/mike/data/OLW/web_app'
-# %cd '/home/mike/data/OLW/web_app'
+script_path = pathlib.Path(os.path.realpath(os.path.dirname(__file__)))
 
-base_path = pathlib.Path(base_path)
+base_path = script_path.parent.joinpath('data')
 
-rec_rivers_feather = '/home/mike/data/NIWA/REC25_rivers/rec25_rivers_clean.feather'
-rec_catch_feather = '/home/mike/data/NIWA/REC25_watersheds/rec25_watersheds_clean.feather'
+# rec_rivers_feather = '/home/mike/data/NIWA/REC25_rivers/rec25_rivers_clean.feather'
+# rec_catch_feather = '/home/mike/data/NIWA/REC25_watersheds/rec25_watersheds_clean.feather'
 
-rc_bounds_gpkg = '/home/mike/data/statsnz/regional-council-2023-clipped-generalised.gpkg'
+rc_bounds_gpkg = base_path.joinpath('statsnz/regional-council-2023-clipped-generalised.gpkg')
 
-nzrec_data_path = '/home/mike/git/nzrec/data'
+nzrec_data_path = base_path.joinpath('nzrec')
+rec_rivers_feather = nzrec_data_path.joinpath('rec25_rivers_clean.feather')
 
 segment_id_col = 'nzsegment'
 
 output_path = base_path.joinpath('output')
 output_path.mkdir(parents=True, exist_ok=True)
 
-assets_path = output_path.joinpath('assets')
+assets_path = base_path.parent.joinpath('web_app/app/assets/')
 assets_path.mkdir(parents=True, exist_ok=True)
 
 indicators_mapping = {'rivers': {'Visual Clarity': 'suspended sediment', 'E.coli': 'e.coli', 'Dissolved reactive phosphorus': 'total phosphorus', 'Nitrate nitrogen': 'total nitrogen', 'Total nitrogen': 'total nitrogen', 'Total phosphorus': 'total phosphorus'},
@@ -105,27 +104,29 @@ lc_red_csv_path = lc_base_path.joinpath('typology_reductions.csv')
 lc_special_layers_path = lc_base_path.joinpath('special_layers')
 
 ### Rivers
-sites_loc_csv = base_path.joinpath('olw_river_sites_locations.csv')
-sites_rec_csv = base_path.joinpath('lawa_to_nzsegment.csv')
-sites_names_csv = base_path.joinpath('LAWARiverSiteswithRCIDs.csv')
+rivers_base_path = base_path.joinpath('rivers')
+lc_base_path.mkdir(parents=True, exist_ok=True)
+
+sites_loc_csv = rivers_base_path.joinpath('olw_river_sites_locations.csv')
+sites_rec_csv = rivers_base_path.joinpath('lawa_to_nzsegment.csv')
+sites_names_csv = rivers_base_path.joinpath('LAWARiverSiteswithRCIDs.csv')
 
 ## concentrations
-rivers_conc_base_path = base_path.joinpath('rivers')
-rivers_conc_csv_path1 = rivers_conc_base_path.joinpath('NutrientConcsYields.csv')
-rivers_conc_csv_path2 = rivers_conc_base_path.joinpath('EcoliConcsYields.csv')
-rivers_conc_csv_path3 = rivers_conc_base_path.joinpath('updated-suspended-sediment-yield-estimator-and-estuarine-tra.csv')
+rivers_conc_csv_path1 = rivers_base_path.joinpath('NutrientConcsYields.csv')
+rivers_conc_csv_path2 = rivers_base_path.joinpath('EcoliConcsYields.csv')
+rivers_conc_csv_path3 = rivers_base_path.joinpath('updated-suspended-sediment-yield-estimator-and-estuarine-tra.csv')
 
-rivers_ref_conc3_csv_path = rivers_conc_base_path.joinpath('reference_conc_rec_level_3.csv')
-rivers_ref_conc2_csv_path = rivers_conc_base_path.joinpath('reference_conc_rec_level_2.csv')
-rivers_ref_conc_csv_path = rivers_conc_base_path.joinpath('reference_conc_rec_clean.csv')
-rivers_ref_load_csv_path = rivers_conc_base_path.joinpath('reference_load_rec_clean.csv')
+rivers_ref_conc3_csv_path = rivers_base_path.joinpath('reference_conc_rec_level_3.csv')
+rivers_ref_conc2_csv_path = rivers_base_path.joinpath('reference_conc_rec_level_2.csv')
+rivers_ref_conc_csv_path = rivers_base_path.joinpath('reference_conc_rec_clean.csv')
+rivers_ref_load_csv_path = rivers_base_path.joinpath('reference_load_rec_clean.csv')
 
 # catch_break_points_gpkg = rivers_conc_base_path.joinpath('catch_management_points.gpkg')
 
 ## Errors and powers
-river_errors_model_path = base_path.joinpath('rivers_errors_modelled_v02.csv')
-river_errors_moni_path = base_path.joinpath('rivers_errors_monitored.csv')
-river_sites_path = base_path.joinpath('olw_river_sites.gpkg')
+river_errors_model_path = rivers_base_path.joinpath('rivers_errors_modelled_v03.csv')
+river_errors_moni_path = rivers_base_path.joinpath('rivers_errors_monitored.csv')
+river_sites_path = rivers_base_path.joinpath('olw_river_sites.gpkg')
 
 ## Flows and loads
 river_flows_rec_path = output_path.joinpath('rivers_flows_rec.blt')
@@ -138,11 +139,11 @@ river_loads_rec_path = assets_path.joinpath('rivers_loads_rec.blt')
 # major_catch_file = output_path.joinpath('rivers_major_catch.feather')
 # catch_file = output_path.joinpath('rivers_catch.feather')
 
-rivers_high_loads_reaches_csv_path = rivers_conc_base_path.joinpath('high_flow_loads.csv')
+rivers_high_loads_reaches_csv_path = rivers_base_path.joinpath('high_flow_loads.csv')
 rivers_high_loads_reaches_path = assets_path.joinpath('rivers_high_flow_loads.h5')
 
-high_res_moni_dir = rivers_conc_base_path.joinpath('high_res')
-high_res_moni_feather_path = rivers_conc_base_path.joinpath('high_res_sites_load.feather')
+high_res_moni_dir = rivers_base_path.joinpath('high_res')
+high_res_moni_feather_path = rivers_base_path.joinpath('high_res_sites_load.feather')
 rivers_perc_load_above_90_flow_h5_path = assets_path.joinpath('rivers_perc_load_above_90_flow.h5')
 
 # Individual catchment land covers
@@ -162,7 +163,7 @@ river_catch_major_path = assets_path.joinpath('rivers_catchments_major.blt')
 river_catch_name_path = assets_path.joinpath('rivers_catchments_names.blt')
 river_marae_path = assets_path.joinpath('rivers_catchments_marae.blt')
 
-river_catch_gpkg_path = base_path.joinpath('rivers_catch_major_3rd.gpkg')
+river_catch_gpkg_path = rivers_base_path.joinpath('rivers_catch_major_3rd.gpkg')
 
 river_sims_path = output_path.joinpath('rivers_sims')
 river_sims_path.mkdir(parents=True, exist_ok=True)
@@ -285,8 +286,8 @@ lakes_interp_test_results_path = lakes_source_path.joinpath('lakes_interp_test_r
 lakes_interp_test_summ_path = lakes_source_path.joinpath('lakes_interp_test_summary.csv')
 lakes_dtl_ratios_path = lakes_source_path.joinpath('lakes_dtl_ratios.csv')
 
-lakes_fenz_catch_path = base_path.joinpath('lakes_catchments_fenz.gpkg')
-lakes_fenz_poly_path = base_path.joinpath('lakes_polygons_fenz.gpkg')
+lakes_fenz_catch_path = lakes_source_path.joinpath('lakes_catchments_fenz.gpkg')
+lakes_fenz_poly_path = lakes_source_path.joinpath('lakes_polygons_fenz.gpkg')
 
 ## Geo processing
 lakes_points_path = output_path.joinpath('lakes_points.gpkg')
@@ -331,10 +332,10 @@ lakes_loads_rec_path = assets_path.joinpath('lakes_loads_rec.blt')
 lakes_marae_path = assets_path.joinpath('lakes_catchments_marae.blt')
 
 ## Model data
-lakes_rupesh_stdev_path = base_path.joinpath('lakes_stdev_v04.csv')
-lakes_data_path = base_path.joinpath('lakes_wq_data.csv')
+# lakes_rupesh_stdev_path = base_path.joinpath('lakes_stdev_v04.csv')
+lakes_data_path = lakes_source_path.joinpath('lakes_wq_data.csv')
 # lakes_data_clean_path = base_path.joinpath('lakes_wq_data_clean.feather')
-lakes_class_csv = base_path.joinpath('fenz_lakes_classification.csv')
+lakes_class_csv = lakes_source_path.joinpath('fenz_lakes_classification.csv')
 lakes_stdev_model_path = output_path.joinpath('lakes_stdev_modelled_v06.h5')
 lakes_stdev_moni_path = output_path.joinpath('lakes_stdev_monitored_v06.csv')
 lakes_stdev_model_summ_path = lakes_source_path.joinpath('lakes_stdev_modelled_summary.csv')
@@ -343,7 +344,7 @@ lakes_stdev_model_input_path = lakes_source_path.joinpath('lakes_FENZ_model_inpu
 lakes_stdev_model_input_sites_path = lakes_source_path.joinpath('lakes_FENZ_model_input_at_sites.csv')
 lakes_conc_moni_path = lakes_source_path.joinpath('lakes_conc_monitored.csv')
 
-lakes_missing_3rd_path = output_path.joinpath('lakes_stdev_missing.gpkg')
+lakes_missing_3rd_path = lakes_source_path.joinpath('lakes_stdev_missing.gpkg')
 
 ### GW
 

@@ -84,7 +84,7 @@ def lakes_catch_delin():
     # sindex = shapely.strtree.STRtree(list(catch.values()))
     # sindex_ids = list(catch.keys())
 
-    lakes_poly = gpd.read_feather(utils.lakes_poly_path)
+    lakes_poly = gpd.read_file(utils.lakes_poly_path)
 
     catches_minor_dict = {}
     segs_dict = {}

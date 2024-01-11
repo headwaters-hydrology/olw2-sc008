@@ -32,30 +32,18 @@ pd.options.display.max_columns = 10
 ### preprocessing
 
 ## Error assessments
-# indicators = ['ECOLI', 'Secchi', 'TN', 'TP', 'CHLA', 'NH4N', 'CYANOTOT']
-
-# lakes0 = xr.open_dataset(utils.lakes_stdev_path, engine='h5netcdf')
-
-# lakes1 = lakes0.sel(model='BoostingRegressor', indicator=indicators)
-
-# start = lakes1.stdev.min().round(3).values
-# end = lakes1.stdev.max().round(3).values
-
-# start = 0.069
-# end = 4.299
 start = 0.1
 end = 1.7
 
 errors = utils.log_error_cats(start, end, 0.04)
 
-# n_samples_year = utils.n_samples_year
 n_samples_year = [4, 6, 12, 26, 52, 104, 364]
 n_years = utils.n_years
 n_sims = 10000
 
 
 if __name__ == '__main__':
-    with concurrent.futures.ProcessPoolExecutor(max_workers=7, mp_context=mp.get_context("spawn")) as executor:
+    with concurrent.futures.ProcessPoolExecutor(max_workers=4, mp_context=mp.get_context("spawn")) as executor:
         futures = []
         for error in errors[:-1]:
             f = executor.submit(utils.power_sims_lakes, error, n_years, n_samples_year, n_sims, utils.lakes_sims_path)
