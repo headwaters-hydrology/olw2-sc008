@@ -357,7 +357,7 @@ def test_deseason_resampling_2M(data):
 # data0.to_csv(utils.lakes_source_data_path)
 
 
-def lakes_sd_conc():
+def lakes_stdev_monitored_conc():
     ## monitoring data from large spreadsheet
     moni0 = pd.read_csv(utils.lakes_raw_moni_data_csv_path, usecols=['LawaSiteID', 'SiteID', 'LFENZID', 'Latitude', 'Longitude', 'Indicator', 'SampleDate', 'Symbol', 'CensoredValue']).rename(columns={'LawaSiteID': 'lawa_id', 'SiteID': 'site_id', 'Latitude': 'lat', 'Longitude': 'lon', 'Indicator': 'parameter', 'SampleDate': 'date', 'CensoredValue': 'value', 'Symbol': 'censor_code'})
     moni1 = moni0.dropna(subset=['LFENZID', 'date', 'lat', 'lon', 'value']).copy()

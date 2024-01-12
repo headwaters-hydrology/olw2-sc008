@@ -34,8 +34,6 @@ base_path = script_path.parent.joinpath('data')
 # rec_rivers_feather = '/home/mike/data/NIWA/REC25_rivers/rec25_rivers_clean.feather'
 # rec_catch_feather = '/home/mike/data/NIWA/REC25_watersheds/rec25_watersheds_clean.feather'
 
-rc_bounds_gpkg = base_path.joinpath('statsnz/regional-council-2023-clipped-generalised.gpkg')
-
 nzrec_data_path = base_path.joinpath('nzrec')
 rec_rivers_feather = nzrec_data_path.joinpath('rec25_rivers_clean.feather')
 
@@ -135,16 +133,15 @@ river_flows_rec_path = output_path.joinpath('rivers_flows_rec.blt')
 river_loads_rec_path = assets_path.joinpath('rivers_loads_rec.blt')
 # river_loads_area_path = assets_path.joinpath('rivers_loads_area.blt')
 
-# rec_delin_file = output_path.joinpath('rivers_reach_delineation.feather')
-# major_catch_file = output_path.joinpath('rivers_major_catch.feather')
-# catch_file = output_path.joinpath('rivers_catch.feather')
-
 rivers_high_loads_reaches_csv_path = rivers_base_path.joinpath('high_flow_loads.csv')
 rivers_high_loads_reaches_path = assets_path.joinpath('rivers_high_flow_loads.h5')
 
-high_res_moni_dir = rivers_base_path.joinpath('high_res')
+high_res_moni_dir = rivers_base_path.joinpath('high_res_data')
+high_res_moni_dir.mkdir(parents=True, exist_ok=True)
 high_res_moni_feather_path = rivers_base_path.joinpath('high_res_sites_load.feather')
 rivers_perc_load_above_90_flow_h5_path = assets_path.joinpath('rivers_perc_load_above_90_flow.h5')
+rec_4th_order_and_greater_path = rivers_base_path.joinpath('rec_4th_order_and_greater.csv')
+high_res_dup_sites_path = rivers_base_path.joinpath('high_res_dup_sites.csv')
 
 # Individual catchment land covers
 rivers_catch_lc_dir = assets_path.joinpath('rivers_land_cover_gpkg')
@@ -349,12 +346,13 @@ lakes_missing_3rd_path = lakes_source_path.joinpath('lakes_stdev_missing.gpkg')
 ### GW
 
 ## Source data
-# gw_data_path = base_path.joinpath('gw_points_data.hdf')
-gw_monitoring_data_path = base_path.joinpath('gw_monitoring_data_v04.nc')
+gw_path = base_path.joinpath('gw')
+gw_path.mkdir(parents=True, exist_ok=True)
+gw_monitoring_data_path = gw_path.joinpath('gw_monitoring_data_v05.nc')
 
 ## Spatial data
-# gw_points_gbuf_path = assets_path.joinpath('gw_points.pbf')
-gw_points_path = output_path.joinpath('gw_points.gpkg')
+rc_bounds_gpkg = gw_path.joinpath('regional-council-2023-clipped-generalised.gpkg')
+gw_points_path = gw_path.joinpath('gw_points.gpkg')
 gw_points_rc_blt = assets_path.joinpath('gw_points_rc.blt')
 
 ## Power calcs

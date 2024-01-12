@@ -27,7 +27,8 @@ from ecology.eco_assign_reach_weights import eco_calc_river_reach_weights
 from ecology.eco_monitoring_sites import eco_monitoring_sites_processing
 from ecology.eco_catchment_stdev import eco_catchment_stdev_processing
 
-from lakes.lakes_stdev_monitored import lakes_sd_conc
+from lakes.lakes_stdev_monitored import lakes_stdev_monitored_conc
+from lakes.lakes_stdev_model import lakes_stdev_modelled_conc
 from lakes.lakes_geo_processing import lakes_geo_process
 from lakes.lakes_delineation import lakes_catch_delin
 from lakes.lakes_land_cover_assignment import lakes_land_cover
@@ -111,11 +112,14 @@ eco_process_power_modelled()
 ###################################################
 ### Lakes
 
-## Lakes stdev conc processing for modelling
-lakes_sd_conc()
+## Lakes stdev conc processing for monitored sites
+lakes_stdev_monitored_conc()
 
 ## Lakes locations
 lakes_geo_process()
+
+## Lakes stdev conc processing extrapolated to all lakes
+lakes_stdev_modelled_conc()
 
 ## Lakes catch delineation
 lakes_catch_delin()

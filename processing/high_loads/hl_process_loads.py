@@ -52,7 +52,7 @@ def hl_process_loads():
         rec_4th_data_list.append(data)
 
     rec_4th_data = pd.DataFrame(rec_4th_data_list).set_index('nzsegment')
-    rec_4th_data.to_csv('/home/mike/data/OLW/web_app/rivers/rec_4th_order_and_greater.csv')
+    rec_4th_data.to_csv(utils.rec_4th_order_and_greater_path)
 
     # Load results
     hl0 = pd.read_csv(utils.rivers_high_loads_reaches_csv_path)
@@ -108,7 +108,7 @@ def hl_process_loads():
     ## Add in the other site identifiers
     site_data = gpd.read_file(utils.river_sites_path)
     results1a = pd.merge(site_data.drop('geometry', axis=1), results0, on='lawa_id')
-    results1a[results1a.duplicated(['nzsegment', 'indicator'], keep=False)].to_csv('/home/mike/data/OLW/web_app/rivers/high_res/dup_sites.csv', index=False)
+    results1a[results1a.duplicated(['nzsegment', 'indicator'], keep=False)].to_csv(utils.high_res_dup_sites_path, index=False)
 
     results2a = results1a.groupby(['indicator', 'nzsegment'])[['perc_load_above_90_flow']].mean().to_xarray()
     results2b = results1a.drop_duplicates(['nzsegment']).set_index('nzsegment')[['lawa_id', 'site_id']].to_xarray()
