@@ -45,11 +45,11 @@ output_path.mkdir(parents=True, exist_ok=True)
 assets_path = base_path.parent.joinpath('web_app/app/assets/')
 assets_path.mkdir(parents=True, exist_ok=True)
 
-indicators_mapping = {'rivers': {'Visual Clarity': 'suspended sediment', 'E.coli': 'e.coli', 'Dissolved reactive phosphorus': 'total phosphorus', 'Nitrate nitrogen': 'total nitrogen', 'Total nitrogen': 'total nitrogen', 'Total phosphorus': 'total phosphorus'},
-              'lakes': {'E.coli': 'e.coli', 'Total nitrogen': 'total nitrogen', 'Total phosphorus': 'total phosphorus', 'Chlorophyll a': 'e.coli', 'Total Cyanobacteria': 'e.coli', 'Secchi Depth': 'suspended sediment'}
+indicators_mapping = {'rivers': {'Visual Clarity': 'sediment', 'E.coli': 'e.coli', 'Dissolved reactive phosphorus': 'total phosphorus', 'Nitrate nitrogen': 'total nitrogen', 'Total nitrogen': 'total nitrogen', 'Total phosphorus': 'total phosphorus'},
+              'lakes': {'E.coli': 'e.coli', 'Total nitrogen': 'total nitrogen', 'Total phosphorus': 'total phosphorus', 'Chlorophyll a': 'e.coli', 'Total Cyanobacteria': 'e.coli', 'Secchi Depth': 'sediment'}
               }
 
-# indicators = {'rivers': ['total phosphorus', 'total nitrogen', 'suspended sediment', 'e.coli'],
+# indicators = {'rivers': ['total phosphorus', 'total nitrogen', 'sediment', 'e.coli'],
 #               'lakes': ['E.coli', 'Ammoniacal nitrogen', 'Total nitrogen', 'Total phosphorus', 'Chlorophyll a', 'Total Cyanobacteria', 'Secchi Depth']
 #               }
 
@@ -144,7 +144,7 @@ rec_4th_order_and_greater_path = rivers_base_path.joinpath('rec_4th_order_and_gr
 high_res_dup_sites_path = rivers_base_path.joinpath('high_res_dup_sites.csv')
 
 # Individual catchment land covers
-rivers_catch_lc_dir = assets_path.joinpath('rivers_land_cover_gpkg')
+rivers_catch_lc_dir = output_path.joinpath('rivers_land_cover_gpkg')
 rivers_catch_lc_dir.mkdir(parents=True, exist_ok=True)
 
 rivers_catch_lc_gpkg_str = '{}_rivers_land_cover_reductions.gpkg'
@@ -308,7 +308,7 @@ lakes_catches_major_path = assets_path.joinpath('lakes_catchments_major.blt')
 lakes_catches_minor_path = assets_path.joinpath('lakes_catchments_minor.blt')
 lakes_reaches_path = assets_path.joinpath('lakes_reaches.blt')
 
-lakes_catch_lc_dir = assets_path.joinpath('lakes_land_cover_gpkg')
+lakes_catch_lc_dir = output_path.joinpath('lakes_land_cover_gpkg')
 lakes_catch_lc_dir.mkdir(parents=True, exist_ok=True)
 
 lakes_catch_lc_gpkg_str = '{}_lakes_land_cover_reductions.gpkg'

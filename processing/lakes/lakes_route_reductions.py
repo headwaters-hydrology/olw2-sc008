@@ -48,7 +48,7 @@ with booklet.open(utils.lakes_reaches_mapping_path) as f:
 
 if __name__ == '__main__':
 
-    with concurrent.futures.ProcessPoolExecutor(max_workers=4, mp_context=mp.get_context("spawn")) as executor:
+    with concurrent.futures.ProcessPoolExecutor(max_workers=8, mp_context=mp.get_context("spawn")) as executor:
         futures = []
         for catch_id in catches:
             f = executor.submit(utils.calc_lakes_reach_reductions, feature, catch_id, reduction_ratios)

@@ -87,7 +87,7 @@ rivers_red_url = '{}olw-data/olw-sc008/olw_rivers_reductions.csv.zip'.format(bas
 lc_catch_pbf_path = assets_path.joinpath('rivers_catch_lc_pbf.blt')
 
 rivers_lc_param_mapping = {
-    'Visual Clarity': 'suspended sediment',
+    'Visual Clarity': 'sediment',
     'E.coli': 'e.coli',
     'Dissolved reactive phosphorus': 'total phosphorus',
     'Ammoniacal nitrogen': 'total nitrogen',
@@ -100,7 +100,7 @@ rivers_lc_param_effects = {
     'total nitrogen': ['Total nitrogen', 'Nitrate nitrogen', 'Ammoniacal nitrogen'],
     'total phosphorus': ['Total phosphorus', 'Dissolved reactive phosphorus'],
     'e.coli': ['E.coli'],
-    'suspended sediment': ['Visual Clarity']
+    'sediment': ['Visual Clarity']
     }
 
 lakes_lc_param_mapping = {
@@ -109,11 +109,11 @@ lakes_lc_param_mapping = {
     'Total phosphorus': 'total phosphorus',
     'Chlorophyll a': 'e.coli',
     # 'Total Cyanobacteria': 'e.coli',
-    'Secchi Depth': 'suspended sediment'
+    'Secchi Depth': 'sediment'
     }
 
 lakes_lc_param_effects = {
-    'suspended sediment': ['Secchi Depth'],
+    'sediment': ['Secchi Depth'],
     'e.coli': ['Chlorophyll a'],
     'total phosphorus': ['Total phosphorus'],
     'total nitrogen': ['Total nitrogen']

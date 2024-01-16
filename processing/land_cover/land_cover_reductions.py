@@ -223,7 +223,7 @@ def land_cover_reductions():
     combo1 = pd.concat([snb3, dairy4]).reset_index(drop=True)
 
     # combo2 = combo1.drop(set(param_mapping.values()), axis=1)
-    combo2 = combo1.rename(columns={'nitrogen': 'total nitrogen', 'phosphorus': 'total phosphorus', 'sediment': 'suspended sediment'})
+    combo2 = combo1.rename(columns={'nitrogen': 'total nitrogen', 'phosphorus': 'total phosphorus'})
 
     utils.gpd_to_feather(combo2, utils.snb_dairy_red_path)
 
@@ -245,7 +245,7 @@ def land_cover_reductions():
     lcdb1 = lcdb0.merge(lcdb_red, on='typology').reset_index(drop=True)
 
     # lcdb2 = lcdb1.drop(set(param_mapping.values()), axis=1)
-    lcdb2 = lcdb1.rename(columns={'nitrogen': 'total nitrogen', 'phosphorus': 'total phosphorus', 'sediment': 'suspended sediment'})
+    lcdb2 = lcdb1.rename(columns={'nitrogen': 'total nitrogen', 'phosphorus': 'total phosphorus'})
 
     lcdb2.loc[lcdb2.land_cover == 'Low Producing Grassland', lcdb_extras.columns] = lcdb_extras.loc['Sheep and Beef'].values
     lcdb2.loc[lcdb2.land_cover == 'High Producing Exotic Grassland', lcdb_extras.columns] = lcdb_extras.loc['Dairy'].values
