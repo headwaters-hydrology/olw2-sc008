@@ -151,7 +151,7 @@ def layout():
                                                 value=80,
                                                 mb=35,
                                                 step=5,
-                                                min=10,
+                                                min=60,
                                                 max=100,
                                                 showLabelOnHover=True,
                                                 disabled=False,

@@ -26,7 +26,7 @@ services:
           - node.labels.function == web_server
 
   dash:
-    image: mullenkamp/olw-monitoring-app:3.19
+    image: mullenkamp/olw-monitoring-app:3.20
     volumes:
       - olw-assets:/app/assets
     networks:

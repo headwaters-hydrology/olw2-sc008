@@ -229,8 +229,8 @@ for i in range(0, 101, 10):
 
 ### Power Slider marks
 marks_power = []
-for i in range(10, 101, 5):
-    if (i % 10) == 0:
+for i in range(60, 101, 5):
+    if (i % 5) == 0:
         marks_power.append({'label': str(i) + '%', 'value': i})
     else:
         marks_power.append({'value': i})
