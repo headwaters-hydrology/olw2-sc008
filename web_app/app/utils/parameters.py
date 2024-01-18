@@ -165,7 +165,7 @@ lc_style = dict(weight=1, opacity=0.7, color='white', dashArray='3', fillOpacity
 style_power = dict(weight=4, opacity=1, color='white')
 classes = [0, 20, 40, 60, 80]
 bins = classes.copy()
-bins.append(101)
+bins.append(1000)
 colorscale_power = ['#808080', '#FED976', '#FD8D3C', '#E31A1C', '#800026']
 ctg = ["{}%+".format(cls, classes[i + 1]) for i, cls in enumerate(classes[:-1])] + ["{}%+".format(classes[-1])]
 
@@ -173,7 +173,7 @@ site_point_radius = 6
 
 classes_reductions = [0, 20, 40, 60, 80]
 bins_reductions = classes.copy()
-bins_reductions.append(101)
+bins_reductions.append(1000)
 colorscale_reductions = ['#edf8fb','#b3cde3','#8c96c6','#8856a7','#810f7c']
 ctg_reductions = ["{}%+".format(cls, classes[i + 1]) for i, cls in enumerate(classes[:-1])] + ["{}%+".format(classes[-1])]
 
@@ -227,6 +227,13 @@ for i in range(0, 101, 10):
     else:
         marks.append({'value': i})
 
+### Power Slider marks
+marks_power = []
+for i in range(10, 101, 5):
+    if (i % 10) == 0:
+        marks_power.append({'label': str(i) + '%', 'value': i})
+    else:
+        marks_power.append({'value': i})
 
 ### high flow colobar
 hfl_colorscale = ['#fef0d9','#fdcc8a','#fc8d59','#e34a33','#b30000']

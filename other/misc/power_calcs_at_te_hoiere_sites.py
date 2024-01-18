@@ -19,9 +19,11 @@ pd.options.display.max_columns = 10
 ######################################################
 ### Parameters
 
-base_path = pathlib.Path('/home/mike/data/olw')
+script_path = pathlib.Path(os.path.realpath(os.path.dirname(__file__)))
+base_path = script_path.parent.parent.joinpath('data')
+assets_path = script_path.parent.parent.joinpath('web_app/app/assets')
 
-rivers_reach_error_path = base_path.joinpath('web_app/output/assets/rivers_reaches_power_modelled.h5')
+rivers_reach_error_path = assets_path.joinpath('rivers_reaches_power_modelled.h5')
 # rivers_reach_error_path = base_path.joinpath('web_app/output/assets/rivers_reaches_power_monitored.h5')
 
 sites_csv = 'te_hoiere_sites.csv'
@@ -42,9 +44,9 @@ n_samples_df['n_samples'] = n_samples
 #####################################################
 ### Process data
 
-w0 = nzrec.Water('/home/mike/git/nzrec/data', download_files=False)
+w0 = nzrec.Water(base_path.joinpath('nzrec'), download_files=False)
 
-sites0 = pd.read_csv(base_path.joinpath(sites_csv))
+sites0 = pd.read_csv(base_path.joinpath('other').joinpath(sites_csv))
 
 power_data = xr.open_dataset(rivers_reach_error_path, engine='h5netcdf')
 

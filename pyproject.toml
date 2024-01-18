@@ -173,17 +173,17 @@ ban-relative-imports = "all"
 # Tests can use magic values, assertions, and relative imports
 "tests/**/*" = ["PLR2004", "S101", "TID252"]
 
-[tool.coverage.run]
-source_pkgs = ["olw2_sc008", "tests"]
-branch = true
-parallel = true
-omit = [
-  "src/olw2_sc008/__about__.py",
-]
+# [tool.coverage.run]
+# source_pkgs = ["olw2_sc008", "tests"]
+# branch = true
+# parallel = true
+# omit = [
+#   "src/olw2_sc008/__about__.py",
+# ]
 
-[tool.coverage.paths]
-olw2_sc008 = ["src/olw2_sc008", "*/olw2-sc008/src/olw2_sc008"]
-tests = ["tests", "*/olw2-sc008/tests"]
+# [tool.coverage.paths]
+# olw2_sc008 = ["src/olw2_sc008", "*/olw2-sc008/src/olw2_sc008"]
+# tests = ["tests", "*/olw2-sc008/tests"]
 
 [tool.coverage.report]
 exclude_lines = [

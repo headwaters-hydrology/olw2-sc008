@@ -83,6 +83,13 @@ def create_sidebar_children(pages):
         dmc.Group(
             children=[
                 create_nav_link(
+                    label=pages["pages.rivers_wq_sites_improve"]['title'], href=pages["pages.rivers_wq_sites_improve"]["path"]
+                    )
+                ], style={"marginBottom": 10}
+            ),
+        dmc.Group(
+            children=[
+                create_nav_link(
                     label=pages["pages.rivers_eco"]['title'], href=pages["pages.rivers_eco"]["path"]
                     )
                 ], style={"marginBottom": 10}
@@ -129,6 +136,13 @@ def create_sidebar_children(pages):
             children=[
                 create_nav_link(
                     label=pages["pages.lakes_wq_sites"]['title'], href=pages["pages.lakes_wq_sites"]["path"]
+                    )
+                ], style={"marginBottom": 10}
+            ),
+        dmc.Group(
+            children=[
+                create_nav_link(
+                    label=pages["pages.lakes_wq_sites_improve"]['title'], href=pages["pages.lakes_wq_sites_improve"]["path"]
                     )
                 ], style={"marginBottom": 10}
             ),

@@ -28,7 +28,6 @@ import tempfile
 ### Parameters
 
 script_path = pathlib.Path(os.path.realpath(os.path.dirname(__file__)))
-
 base_path = script_path.parent.joinpath('data')
 
 # rec_rivers_feather = '/home/mike/data/NIWA/REC25_rivers/rec25_rivers_clean.feather'
