@@ -160,7 +160,7 @@ def layout():
                                             dmc.HoverCardDropdown(
                                                 dmc.Text(
                                                     """
-                                                    This is the minimum power required to detect water quality improvements across the catchment.
+                                                    This is the minimum power required to detect water quality improvements at all monitoring sites.
                                                     """,
                                                     size="sm",
                                                 )
