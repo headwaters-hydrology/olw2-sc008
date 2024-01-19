@@ -36,7 +36,7 @@ from utils import utils
 dash.register_page(
     __name__,
     path='/lakes-wq-sites-improve',
-    title='Water Quality Sites Changes Improvements',
+    title='Water Quality Sites Improvements',
     name='lakes_wq_sites_improve',
     description='Lakes Water Quality Sites Improvements'
 )

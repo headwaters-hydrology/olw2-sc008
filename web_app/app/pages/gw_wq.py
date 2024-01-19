@@ -38,9 +38,9 @@ from utils import utils
 dash.register_page(
     __name__,
     path='/gw-wq',
-    title='Water Quality',
+    title='Water Quality Sites',
     name='gw_wq',
-    description='Groundwater Quality'
+    description='Groundwater Quality Sites'
 )
 
 ### Handles
