@@ -126,9 +126,9 @@ def layout():
                                 ),
 
                             dmc.AccordionItem([
-                                dmc.AccordionControl('(2) Select Indicator and minimum power', style={'font-size': 18}),
+                                dmc.AccordionControl('(2) Select Indicator and Power', style={'font-size': 18}),
                                 dmc.AccordionPanel([
-                                    dmc.Text('(2a) Select Indicator:'),
+                                    dmc.Text('(2a) Select indicator:'),
                                     dcc.Dropdown(options=indicators, id='indicator_lakes_sites_change', optionHeight=40, clearable=False, style={'margin-bottom': 20}),
                                     dmc.HoverCard(
                                         withArrow=True,
@@ -136,11 +136,11 @@ def layout():
                                         shadow="md",
                                         openDelay=param.hovercard_open_delay,
                                         children=[
-                                            dmc.HoverCardTarget(html.Label('(2b) Select the minimum detection power (❓):', style={'margin-top': 20})),
+                                            dmc.HoverCardTarget(html.Label('(2b) Select detection power (❓):', style={'margin-top': 20})),
                                             dmc.HoverCardDropdown(
                                                 dmc.Text(
                                                     """
-                                                    This is the minimum power required to detect water quality improvements across the lake.
+                                                    Select the statistical detection power to be applied to all monitoring sites in the selected catchment. Please refer to the user guide for more information on statistical power.
                                                     """,
                                                     size="sm",
                                                 )
@@ -487,7 +487,7 @@ def update_map_info_lakes(powers_obj, sites_powers_obj, feature, sites_feature, 
 
             lake_name = lakes_names[int(lake_id)]
 
-            info_str = """**Lake name**: {lake}\n\n**Estimated improvement**: {red}%""".format(red=int(props['reduction']), lake=lake_name)
+            info_str = """**Lake name**: {lake}\n\n**Minimum detectable improvement**: {red}%""".format(red=int(props['reduction']), lake=lake_name)
 
             if (sites_powers_obj != ''):
                 info_str += """\n\n*Estimates from monitoring site(s)*"""
@@ -516,7 +516,7 @@ def update_map_info_lakes(powers_obj, sites_powers_obj, feature, sites_feature, 
 
                 site_name = reach_data0['site_name']
 
-                info_str = """**Site name**: {site}\n\n**Estimated improvement**: {red}""".format(red=reduction, site=site_name)
+                info_str = """**Site name**: {site}\n\n**Minimum detectable improvement**: {red}""".format(red=reduction, site=site_name)
 
                 info = info_str
 
@@ -526,7 +526,7 @@ def update_map_info_lakes(powers_obj, sites_powers_obj, feature, sites_feature, 
 
         lake_name = lakes_names[int(lake_id)]
 
-        info_str = """**Lake name**: {lake}\n\n**Estimated improvement**: {red}%""".format(red=int(props['reduction']), lake=lake_name)
+        info_str = """**Lake name**: {lake}\n\n**Minimum detectable improvement**: {red}%""".format(red=int(props['reduction']), lake=lake_name)
 
         if (sites_powers_obj != ''):
             info_str += """\n\n*Estimates from monitoring site(s)*"""

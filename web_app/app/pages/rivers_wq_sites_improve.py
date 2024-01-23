@@ -146,9 +146,9 @@ def layout():
                                 ),
 
                             dmc.AccordionItem([
-                                dmc.AccordionControl('(2) Select Indicator and minimum power', style={'font-size': 18}),
+                                dmc.AccordionControl('(2) Select Indicator and Power', style={'font-size': 18}),
                                 dmc.AccordionPanel([
-                                    dmc.Text('(2a) Select Indicator:'),
+                                    dmc.Text('(2a) Select indicator:'),
                                     dcc.Dropdown(options=[{'label': param.rivers_indicator_dict[d], 'value': d} for d in indicators], id='indicator_sites_change', optionHeight=40, clearable=False, style={'margin-bottom': 0}),
                                     dmc.HoverCard(
                                         withArrow=True,
@@ -156,11 +156,11 @@ def layout():
                                         shadow="md",
                                         openDelay=param.hovercard_open_delay,
                                         children=[
-                                            dmc.HoverCardTarget(html.Label('(2b) Select the minimum detection power (❓):', style={'margin-top': 20})),
+                                            dmc.HoverCardTarget(html.Label('(2b) Select detection power (❓):', style={'margin-top': 20})),
                                             dmc.HoverCardDropdown(
                                                 dmc.Text(
                                                     """
-                                                    This is the minimum power required to detect water quality improvements at all monitoring sites.
+                                                    Select the statistical detection power to be applied to all monitoring sites in the selected lake. Please refer to the user guide for more information on statistical power.
                                                     """,
                                                     size="sm",
                                                 )
@@ -509,7 +509,7 @@ def update_map_info(sites_powers_obj, sites_feature, old_info):
             #     \n\n**nzsegment**: {seg}\n\n**Site name**: {site}\n\n**Estimated minimum improvement %**: {conc}\n\n**Likelihood of detecting the improvement (power)**: {t_stat}""".format(t_stat=power, conc=red, seg=feature_id, site=sites_feature['id'])
             info += """##### Monitoring Site:
 
-                \n\n**nzsegment**: {seg}\n\n**Site name**: {site}\n\n**Estimated minimum improvement**: {conc}""".format(conc=red, seg=feature_id, site=sites_feature['id'])
+                \n\n**nzsegment**: {seg}\n\n**Site name**: {site}\n\n**Minimum detectable improvement**: {conc}""".format(conc=red, seg=feature_id, site=sites_feature['id'])
 
     return info
 
