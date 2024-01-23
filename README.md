@@ -30,7 +30,7 @@ docker stack deploy -c docker-swarm.yml olw-app
 
 ## Running the processing scripts
 All of the data processing is performed by python scripts. 
-To run the python scripts, you'll need to install a python environment with the dependencies defined in the pyproject.toml file in the root directory. Then you'll need to download all of the [source data files]() to the data directory and extract the files to the data directory.
+To run the python scripts, you'll need to install a python environment with the dependencies defined in the pyproject.toml file in the root directory. Then you'll need to download all of the [source data files](https://drive.google.com/file/d/13XauiXg3hppAEl2eeXYcM3Gcz14pLQ0U/view?usp=sharing) to the root directory and extract the files. This should create a data folder with all the necessary data files to run the python scripts.
 
 To ensure that rtree works, these need to be installed on linux:
 https://github.com/Toblerity/rtree/issues/64#issuecomment-574377066
@@ -44,6 +44,9 @@ The main.py file in the processing directory contains the sequence of modules/fu
 Detailed documentation for the individual processes can be found here:
 https://github.com/headwaters-hydrology/olw2-sc008/tree/main/web_app/docs
 
-
+## Tranferring the land cover mitigation files to S3
+The land cover mitigation files are hosted in Backblaze, and I use rclone to transfer them.
+rclone copy -v -P --transfers=10 rivers_land_cover_gpkg/ b2p:olw-data/olw-sc008/rivers_land_cover_gpkg/
+rclone copy -v -P --transfers=10 lakes_land_cover_gpkg/ b2p:olw-data/olw-sc008/lakes_land_cover_gpkg/
 
 

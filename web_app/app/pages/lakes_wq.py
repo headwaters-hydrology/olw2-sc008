@@ -733,6 +733,8 @@ def update_map_info_lakes(powers_obj, sites_powers_obj, feature, sites_feature, 
 
     trig = ctx.triggered_id
 
+    print(trig)
+
     # print(ctx.triggered_prop_ids)
 
     # if (reductions_obj != '') and (reductions_obj is not None) and ('reductions_poly' in map_checkboxes):
@@ -787,6 +789,8 @@ def update_map_info_lakes(powers_obj, sites_powers_obj, feature, sites_feature, 
     elif (trig == 'powers_obj_lakes') and (powers_obj != '') and ('Lake name' in old_info):
         # print(reach_feature)
         props = utils.decode_obj(powers_obj)
+
+        lake_data = feature['properties']
 
         lake_name = lakes_names[int(lake_id)]
 

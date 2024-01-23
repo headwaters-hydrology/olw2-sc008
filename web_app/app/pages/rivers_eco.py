@@ -35,9 +35,9 @@ from utils import utils
 dash.register_page(
     __name__,
     path='/rivers-eco',
-    title='Ecology Reaches',
+    title='Ecology Routing',
     name='rivers_eco',
-    description='River Ecology Reaches'
+    description='River Ecology Routing'
 )
 
 ## Handles

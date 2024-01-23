@@ -12,7 +12,7 @@ volumes:
 
 services:
   assets:
-    image: mullenkamp/olw-monitoring-app-assets:1.25
+    image: mullenkamp/olw-monitoring-app-assets:1.26
     volumes:
       - olw-assets:/app/assets
     networks:
@@ -26,7 +26,7 @@ services:
           - node.labels.function == web_server
 
   dash:
-    image: mullenkamp/olw-monitoring-app:3.17
+    image: mullenkamp/olw-monitoring-app:3.21
     volumes:
       - olw-assets:/app/assets
     networks:
@@ -35,7 +35,7 @@ services:
     depends_on:
       - assets
     deploy:
-      replicas: 8
+      replicas: 4
       placement:
         constraints:
           - node.labels.function == web_server

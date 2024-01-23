@@ -87,7 +87,7 @@ rivers_red_url = '{}olw-data/olw-sc008/olw_rivers_reductions.csv.zip'.format(bas
 lc_catch_pbf_path = assets_path.joinpath('rivers_catch_lc_pbf.blt')
 
 rivers_lc_param_mapping = {
-    'Visual Clarity': 'suspended sediment',
+    'Visual Clarity': 'sediment',
     'E.coli': 'e.coli',
     'Dissolved reactive phosphorus': 'total phosphorus',
     'Ammoniacal nitrogen': 'total nitrogen',
@@ -100,7 +100,7 @@ rivers_lc_param_effects = {
     'total nitrogen': ['Total nitrogen', 'Nitrate nitrogen', 'Ammoniacal nitrogen'],
     'total phosphorus': ['Total phosphorus', 'Dissolved reactive phosphorus'],
     'e.coli': ['E.coli'],
-    'suspended sediment': ['Visual Clarity']
+    'sediment': ['Visual Clarity']
     }
 
 lakes_lc_param_mapping = {
@@ -109,11 +109,11 @@ lakes_lc_param_mapping = {
     'Total phosphorus': 'total phosphorus',
     'Chlorophyll a': 'e.coli',
     # 'Total Cyanobacteria': 'e.coli',
-    'Secchi Depth': 'suspended sediment'
+    'Secchi Depth': 'sediment'
     }
 
 lakes_lc_param_effects = {
-    'suspended sediment': ['Secchi Depth'],
+    'sediment': ['Secchi Depth'],
     'e.coli': ['Chlorophyll a'],
     'total phosphorus': ['Total phosphorus'],
     'total nitrogen': ['Total nitrogen']
@@ -126,7 +126,7 @@ lakes_lc_params = list(set(lakes_lc_param_mapping.values()))
 lakes_lc_params.sort()
 
 ### Layout
-# map_height = '80vh'
+# map_height = '80vh' # for combined website
 map_height = '95vh' # for stand-alone pages
 center = [-41.1157, 172.4759]
 zoom = 6
@@ -165,7 +165,7 @@ lc_style = dict(weight=1, opacity=0.7, color='white', dashArray='3', fillOpacity
 style_power = dict(weight=4, opacity=1, color='white')
 classes = [0, 20, 40, 60, 80]
 bins = classes.copy()
-bins.append(101)
+bins.append(1000)
 colorscale_power = ['#808080', '#FED976', '#FD8D3C', '#E31A1C', '#800026']
 ctg = ["{}%+".format(cls, classes[i + 1]) for i, cls in enumerate(classes[:-1])] + ["{}%+".format(classes[-1])]
 
@@ -173,7 +173,7 @@ site_point_radius = 6
 
 classes_reductions = [0, 20, 40, 60, 80]
 bins_reductions = classes.copy()
-bins_reductions.append(101)
+bins_reductions.append(1000)
 colorscale_reductions = ['#edf8fb','#b3cde3','#8c96c6','#8856a7','#810f7c']
 ctg_reductions = ["{}%+".format(cls, classes[i + 1]) for i, cls in enumerate(classes[:-1])] + ["{}%+".format(classes[-1])]
 
@@ -227,6 +227,13 @@ for i in range(0, 101, 10):
     else:
         marks.append({'value': i})
 
+### Power Slider marks
+marks_power = []
+for i in range(60, 101, 5):
+    if (i % 5) == 0:
+        marks_power.append({'label': str(i) + '%', 'value': i})
+    else:
+        marks_power.append({'value': i})
 
 ### high flow colobar
 hfl_colorscale = ['#fef0d9','#fdcc8a','#fc8d59','#e34a33','#b30000']

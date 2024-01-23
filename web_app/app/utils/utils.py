@@ -45,23 +45,23 @@ param_weights = {
 #     'peri': {
 #         'total nitrogen': 0.4,
 #         'total phosphorus': 0.4,
-#         'suspended sediment': 0.2
+#         'sediment': 0.2
 #         },
 #     'mci': {
 #         'total nitrogen': 0.5,
 #         'total phosphorus': 0.2,
-#         'suspended sediment': 0.3
+#         'sediment': 0.3
 #         },
 #     'sediment': {
 #         'total nitrogen': 0,
 #         'total phosphorus': 0,
-#         'suspended sediment': 1
+#         'sediment': 1
 #         },
 #     }
 
 weights_encoding = {'missing_value': -99, 'dtype': 'int16', 'scale_factor': 0.1}
 
-weights_params = ['total nitrogen', 'total phosphorus', 'suspended sediment']
+weights_params = ['total nitrogen', 'total phosphorus', 'sediment']
 
 
 ###############################################

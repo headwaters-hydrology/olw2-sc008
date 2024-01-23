@@ -161,97 +161,98 @@ def create_sidebar_children(pages):
     return list1
 
 
-sidebar = dmc.Navbar(
-    fixed=True,
-    width={"base": 185},
-    position={"top": 80},
-    px=10,
-    children=[
-        dmc.ScrollArea(
-            offsetScrollbars=True,
-            type="scroll",
-            children=create_sidebar_children(dash.page_registry)
-            )
-        ]
-    )
+# sidebar = dmc.Navbar(
+#     fixed=True,
+#     width={"base": 185},
+#     position={"top": 80},
+#     px=10,
+#     children=[
+#         dmc.ScrollArea(
+#             offsetScrollbars=True,
+#             type="scroll",
+#             children=create_sidebar_children(dash.page_registry)
+#             )
+#         ]
+#     )
 
 app.layout = html.Div(
     [
-       dmc.Header(
-          height=60,
-          fixed=True,
-          px=25,
-          children=[
-              dmc.Grid(
-                  # gutter='xl',
-                  style={"height": 60},
-                  children=[
-                      dmc.Col(
-                          dmc.Anchor(
-                              'Mitigation Effectiveness Monitoring Design',
-                              size="xl",
-                              href="/",
-                              underline=False,
-                              # align='center',
-                              # style={'vertical-align': 'middle'}
+      # dmc.Header(
+      #    height=60,
+      #    fixed=True,
+      #    px=25,
+      #    children=[
+      #        dmc.Grid(
+      #            # gutter='xl',
+      #            style={"height": 60},
+      #            children=[
+      #                dmc.Col(
+      #                    dmc.Anchor(
+      #                        'Mitigation Effectiveness Monitoring Design',
+      #                        size="xl",
+      #                        href="/",
+      #                        underline=False,
+      #                        # align='center',
+      #                        # style={'vertical-align': 'middle'}
 
-                          ),
-                          span=5,
-                          style={'padding': '20px 0'}
-                          # style={'vertical-align': 'middle'}
-                          ),
-                      dmc.Col(
-                          dmc.Text(
-                              '',
-                              id='title',
-                              size=28,
-                              ),
-                          span=4,
-                          style={'padding': '20px 0'}
-                          ),
-                      dmc.Col(
-                          dmc.Anchor(
-                              dmc.Image(
-                                  src=str(app_base_path.joinpath('our-land-and-water-logo.svg')),
-                                  fit='cover',
-                                  width='90%'
-                                  ),
-                              href='https://ourlandandwater.nz/'
-                              ),
-                          span=3,
-                          offset=0
-                          ),
-                      ]
-                  )
-              ]
-          ),
+      #                    ),
+      #                    span=6,
+      #                    style={'padding': '20px 0'}
+      #                    # style={'vertical-align': 'middle'}
+      #                    ),
+      #                dmc.Col(
+      #                    dmc.Text(
+      #                        '',
+      #                        id='title',
+      #                        size=28,
+      #                        ),
+      #                    span=3,
+      #                    style={'padding': '20px 0'}
+      #                    ),
+      #                dmc.Col(
+      #                    dmc.Anchor(
+      #                        dmc.Image(
+      #                            src=str(app_base_path.joinpath('our-land-and-water-logo.svg')),
+      #                            fit='cover',
+      #                            width='90%'
+      #                            ),
+      #                        href='https://ourlandandwater.nz/'
+      #                        ),
+      #                    span=3,
+      #                    offset=0
+      #                    ),
+      #                ]
+      #            )
+      #        ]
+      #    ),
 
-          sidebar,
+      #    sidebar,
         dmc.Container(
             dash.page_container,
             size="xl",
             # pt=20,
-            # style={"margin-top": 20, 'margin-left': 0, 'margin-right': 0, 'margin-bottom': 20},
-            style={"margin-top": 80, 'margin-left': 200, 'margin-right': 20},
+            style={"margin-top": 20, 'margin-left': 0, 'margin-right': 0, 'margin-bottom': 20},
+            # style={"margin-top": 80, 'margin-left': 200, 'margin-right': 20},
         ),
     ],
 )
 
-@callback(
-    Output('title', 'children'),
-    Input('_pages_location', 'pathname'),
-    prevent_initial_call=True
-    )
-def updated_title(path):
-    # print(path)
-    if isinstance(path, str):
-        title = page_path_names[path]
-        if title == 'Home':
-            title = ''
+# @callback(
+#     Output('title', 'children'),
+#     Input('_pages_location', 'pathname'),
+#     prevent_initial_call=True
+#     )
+# def updated_title(path):
+#     # print(path)
+#     if isinstance(path, str):
+#         title = page_path_names[path]
+#         if title == 'Home':
+#             # title = 'Mitigation Effectiveness Monitoring Design'
+#             title = ''
 
-        return title
-    else:
-        raise dash.exceptions.PreventUpdate
+#         return title
+#     else:
+#         raise dash.exceptions.PreventUpdate
 
 
 # if __name__ == '__main__':
