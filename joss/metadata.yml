@@ -1,0 +1,28 @@
+title: 'A Web Application to help design monitoring programmes to assess the effectiveness of freshwater restoration actions in New Zealand'
+tags:
+  - Python
+  - freshwater
+  - monitoring
+  - water quality
+  - environment
+authors:
+  - name: Michael Kittridge
+    orcid: 0009-0000-1732-9097
+    affiliation: 1
+  - name: Laura Keenan
+    affiliation: 2
+  - name: Olivier Ausseil
+    # corresponding: true # (This is how to denote the corresponding author)
+    affiliation: 2
+  - name: Richard McDowell 
+    corresponding: true
+    affiliation: 3
+affiliations:
+ - name: Headwaters Hydrology
+   index: 1
+ - name: Traverse Environmental
+   index: 2
+ - name: AgResearch
+   index: 3
+date: 26 January 2024
+bibliography: paper.bib
