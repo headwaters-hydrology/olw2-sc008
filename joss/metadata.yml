@@ -12,7 +12,6 @@ authors:
   - name: Laura Keenan
     affiliation: 2
   - name: Olivier Ausseil
-    # corresponding: true # (This is how to denote the corresponding author)
     affiliation: 2
   - name: Richard McDowell 
     corresponding: true
