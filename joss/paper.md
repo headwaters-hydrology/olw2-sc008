@@ -10,20 +10,44 @@ authors:
   - name: Michael Kittridge
     orcid: 0009-0000-1732-9097
     affiliation: 1
-  - name: Laura Keenan
-    affiliation: 2
   - name: Olivier Ausseil
     affiliation: 2
+  - name: Laura Keenan
+    affiliation: 2
+  - name: Alasdair Noble 
+    orcid: 0000-0003-2292-8216
+    affiliation: ['3', '4']
+  - name: David Hamilton
+    affiliation: 5
+  - name: Zeb Etheridge
+    affiliation: ['6', '7']
+  - name: Matt Dumont
+    orcid: 0009-0007-2974-0335
+    affiliation: 6
+  - name: Laura Kelly
+    affiliation: 8
+  - name: Joanne Clapcott
+    affiliation: 8
   - name: Richard McDowell 
-    corresponding: true
-    affiliation: 3
+    orcid: 0000-0003-3911-4825
+    affiliation: ['3', '4']
 affiliations:
- - name: Headwaters Hydrology
+ - name: Headwaters Hydrology, Wellington, New Zealand
    index: 1
- - name: Traverse Environmental
+ - name: Traverse Environmental, Wellington, New Zealand
    index: 2
- - name: AgResearch
+ - name: AgResearch, Lincoln Science Centre, Lincoln, New Zealand
    index: 3
+ - name: Faculty of Agriculture and Life Sciences, Lincoln University, Lincoln, New Zealand
+   index: 4
+ - name: Australian Rivers Institute, Griffith University, Queensland, Australia
+   index: 5
+ - name: Komanawa Solutions Ltd, Christchurch, New Zealand
+   index: 6
+ - name: School of Earth and Environment & Waterways Centre for Freshwater Management, University of Canterbury, New Zealand
+   index: 7
+ - name: Cawthron, Nelson, New Zealand
+   index: 8
 date: 26 January 2024
 bibliography: paper.bib
 ---
