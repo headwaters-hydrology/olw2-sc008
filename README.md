@@ -45,8 +45,10 @@ Detailed documentation for the individual processes can be found here:
 https://github.com/headwaters-hydrology/olw2-sc008/tree/main/web_app/docs
 
 ## Tranferring the land cover mitigation files to S3
-The land cover mitigation files are hosted in Backblaze, and I use rclone to transfer them.
+The land cover mitigation files are hosted in Backblaze, and I use rclone to transfer them:
+
+```
 rclone copy -v -P --transfers=10 rivers_land_cover_gpkg/ b2p:olw-data/olw-sc008/rivers_land_cover_gpkg/
 rclone copy -v -P --transfers=10 lakes_land_cover_gpkg/ b2p:olw-data/olw-sc008/lakes_land_cover_gpkg/
-
+```
 
