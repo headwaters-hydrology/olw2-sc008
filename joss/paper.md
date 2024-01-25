@@ -46,7 +46,7 @@ affiliations:
    index: 6
  - name: School of Earth and Environment & Waterways Centre for Freshwater Management, University of Canterbury, New Zealand
    index: 7
- - name: Cawthron, Nelson, New Zealand
+ - name: Cawthron Institute, Nelson, New Zealand
    index: 8
 date: 26 January 2024
 bibliography: paper.bib
@@ -72,23 +72,23 @@ Based on these two related needs, the application has two main purposes:
 
 ## Land cover and associated land mitigation improvements
 
-The reduction in the losses of each of the four main contaminants (nitrogen, phosphorus, sediment, and E.coli) from land is a necessary input dataset for modelling the improvements for in-river and in-lake contaminant loads (Step 1 above). Users can upload their own improvements layer for a catchment of interest, or utilise a default layer we have developed for all of New Zealand. We used the New Zealand Land Cover Database (LCDB) version 5 [@michelle_barnes_lcdb_2020] as a base layer, but edited it based on pastoral land use typologies [@McDowell_2021]. Each land cover or land type was associated with maximum “mitigatable” reductions in the loss of each contaminant (using information in [@McDowell_2021] for pastoral land use and other literature values for the other land cover types). Mitigatable reductions do not include contaminant concentrations expected under natural conditions [@McDowell_2013].
+The reduction in the losses of each of the four main contaminants (nitrogen, phosphorus, sediment, and E.coli) from land is a necessary input dataset for modelling the improvements for in-river and in-lake contaminant loads (Step 1 above). Users can upload their own improvements layer for a catchment of interest, or utilise a default layer we have developed for all of New Zealand. We used the New Zealand Land Cover Database (LCDB) version 5 [@michelle_barnes_lcdb_2020] as a base layer, but edited it based on pastoral land use typologies [@McDowell_2021]. Each land cover or land type was associated with maximum “mitigatable” reductions in the loss of each contaminant (using information in @McDowell_2021 for pastoral land use and other literature values for the other land cover types). Mitigatable reductions do not include contaminant concentrations expected under natural conditions [@McDowell_2013].
 
 ## Rivers
 
-The rivers module contains six dashboards providing guidance on the likelihood of detecting changes in a range of key water quality and ecological indicators at existing monitoring sites and across the whole stream network of the selected catchment.
+The rivers dashboard contains six modules providing guidance on the likelihood of detecting changes in a range of key water quality and ecological indicators at existing monitoring sites and across the whole stream network of the selected catchment.
 
-The land mitigation dashboard is dedicated to visualising the potential contaminant loss reductions from land parcels in a selected catchment. These reductions are then routed through the stream network to determine modelled in-river improvements which can be visualised. The “Water Quality-Catchment” dashboard uses the modelled land mitigation improvements described above (\autoref{webapp_example_fig}) and the “Water Quality-Monitoring Sites” dashboard allows the user to specify a target improvement for each monitoring site. In both modules, the user can then input various combinations of monitoring frequency and duration and the application calculates the likelihood of being able to detect the modelled or target in-river improvements.
+The land mitigation module is dedicated to visualising the potential contaminant loss reductions from land parcels in a selected catchment. These reductions are then routed through the stream network to determine modelled in-river improvements which can be visualised. The “Water Quality-Catchment” module uses the modelled land mitigation improvements described above (\autoref{webapp_example_fig}) and the “Water Quality-Monitoring Sites” module allows the user to specify a target improvement for each monitoring site. In both modules, the user can then input various combinations of monitoring frequency and duration and the application calculates the likelihood of being able to detect the modelled or target in-river improvements.
 
-![Example of the Rivers Water Quality - Catchments dashboard. A catchment has been selected with the associated query options. The river reaches are colored (and selectable) according to the estimated power. \label{webapp_example_fig}](webapp_fig.png)
+![Example of the Rivers Water Quality - Catchments module. A catchment has been selected with the associated query options. The river reaches are colored (and selectable) according to the estimated power. \label{webapp_example_fig}](webapp_fig.png)
 
-A fourth dashboard allows the user to see stream reaches that have a high contribution of contaminant loads during high river flows (above the 90th percentile). This allows the user to evaluate the risk of poorly characterising annual contaminant loads if high-flow events are not captured by the monitoring programme.
+A fourth module allows the user to see stream reaches that have a high contribution of contaminant loads during high river flows (above the 90th percentile). This allows the user to evaluate the risk of poorly characterising annual contaminant loads if high-flow events are not captured by the monitoring programme.
 
-The final two dashboards are for ecological parameters (a macroinvertebrate index, periphyton, and deposited sediment). In the first dashboard, the user defines a target improvement at each monitoring site and the application calculates the likelihood of being able to detect the target improvement based on the user-defined monitoring frequency and duration. In the other dashboard, the application provides qualitative guidance on where the user should monitor within a catchment based on where the greatest improvements in ecological indicators are likely to occur.
+The final two modules are for ecological parameters (a macroinvertebrate index, periphyton, and deposited sediment). In the first module, the user defines a target improvement at each monitoring site and the application calculates the likelihood of being able to detect the target improvement based on the user-defined monitoring frequency and duration. In the other module, the application provides qualitative guidance on where the user should monitor within a catchment based on where the greatest improvements in ecological indicators are likely to occur.
 
 ## Lakes
 
-The lakes component encompasses two dashboards with four lake water quality attributes each. The first dashboard uses the land mitigation improvements layer for the lake’s catchment (as described above) and routes the contaminant improvements down the stream network to estimate the contaminant improvement at each lake. In the second dashboard, the user directly specifies a target improvement in one water quality attribute at existing monitoring sites. In both dashboards, the user then inputs the frequency and duration of the monitoring programme and the application calculates likelihood (power) of being able to detect the modelled or target improvement at the lake.
+The lakes dashboard encompasses two modules with four lake water quality attributes each. The first module uses the land mitigation improvements layer for the lake’s catchment (as described above) and routes the contaminant improvements down the stream network to estimate the contaminant improvement at each lake. In the second module, the user directly specifies a target improvement in one water quality attribute at existing monitoring sites. In both modules, the user then inputs the frequency and duration of the monitoring programme and the application calculates likelihood (power) of being able to detect the modelled or target improvement at the lake.
 
 ## Groundwater
 
