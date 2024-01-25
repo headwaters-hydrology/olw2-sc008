@@ -62,7 +62,7 @@ The software was developed in [Python](https://www.python.org/) using [Dash](htt
 
 Land-based mitigation actions require considerable time and financial investment to reduce the loss of nutrients (nitrogen and phosphorus), sediment, and faecal bacteria from land into freshwater environments. Monitoring of freshwater environments is important to determine the effectiveness of mitigation actions. However, due to natural variability, changes in water quality and ecological indicators in a water body can be difficult to detect. Freshwater monitoring programmes should therefore be carefully designed to ensure they have adequate statistical power to be able to detect improvements in contaminant concentrations or ecological indicators. Good monitoring programme design can prevent years of wasted effort and expense.
  
-Under current New Zealand legislation, regional authorities must set targets for various “attributes” in water bodies, such as nutrient concentrations and water clarity. Monitoring to evaluate progress towards achieving these targets is required; however, current monitoring frequencies vary from quarterly (e.g., in many lakes) to monthly in most rivers. This may not be frequent enough to detect improvements.
+Under current New Zealand legislation, regional authorities must set targets for various “attributes” in water bodies, such as nutrient concentrations and water clarity. Monitoring to evaluate progress towards achieving these targets is required; however, current monitoring frequencies vary from quarterly (e.g., in many lakes) to monthly in most rivers and quarterly or annual in groundwater. This may not be frequent enough to detect improvements.
 Based on these two related needs, the application has two main purposes:
 
 1. Model the expected improvement in in-river and in-lake contaminant concentrations resulting from land-based mitigation actions in a catchment. These can be defined by the user or based on default settings.
@@ -80,7 +80,7 @@ The rivers dashboard contains six modules providing guidance on the likelihood o
 
 The land mitigation module is dedicated to visualising the potential contaminant loss reductions from land parcels in a selected catchment. These reductions are then routed through the stream network to determine modelled in-river improvements which can be visualised. The “Water Quality-Catchment” module uses the modelled land mitigation improvements described above (\autoref{webapp_example_fig}) and the “Water Quality-Monitoring Sites” module allows the user to specify a target improvement for each monitoring site. In both modules, the user can then input various combinations of monitoring frequency and duration and the application calculates the likelihood of being able to detect the modelled or target in-river improvements.
 
-![Example of the Rivers Water Quality - Catchments module. A catchment has been selected with the associated query options. The river reaches are colored (and selectable) according to the estimated power. \label{webapp_example_fig}](webapp_fig.png)
+![Example of the Rivers Water Quality - Catchments module. A catchment has been selected with the associated query options. The river reaches are colored (and selectable) according to the estimated power. \label{webapp_example_fig}](webapp_fig2.png)
 
 A fourth module allows the user to see stream reaches that have a high contribution of contaminant loads during high river flows (above the 90th percentile). This allows the user to evaluate the risk of poorly characterising annual contaminant loads if high-flow events are not captured by the monitoring programme.
 
@@ -92,6 +92,6 @@ The lakes dashboard encompasses two modules with four lake water quality attribu
 
 ## Groundwater
 
-The groundwater dashboard does not use the land mitigation improvements layer. Instead, the user inputs a percentage reduction in median nitrate-N concentration for all groundwater wells in a region. The user is then able to specify various combinations of the monitoring regime (frequency and duration). The application will then calculate the likelihood of the monitoring regime being able to detect that improvement for all wells in the region.
+The groundwater dashboard does not use the land mitigation improvements layer. Instead, the user inputs a target percentage reduction in median nitrate-N concentration for all groundwater wells in a region. The user is then able to specify various combinations of the monitoring regime (frequency and duration). The application will then calculate the likelihood of the monitoring regime being able to detect that improvement for all wells in the region.
 
 # References
