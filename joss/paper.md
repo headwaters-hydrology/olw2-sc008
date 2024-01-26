@@ -26,7 +26,7 @@ authors:
     orcid: 0009-0007-2974-0335
     affiliation: 6
   - name: Laura Kelly
-  orcid: 0000-0002-1251-7475
+    orcid: 0000-0002-1251-7475
     affiliation: 8
   - name: Joanne Clapcott
     affiliation: 8
@@ -41,15 +41,15 @@ affiliations:
  - name: AgResearch, Lincoln Science Centre, Lincoln, New Zealand
    index: 3
  - name: Faculty of Agriculture and Life Sciences, Lincoln University, Lincoln, New Zealand
- - index: 4
+   index: 4
  - name: Australian Rivers Institute, Griffith University, Queensland, Australia
- - index: 5
+   index: 5
  - name: Komanawa Solutions Ltd, Christchurch, New Zealand
- - index: 6
+   index: 6
  - name: School of Earth and Environment & Waterways Centre for Freshwater Management, University of Canterbury, New Zealand
- - index: 7
+   index: 7
  - name: Freshwater Group, Cawthron Institute, Nelson, New Zealand
- - index: 8
+   index: 8
 date: 26 January 2024
 bibliography: paper.bib
 ---
