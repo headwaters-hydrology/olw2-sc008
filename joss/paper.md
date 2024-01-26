@@ -16,8 +16,9 @@ authors:
     affiliation: 2
   - name: Alasdair Noble 
     orcid: 0000-0003-2292-8216
-    affiliation: ['3', '4']
+    affiliation: 3
   - name: David Hamilton
+    orcid: 0000-0002-9341-8777
     affiliation: 5
   - name: Zeb Etheridge
     affiliation: ['6', '7']
@@ -25,6 +26,7 @@ authors:
     orcid: 0009-0007-2974-0335
     affiliation: 6
   - name: Laura Kelly
+  orcid: 0000-0002-1251-7475
     affiliation: 8
   - name: Joanne Clapcott
     affiliation: 8
@@ -39,15 +41,15 @@ affiliations:
  - name: AgResearch, Lincoln Science Centre, Lincoln, New Zealand
    index: 3
  - name: Faculty of Agriculture and Life Sciences, Lincoln University, Lincoln, New Zealand
-   index: 4
+ - index: 4
  - name: Australian Rivers Institute, Griffith University, Queensland, Australia
-   index: 5
+ - index: 5
  - name: Komanawa Solutions Ltd, Christchurch, New Zealand
-   index: 6
+ - index: 6
  - name: School of Earth and Environment & Waterways Centre for Freshwater Management, University of Canterbury, New Zealand
-   index: 7
- - name: Cawthron Institute, Nelson, New Zealand
-   index: 8
+ - index: 7
+ - name: Freshwater Group, Cawthron Institute, Nelson, New Zealand
+ - index: 8
 date: 26 January 2024
 bibliography: paper.bib
 ---
@@ -72,7 +74,7 @@ Based on these two related needs, the application has two main purposes:
 
 ## Land cover and associated land mitigation improvements
 
-The reduction in the losses of each of the four main contaminants (nitrogen, phosphorus, sediment, and E.coli) from land is a necessary input dataset for modelling the improvements for in-river and in-lake contaminant loads (Step 1 above). Users can upload their own improvements layer for a catchment of interest, or utilise a default layer we have developed for all of New Zealand. We used the New Zealand Land Cover Database (LCDB) version 5 [@michelle_barnes_lcdb_2020] as a base layer, but edited it based on pastoral land use typologies [@McDowell_2021]. Each land cover or land type was associated with maximum “mitigatable” reductions in the loss of each contaminant (using information in @McDowell_2021 for pastoral land use and other literature values for the other land cover types). Mitigatable reductions do not include contaminant concentrations expected under natural conditions [@McDowell_2013].
+The reduction in the losses of each of the four main contaminants (nitrogen, phosphorus, sediment, and *E.coli*) from land is a necessary input dataset for modelling the improvements for in-river and in-lake contaminant loads (Step 1 above). Users can upload their own improvements layer for a catchment of interest, or utilise a default layer we have developed for all of New Zealand. We used the New Zealand Land Cover Database (LCDB) version 5 [@michelle_barnes_lcdb_2020] as a base layer, but edited it based on pastoral land use typologies [@McDowell_2021]. Each land cover or land type was associated with maximum “mitigatable” reductions in the loss of each contaminant (using information in @McDowell_2021 for pastoral land use and other literature values for the other land cover types). Mitigatable reductions do not include contaminant concentrations expected under natural conditions [@McDowell_2013].
 
 ## Rivers
 

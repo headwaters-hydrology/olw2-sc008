@@ -17,6 +17,7 @@ authors:
     orcid: 0000-0003-2292-8216
     affiliation: ['3', '4']
   - name: David Hamilton
+    orcid: 0000-0002-9341-8777
     affiliation: 5
   - name: Zeb Etheridge
     affiliation: ['6', '7']
@@ -24,6 +25,7 @@ authors:
     orcid: 0009-0007-2974-0335
     affiliation: 6
   - name: Laura Kelly
+  orcid: 0000-0002-1251-7475
     affiliation: 8
   - name: Joanne Clapcott
     affiliation: 8
@@ -45,7 +47,7 @@ affiliations:
  - index: 6
  - name: School of Earth and Environment & Waterways Centre for Freshwater Management, University of Canterbury, New Zealand
  - index: 7
- - name: Cawthron Institute, Nelson, New Zealand
+ - name: Freshwater Group, Cawthron Institute, Nelson, New Zealand
  - index: 8
 date: 26 January 2024
 bibliography: paper.bib
