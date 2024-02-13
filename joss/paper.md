@@ -21,7 +21,7 @@ authors:
     orcid: 0000-0002-9341-8777
     affiliation: 5
   - name: Zeb Etheridge
-    affiliation: [6, 7]
+    affiliation: "6, 7"
   - name: Matt Dumont
     orcid: 0009-0007-2974-0335
     affiliation: 6
@@ -33,7 +33,7 @@ authors:
     affiliation: 8
   - name: Richard McDowell 
     orcid: 0000-0003-3911-4825
-    affiliation: [3, 4]
+    affiliation: "3, 4"
 affiliations:
  - name: Headwaters Hydrology, Wellington, New Zealand
    index: 1
