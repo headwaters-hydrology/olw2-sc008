@@ -126,8 +126,8 @@ lakes_lc_params = list(set(lakes_lc_param_mapping.values()))
 lakes_lc_params.sort()
 
 ### Layout
-# map_height = '80vh' # for combined website
-map_height = '95vh' # for stand-alone pages
+map_height = '80vh' # for combined website
+# map_height = '95vh' # for stand-alone pages
 center = [-41.1157, 172.4759]
 zoom = 6
 

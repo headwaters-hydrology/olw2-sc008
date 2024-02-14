@@ -232,7 +232,7 @@ app.layout = html.Div(
             size="xl",
             # pt=20,
             # style={"margin-top": 20, 'margin-left': 0, 'margin-right': 0, 'margin-bottom': 20},
-            style={"margin-top": 80, 'margin-left': 200, 'margin-right': 20},
+            style={"margin-top": 80, 'margin-left': 170, 'margin-right': 20},
         ),
     ],
 )
