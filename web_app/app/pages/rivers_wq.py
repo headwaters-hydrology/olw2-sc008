@@ -164,7 +164,7 @@ def layout():
                             dmc.AccordionItem([
                                 dmc.AccordionControl('(2 - Optional) Customise the Land Mitigation Layer', style={'font-size': 18}),
                                 dmc.AccordionPanel([
-                                    html.Label('(2a) Download default Land Mitigation Layer as GPKG:'),
+                                    html.Label('(2a) Download default Land Mitigation Layer as CSV:'),
                                     dcc.Loading(
                                     id="loading-2",
                                     type="default",
@@ -174,7 +174,7 @@ def layout():
                                         'margin-top': 10
                                     }
                                         ),
-                                    html.Label('(2b) Upload modified Land Mitigation Layer as GPKG:', style={
+                                    html.Label('(2b) Upload modified Land Mitigation Layer as CSV:', style={
                                         'margin-top': 20
                                     }
                                         ),
@@ -290,7 +290,7 @@ def layout():
                             dmc.AccordionItem([
                                 dmc.AccordionControl('(4) Download Results', style={'font-size': 18}),
                                 dmc.AccordionPanel([
-                                    dmc.Text('(4a) Download power results given the prior query options (csv):'),
+                                    dmc.Text('(4a) Download power results given the prior query options (CSV):'),
                                     dcc.Loading(
                                     type="default",
                                     children=[html.Div(dmc.Button("Download power results", id='dl_btn_power_rivers'), style={'margin-bottom': 20, 'margin-top': 10}),
@@ -463,7 +463,7 @@ def update_base_reductions_obj(catch_id):
 def download_catch_lc(catch_id):
 
     if catch_id != '':
-        url = param.rivers_catch_lc_gpkg_str.format(base_url=param.base_data_url, catch_id=catch_id)
+        url = param.rivers_catch_lc_csv_str.format(base_url=param.base_data_url, catch_id=catch_id)
 
         return url
 
@@ -481,7 +481,8 @@ def update_land_reductions(contents, filename, catch_id):
 
     if catch_id != '':
         if contents is not None:
-            data = utils.parse_gis_file(contents, filename)
+            # data = utils.parse_gis_file(contents, filename)
+            data = utils.parse_csv_file(contents, filename)
 
             if isinstance(data, list):
                 error_text = data[0]
@@ -533,7 +534,7 @@ def update_reach_reductions(click, base_reductions_obj, catch_id, reductions_obj
                 text_out = 'Routing complete'
             else:
                 data = utils.set_default_rivers_reach_reductions(catch_id)
-                text_out = 'The improvements values are identical to the originals. Either skip this step, or modify the improvements values.'
+                text_out = 'The improvements values are identical to the originals. Either skip this step, or modify the improvement values.'
         elif catch_id != '':
             data = utils.set_default_rivers_reach_reductions(catch_id)
             text_out = 'Please upload a Land Mitigation file in step (2b)'

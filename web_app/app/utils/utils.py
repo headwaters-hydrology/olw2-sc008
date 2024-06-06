@@ -211,6 +211,22 @@ def parse_gis_file(contents, filename):
     return output
 
 
+def parse_csv_file(contents, filename):
+    """
+
+    """
+    try:
+        content_type, content_string = contents.split(',')
+        decoded = base64.b64decode(content_string)
+        plan1 = pd.read_csv(io.BytesIO(decoded))
+
+        output = encode_obj(plan1)
+    except:
+        output = ['Wrong file type. It must be a CSV file.']
+
+    return output
+
+
 def check_reductions_input(new_reductions, base_reductions):
     """
 
@@ -305,7 +321,10 @@ def calc_river_reach_reductions(catch_id, new_reductions, base_reductions, diff_
     with booklet.open(param.rivers_loads_rec_path) as f:
         loads = f[int(catch_id)][indicators]
 
-    new_reductions0 = new_reductions[diff_cols + ['geometry']]
+    ## Combine the new reductions with the old geometries
+    new_reductions0 = base_reductions[['typology', 'geometry']].merge(new_reductions[diff_cols + ['typology']], on='typology').drop('typology', axis=1)
+
+    # new_reductions0 = new_reductions[diff_cols + ['geometry']]
     not_all_zeros = new_reductions0[diff_cols].sum(axis=1) > 0
     new_reductions1 = new_reductions0.loc[not_all_zeros]
 
@@ -408,7 +427,10 @@ def calc_river_reach_eco_weights(catch_id, new_reductions, base_reductions):
     with booklet.open(param.rivers_loads_rec_path) as f:
         loads = f[int(catch_id)][indicators]
 
-    new_reductions0 = new_reductions[diff_cols + ['geometry']]
+    ## Combine the new reductions with the old geometries
+    new_reductions0 = base_reductions[['typology', 'geometry']].merge(new_reductions[diff_cols + ['typology']], on='typology').drop('typology', axis=1)
+
+    # new_reductions0 = new_reductions[diff_cols + ['geometry']]
     not_all_zeros = new_reductions0[diff_cols].sum(axis=1) > 0
     new_reductions1 = new_reductions0.loc[not_all_zeros]
 
@@ -515,7 +537,10 @@ def calc_lake_reach_reductions(lake_id, new_reductions, base_reductions, diff_co
     with booklet.open(param.lakes_loads_rec_path) as f:
         loads = f[int(lake_id)][indicators]
 
-    new_reductions0 = new_reductions[diff_cols + ['geometry']]
+    ## Combine the new reductions with the old geometries
+    new_reductions0 = base_reductions[['typology', 'geometry']].merge(new_reductions[diff_cols + ['typology']], on='typology').drop('typology', axis=1)
+
+    # new_reductions0 = new_reductions[diff_cols + ['geometry']]
     not_all_zeros = new_reductions0[diff_cols].sum(axis=1) > 0
     new_reductions1 = new_reductions0.loc[not_all_zeros]
 

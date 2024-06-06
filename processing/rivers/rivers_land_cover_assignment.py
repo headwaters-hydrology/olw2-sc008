@@ -158,8 +158,8 @@ def rivers_land_cover():
             lc_gbuf[i] = gbuf
 
     for i, data in lc_dict.items():
-        path = utils.rivers_catch_lc_dir.joinpath(utils.rivers_catch_lc_gpkg_str.format(i))
-        data.drop('tooltip', axis=1).to_file(path)
+        path = utils.rivers_catch_lc_dir.joinpath(utils.rivers_catch_lc_csv_str.format(i))
+        data.drop(['tooltip', 'geometry'], axis=1).to_csv(path, index=False)
 
     combo_list = []
     with booklet.open(utils.catch_lc_path) as lc:

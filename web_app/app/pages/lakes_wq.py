@@ -143,7 +143,7 @@ def layout():
                             dmc.AccordionItem([
                                 dmc.AccordionControl('(2 - Optional) Customise the Land Mitigation Layer', style={'font-size': 18}),
                                 dmc.AccordionPanel([
-                                    html.Label('(2a) Download default Land Mitigation Layer as GPKG:'),
+                                    html.Label('(2a) Download default Land Mitigation Layer as CSV:'),
                                     dcc.Loading(
                                     type="default",
                                     children=[dmc.Anchor(dmc.Button('Download default layer'), href='', id='dl_poly_lakes', style={'margin-top': 10})],
@@ -152,7 +152,7 @@ def layout():
                                         'margin-top': 10
                                     }
                                         ),
-                                    html.Label('(2b) Upload modified Land Mitigation Layer as GPKG:', style={
+                                    html.Label('(2b) Upload modified Land Mitigation Layer as CSV:', style={
                                         'margin-top': 20
                                     }
                                         ),
@@ -246,7 +246,7 @@ def layout():
                             dmc.AccordionItem([
                                 dmc.AccordionControl('(4) Download Results', style={'font-size': 18}),
                                 dmc.AccordionPanel([
-                                    dmc.Text('(4a) Download power results given the prior query options (csv):'),
+                                    dmc.Text('(4a) Download power results given the prior query options (CSV):'),
                                     dcc.Loading(
                                     type="default",
                                     children=[html.Div(dmc.Button("Download power results", id='dl_btn_power_lakes'), style={'margin-bottom': 20, 'margin-top': 10}),
@@ -449,7 +449,7 @@ def update_base_reductions_obj(lake_id):
 def download_catch_lc(lake_id):
 
     if lake_id != '':
-        url = param.lakes_catch_lc_gpkg_str.format(base_url=param.base_data_url, lake_id=lake_id)
+        url = param.lakes_catch_lc_csv_str.format(base_url=param.base_data_url, lake_id=lake_id)
 
         return url
 
@@ -468,7 +468,8 @@ def update_land_reductions(contents, filename, lake_id):
 
     if lake_id != '':
         if contents is not None:
-            data = utils.parse_gis_file(contents, filename)
+            # data = utils.parse_gis_file(contents, filename)
+            data = utils.parse_csv_file(contents, filename)
 
             if isinstance(data, list):
                 error_text = data[0]
@@ -733,7 +734,7 @@ def update_map_info_lakes(powers_obj, sites_powers_obj, feature, sites_feature, 
 
     trig = ctx.triggered_id
 
-    print(trig)
+    # print(trig)
 
     # print(ctx.triggered_prop_ids)
 

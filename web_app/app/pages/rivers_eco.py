@@ -156,7 +156,7 @@ def layout():
                             dmc.AccordionItem([
                                 dmc.AccordionControl('(2 - Optional) Customise the Land Mitigation Layer', style={'font-size': 18}),
                                 dmc.AccordionPanel([
-                                    html.Label('(2a) Download default Land Mitigation Layer as GPKG:'),
+                                    html.Label('(2a) Download default Land Mitigation Layer as CSV:'),
                                     dcc.Loading(
                                     id="loading-2",
                                     type="default",
@@ -166,7 +166,7 @@ def layout():
                                         'margin-top': 10
                                     }
                                         ),
-                                    html.Label('(2b) Upload modified Land Mitigation Layer as GPKG:', style={
+                                    html.Label('(2b) Upload modified Land Mitigation Layer as CSV:', style={
                                         'margin-top': 20
                                     }
                                         ),
@@ -417,7 +417,7 @@ def update_base_reductions_obj(catch_id):
 def download_catch_lc(catch_id):
 
     if catch_id != '':
-        url = param.rivers_catch_lc_gpkg_str.format(base_url=param.base_data_url, catch_id=catch_id)
+        url = param.rivers_catch_lc_csv_str.format(base_url=param.base_data_url, catch_id=catch_id)
 
         return url
 
@@ -435,7 +435,8 @@ def update_land_reductions(contents, filename, catch_id):
 
     if catch_id != '':
         if contents is not None:
-            data = utils.parse_gis_file(contents, filename)
+            # data = utils.parse_gis_file(contents, filename)
+            data = utils.parse_csv_file(contents, filename)
 
             if isinstance(data, list):
                 error_text = data[0]

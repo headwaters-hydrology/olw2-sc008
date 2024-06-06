@@ -146,7 +146,9 @@ high_res_dup_sites_path = rivers_base_path.joinpath('high_res_dup_sites.csv')
 rivers_catch_lc_dir = output_path.joinpath('rivers_land_cover_gpkg')
 rivers_catch_lc_dir.mkdir(parents=True, exist_ok=True)
 
-rivers_catch_lc_gpkg_str = '{}_rivers_land_cover_reductions.gpkg'
+# rivers_catch_lc_gpkg_str = '{}_rivers_land_cover_reductions.gpkg'
+rivers_catch_lc_csv_str = '{}_rivers_land_cover_reductions.csv'
+
 rivers_catch_lc_gpkg_path = output_path.joinpath('olw_land_cover_reductions.gpkg')
 rivers_red_csv_path = output_path.joinpath('olw_rivers_reductions.csv')
 
@@ -168,10 +170,6 @@ river_sims_h5_path = river_sims_path.joinpath('rivers_sims_all.h5')
 # river_sims_gam_path = river_sims_path.joinpath('rivers_sims_gam.h5')
 river_power_moni_path = assets_path.joinpath('rivers_reaches_power_monitored.h5')
 river_power_model_path = assets_path.joinpath('rivers_reaches_power_modelled.h5')
-# river_reach_loads_path = assets_path.joinpath('rivers_reaches_loads.h5')
-# river_reach_loads_area_path = assets_path.joinpath('rivers_reaches_loads_area.h5')
-
-# parcels_path = base_path.joinpath('nz-primary-land-parcels.gpkg')
 
 ## Sims params
 # conc_perc = np.arange(2, 101, 2, dtype='int8')
@@ -249,8 +247,6 @@ eco_catch_stdev_defaults = {
     'sediment': 31/21.2
     }
 
-
-
 eco_sites_gpkg_path = eco_data_path.joinpath('olw_eco_sites.gpkg')
 eco_sites_catch_path = assets_path.joinpath('eco_sites_catchments.blt')
 eco_moni_stdev_path = eco_data_path.joinpath('eco_moni_stdev.csv')
@@ -311,6 +307,7 @@ lakes_catch_lc_dir = output_path.joinpath('lakes_land_cover_gpkg')
 lakes_catch_lc_dir.mkdir(parents=True, exist_ok=True)
 
 lakes_catch_lc_gpkg_str = '{}_lakes_land_cover_reductions.gpkg'
+lakes_catch_lc_csv_str = '{}_lakes_land_cover_reductions.csv'
 
 lakes_sims_path = output_path.joinpath('lakes_sims')
 lakes_sims_path.mkdir(parents=True, exist_ok=True)

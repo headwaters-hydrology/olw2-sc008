@@ -40,6 +40,7 @@ rivers_catch_name_path = assets_path.joinpath('rivers_catchments_names.blt')
 rivers_marae_path = assets_path.joinpath('rivers_catchments_marae.blt')
 
 rivers_catch_lc_gpkg_str = '{base_url}olw-data/olw-sc008/rivers_land_cover_gpkg/{catch_id}_rivers_land_cover_reductions.gpkg'
+rivers_catch_lc_csv_str = '{base_url}olw-data/olw-sc008/rivers_land_cover_gpkg/{catch_id}_rivers_land_cover_reductions.csv'
 
 ## High flow load
 rivers_high_loads_reaches_path = assets_path.joinpath('rivers_high_flow_loads.h5')
@@ -69,7 +70,8 @@ lakes_lc_path = assets_path.joinpath('lakes_catch_lc.blt')
 lakes_reaches_mapping_path = assets_path.joinpath('lakes_reaches_mapping.blt')
 lakes_catches_minor_path = assets_path.joinpath('lakes_catchments_minor.blt')
 
-lakes_catch_lc_gpkg_str = '{base_url}olw-data/olw-sc008/lakes_land_cover_gpkg/{lake_id}_lakes_land_cover_reductions.gpkg'
+# lakes_catch_lc_gpkg_str = '{base_url}olw-data/olw-sc008/lakes_land_cover_gpkg/{lake_id}_lakes_land_cover_reductions.gpkg'
+lakes_catch_lc_csv_str = '{base_url}olw-data/olw-sc008/lakes_land_cover_gpkg/{lake_id}_lakes_land_cover_reductions.csv'
 
 lakes_loads_rec_path = assets_path.joinpath('lakes_loads_rec.blt')
 
