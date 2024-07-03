@@ -92,8 +92,10 @@ def lakes_land_cover():
 
     with booklet.open(utils.lakes_lc_path) as lc:
         for i, data in lc.items():
+            data0 = data.copy()
+            data0.insert(4, 'area_ha', (data0.geometry.area * 0.0001).round().astype('int32'))
             path = utils.lakes_catch_lc_dir.joinpath(utils.lakes_catch_lc_csv_str.format(i))
-            data.drop('geometry', axis=1).to_csv(path, index=False)
+            data0.drop(['geometry', 'farm_type'], axis=1).to_csv(path, index=False)
 
 
 

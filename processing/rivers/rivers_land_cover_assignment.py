@@ -151,15 +151,18 @@ def rivers_land_cover():
 
     with booklet.open(utils.catch_lc_pbf_path, 'n', value_serializer=None, key_serializer='uint4', n_buckets=1607) as lc_gbuf:
         for i, lc2 in lc_dict.items():
-            lc2['tooltip'] = lc2.apply(lambda x: make_tooltip(x), axis=1)
+            lc3 = lc2.copy()
+            lc3['tooltip'] = lc3.apply(lambda x: make_tooltip(x), axis=1)
             gdf = lc2.to_crs(4326)
             gjson = orjson.loads(gdf.to_json())
             gbuf = geobuf.encode(gjson)
             lc_gbuf[i] = gbuf
 
     for i, data in lc_dict.items():
+        data0 = data.copy()
+        data0.insert(4, 'area_ha', (data0.geometry.area * 0.0001).round().astype('int32'))
         path = utils.rivers_catch_lc_dir.joinpath(utils.rivers_catch_lc_csv_str.format(i))
-        data.drop(['tooltip', 'geometry'], axis=1).to_csv(path, index=False)
+        data0.drop(['geometry', 'farm_type'], axis=1).to_csv(path, index=False)
 
     combo_list = []
     with booklet.open(utils.catch_lc_path) as lc:
