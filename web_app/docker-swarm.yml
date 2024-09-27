@@ -9,6 +9,10 @@ networks:
 
 volumes:
   olw-assets:
+    driver: vieux/sshfs
+      driver_opts:
+        sshcmd: app@olw-aus2.nzrivers.xyz:/mnt/app_data/olw-assets
+        password: app4u
 
 services:
   assets:
