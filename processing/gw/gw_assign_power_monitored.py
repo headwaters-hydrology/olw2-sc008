@@ -58,6 +58,7 @@ def gw_process_power_monitored():
 
     error_dict = {}
     for ind, errors in grp1:
+        errors = errors.set_index('ref')
         miss_error = median1.loc[ind]
 
         null_rows = errors.stdev.isnull()
